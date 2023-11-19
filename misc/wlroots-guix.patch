@@ -1,0 +1,26 @@
+diff --git a/backend/drm/meson.build b/backend/drm/meson.build
+index 7bde50c2..ac02c97b 100644
+--- a/backend/drm/meson.build
++++ b/backend/drm/meson.build
+@@ -3,7 +3,7 @@ if hwdata.found()
+ 	hwdata_dir = hwdata.get_variable(pkgconfig: 'pkgdatadir')
+ 	pnp_ids = files(hwdata_dir / 'pnp.ids')
+ else
+-	pnp_ids = files('/usr/share/hwdata/pnp.ids')
++	pnp_ids = files('/gnu/store/vx2q81rpzq63r3jj6j2x4ac4gngxf5n9-hwdata-0.365-pnp/share/hwdata/pnp.ids')
+ endif
+ 
+ pnpids_c = custom_target(
+diff --git a/xwayland/server.c b/xwayland/server.c
+index 75b919b4..8281cd1a 100644
+--- a/xwayland/server.c
++++ b/xwayland/server.c
+@@ -45,7 +45,7 @@ noreturn static void exec_xwayland(struct wlr_xwayland_server *server,
+ 	snprintf(listenfd1, sizeof(listenfd1), "%d", server->x_fd[1]);
+ 	snprintf(displayfd, sizeof(displayfd), "%d", notify_fd);
+ 
+-	argv[i++] = "Xwayland";
++	argv[i++] = "/gnu/store/0dhl0sb9m3kdch4qby3b8pj0f94sqbd8-profile/bin/Xwayland";
+ 	argv[i++] = server->display_name;
+ 	argv[i++] = "-rootless";
+ 	argv[i++] = "-core";
