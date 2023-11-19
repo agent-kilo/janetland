@@ -61,9 +61,10 @@ static Janet cfun_wlr_log_init(int32_t argc, Janet *argv)
 
 
 static JanetReg cfuns[] = {
-    {"wlr_log_init", cfun_wlr_log_init, 
-     "(" MOD_NAME "/wlr_log_init verbosity callback)\n\n" 
-     "Initializes log infrastructure."
+    {
+        "wlr_log_init", cfun_wlr_log_init, 
+        "(" MOD_NAME "/wlr_log_init verbosity callback)\n\n" 
+        "Initializes log infrastructure."
     },
     {NULL, NULL, NULL},
 };
