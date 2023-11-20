@@ -4,29 +4,7 @@
 
 #include <wayland-server-core.h>
 
-/*
-#include <wlr/backend.h>
-#include <wlr/render/allocator.h>
-#include <wlr/render/wlr_renderer.h>
-#include <wlr/types/wlr_cursor.h>
-#include <wlr/types/wlr_compositor.h>
-#include <wlr/types/wlr_data_device.h>
-#include <wlr/types/wlr_input_device.h>
-#include <wlr/types/wlr_keyboard.h>
-#include <wlr/types/wlr_output.h>
-#include <wlr/types/wlr_output_layout.h>
-#include <wlr/types/wlr_pointer.h>
-#include <wlr/types/wlr_scene.h>
-#include <wlr/types/wlr_seat.h>
-#include <wlr/types/wlr_subcompositor.h>
-#include <wlr/types/wlr_xcursor_manager.h>
-#include <wlr/types/wlr_xdg_shell.h>
-*/
 #include <wlr/util/log.h>
-
-/*
-#include <xkbcommon/xkbcommon.h>
-*/
 
 #include "types.h"
 
@@ -44,7 +22,7 @@ static const jl_key_def_t log_defs[] = {
     {"log-importance-last", WLR_LOG_IMPORTANCE_LAST},
 };
 
-static int jwlr_get_log_importance(const Janet *argv, int32_t n)
+static enum wlr_log_importance jwlr_get_log_importance(const Janet *argv, int32_t n)
 {
     const uint8_t *kw = janet_getkeyword(argv, n);
     for (int i = 0; i < WLR_LOG_IMPORTANCE_LAST; i++) {
@@ -101,7 +79,7 @@ static Janet cfun_wlr_log_init(int32_t argc, Janet *argv)
 
     janet_arity(argc, 1, 2);
 
-    verbosity = janet_getinteger(argv, 0);
+    verbosity = jwlr_get_log_importance(argv, 0);
     cb = janet_optfunction(argv, argc, 1, NULL);
     if (cb) {
         if (jwlr_log_callback_fn) {

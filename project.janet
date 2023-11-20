@@ -26,6 +26,14 @@
      (string/split " " (pkg-config "--cflags" "--libs" "wayland-server"))
      (string/split " " (pkg-config "--cflags" "--libs" "xkbcommon")))))
 
+(def common-cflags ["-g" "-Wall" "-Wextra" ;wlr-cflags])
+
 (declare-native :name (project-module "wlr")
                 :source ["wlr.c"]
-                :cflags ["-g" "-Werror" ;wlr-cflags])
+                :header ["types.h"]
+                :cflags [;common-cflags])
+
+(declare-native :name (project-module "wl")
+                :source ["wl.c"]
+                :header ["types.h"]
+                :cflags [;common-cflags])
