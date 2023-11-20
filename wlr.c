@@ -28,13 +28,15 @@
 #include <xkbcommon/xkbcommon.h>
 */
 
+#include "types.h"
+
 #define MOD_NAME "wlr"
 
 
 JANET_THREAD_LOCAL JanetFunction *jwlr_log_callback_fn;
 
 
-static const KeyDef log_defs[] = {
+static const jl_key_def_t log_defs[] = {
     {"silent", WLR_SILENT},
     {"error", WLR_ERROR},
     {"info", WLR_INFO},
@@ -55,15 +57,18 @@ static int jwlr_get_log_importance(const Janet *argv, int32_t n)
 
 void jwlr_log_callback(enum wlr_log_importance importance, const char *fmt, va_list args)
 {
-    Janet argv[2];
+    if (!jwlr_log_callback_fn) {
+        /* May occur when this function is called from a thread which never called wlr_log_init() */
+        fprintf(stderr, "%s:%d - log callback not initialized in current thread\n", __FILE__, __LINE__);
+        return;
+    }
+
     va_list args_copy;
     int str_len;
     JanetBuffer *buf = janet_buffer(256); /* arbitrary size */
 
-    argv[0] = janet_ckeywordv(log_defs[importance].name);
-
     va_copy(args_copy, args);
-    str_len = vsnprintf(buf->data, buf->capacity, fmt, args_copy);
+    str_len = vsnprintf((char *)(buf->data), buf->capacity, fmt, args);
     if (str_len < 0) {
         fprintf(stderr, "%s:%d - vsnprintf() failed, fmt = \"%s\"\n", __FILE__, __LINE__, fmt);
         return;
@@ -73,13 +78,16 @@ void jwlr_log_callback(enum wlr_log_importance importance, const char *fmt, va_l
         str_len = vsnprintf((char *)(buf->data), buf->capacity, fmt, args_copy);
     }
     buf->count = str_len;
-    argv[1] = janet_wrap_buffer(buf);
 
+    Janet argv[2] = {
+        janet_ckeywordv(log_defs[importance].name),
+        janet_wrap_buffer(buf),
+    };
     Janet ret = janet_wrap_nil();
     JanetFiber *fiber = NULL;
     int sig = janet_pcall(jwlr_log_callback_fn, 2, argv, &ret, &fiber);
     if (JANET_SIGNAL_OK != sig) {
-        janet_stacktrace(fiber, out);
+        janet_stacktrace(fiber, ret);
     }
 }
 
@@ -96,6 +104,9 @@ static Janet cfun_wlr_log_init(int32_t argc, Janet *argv)
     verbosity = janet_getinteger(argv, 0);
     cb = janet_optfunction(argv, argc, 1, NULL);
     if (cb) {
+        if (jwlr_log_callback_fn) {
+            janet_gcunroot(janet_wrap_function(jwlr_log_callback_fn));
+        }
         jwlr_log_callback_fn = cb;
         janet_gcroot(janet_wrap_function(cb));
         ccb = jwlr_log_callback;
@@ -109,8 +120,8 @@ static Janet cfun_wlr_log_init(int32_t argc, Janet *argv)
 
 static JanetReg cfuns[] = {
     {
-        "wlr_log_init", cfun_wlr_log_init, 
-        "(" MOD_NAME "/wlr_log_init verbosity callback)\n\n" 
+        "wlr-log-init", cfun_wlr_log_init, 
+        "(" MOD_NAME "/wlr-log-init verbosity &opt callback)\n\n" 
         "Initializes log infrastructure."
     },
     {NULL, NULL, NULL},
