@@ -4,8 +4,14 @@
 
 #include <wayland-server-core.h>
 
-#include <wlr/backend.h>
 #include <wlr/util/log.h>
+#include <wlr/backend.h>
+#include <wlr/render/wlr_renderer.h>
+#include <wlr/render/allocator.h>
+#include <wlr/types/wlr_compositor.h>
+#include <wlr/types/wlr_subcompositor.h>
+#include <wlr/types/wlr_data_device.h>
+#include <wlr/types/wlr_output_layout.h>
 
 #include "jl.h"
 #include "types.h"
@@ -164,26 +170,237 @@ static Janet cfun_wlr_backend_autocreate(int32_t argc, Janet *argv)
 }
 
 
+static const JanetAbstractType jwlr_at_wlr_renderer = {
+    .name = MOD_NAME "/wlr-renderer",
+    .gc = NULL, /* TODO: close the renderer? */
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+static Janet cfun_wlr_renderer_autocreate(int32_t argc, Janet *argv)
+{
+    struct wlr_backend **backend;
+
+    struct wlr_renderer **renderer;
+
+    janet_fixarity(argc, 1);
+
+    backend = janet_getabstract(argv, 0, &jwlr_at_wlr_backend);
+    renderer = janet_abstract(&jwlr_at_wlr_renderer, sizeof(*renderer));
+    *renderer = wlr_renderer_autocreate(*backend);
+    if (!(*renderer)) {
+        janet_panic("failed to create wlroots renderer object");
+    }
+
+    return janet_wrap_abstract(renderer);
+}
+
+
+static Janet cfun_wlr_renderer_init_wl_display(int32_t argc, Janet *argv)
+{
+    struct wlr_renderer **renderer;
+    struct wl_display **display;
+
+    bool ret;
+
+    janet_fixarity(argc, 2);
+
+    renderer = janet_getabstract(argv, 0, &jwlr_at_wlr_renderer);
+    display = janet_getabstract(argv, 1, jl_get_abstract_type_by_name(WL_MOD_NAME "/wl-display"));
+    ret = wlr_renderer_init_wl_display(*renderer, *display);
+
+    return janet_wrap_boolean(ret);
+}
+
+
+static const JanetAbstractType jwlr_at_wlr_allocator = {
+    .name = MOD_NAME "/wlr-allocator",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+static Janet cfun_wlr_allocator_autocreate(int32_t argc, Janet *argv)
+{
+    struct wlr_backend **backend;
+    struct wlr_renderer **renderer;
+
+    struct wlr_allocator **allocator;
+
+    janet_fixarity(argc, 2);
+
+    backend = janet_getabstract(argv, 0, &jwlr_at_wlr_backend);
+    renderer = janet_getabstract(argv, 1, &jwlr_at_wlr_renderer);
+    allocator = janet_abstract(&jwlr_at_wlr_allocator, sizeof(*allocator));
+    *allocator = wlr_allocator_autocreate(*backend, *renderer);
+    if (!(*allocator)) {
+        janet_panic("failed to create wlroots allocator object");
+    }
+
+    return janet_wrap_abstract(allocator);
+}
+
+
+static const JanetAbstractType jwlr_at_wlr_compositor = {
+    .name = MOD_NAME "/wlr-compositor",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+static Janet cfun_wlr_compositor_create(int32_t argc, Janet *argv)
+{
+    struct wl_display **display;
+    struct wlr_renderer **renderer;
+
+    struct wlr_compositor **compositor;
+
+    janet_fixarity(argc, 2);
+
+    display = janet_getabstract(argv, 0, jl_get_abstract_type_by_name(WL_MOD_NAME "/wl-display"));
+    renderer = janet_getabstract(argv, 1, &jwlr_at_wlr_renderer);
+    compositor = janet_abstract(&jwlr_at_wlr_compositor, sizeof(*compositor));
+    *compositor = wlr_compositor_create(*display, *renderer);
+    if (!(*compositor)) {
+        janet_panic("failed to create wlroots compositor object");
+    }
+
+    return janet_wrap_abstract(compositor);
+}
+
+
+static const JanetAbstractType jwlr_at_wlr_subcompositor = {
+    .name = MOD_NAME "/wlr-subcompositor",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+static Janet cfun_wlr_subcompositor_create(int32_t argc, Janet *argv)
+{
+    struct wl_display **display;
+
+    struct wlr_subcompositor **subcompositor;
+
+    janet_fixarity(argc, 1);
+
+    display = janet_getabstract(argv, 0, jl_get_abstract_type_by_name(WL_MOD_NAME "/wl-display"));
+    subcompositor = janet_abstract(&jwlr_at_wlr_subcompositor, sizeof(*subcompositor));
+    *subcompositor = wlr_subcompositor_create(*display);
+    if (!(*subcompositor)) {
+        janet_panic("failed to create wlroots subcompositor object");
+    }
+
+    return janet_wrap_abstract(subcompositor);
+}
+
+
+static const JanetAbstractType jwlr_at_wlr_data_device_manager = {
+    .name = MOD_NAME "/wlr-data-device-manager",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+static Janet cfun_wlr_data_device_manager_create(int32_t argc, Janet *argv)
+{
+    struct wl_display **display;
+
+    struct wlr_data_device_manager **manager;
+
+    janet_fixarity(argc, 1);
+
+    display = janet_getabstract(argv, 0, jl_get_abstract_type_by_name(WL_MOD_NAME "/wl-display"));
+    manager = janet_abstract(&jwlr_at_wlr_data_device_manager, sizeof(*manager));
+    *manager = wlr_data_device_manager_create(*display);
+    if (!(*manager)) {
+        janet_panic("failed to create wlroots data device manager object");
+    }
+
+    return janet_wrap_abstract(manager);
+}
+
+
+static const JanetAbstractType jwlr_at_wlr_output_layout = {
+    .name = MOD_NAME "/wlr-output-layout",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+static Janet cfun_wlr_output_layout_create(int32_t argc, Janet *argv)
+{
+    (void)argv;
+
+    struct wlr_output_layout **layout;
+
+    janet_fixarity(argc, 0);
+
+    layout = janet_abstract(&jwlr_at_wlr_output_layout, sizeof(*layout));
+    *layout = wlr_output_layout_create();
+    if (!(*layout)) {
+        janet_panic("failed to create wlroots output layout object");
+    }
+
+    return janet_wrap_abstract(layout);
+}
+
+
 static JanetReg cfuns[] = {
     {
-        "wlr-log-init", cfun_wlr_log_init, 
-        "(" MOD_NAME "/wlr-log-init verbosity &opt callback)\n\n" 
+        "wlr-log-init", cfun_wlr_log_init,
+        "(" MOD_NAME "/wlr-log-init verbosity &opt callback)\n\n"
         "Initializes log infrastructure."
     },
     {
-        "wlr-log-get-verbosity", cfun_wlr_log_get_verbosity, 
-        "(" MOD_NAME "/wlr-log-get-verbosity)\n\n" 
+        "wlr-log-get-verbosity", cfun_wlr_log_get_verbosity,
+        "(" MOD_NAME "/wlr-log-get-verbosity)\n\n"
         "Returns the current log verbosity."
     },
     {
-        "wlr-log", cfun_wlr_log, 
-        "(" MOD_NAME "/wlr-log verbosity format & args)\n\n" 
+        "wlr-log", cfun_wlr_log,
+        "(" MOD_NAME "/wlr-log verbosity format & args)\n\n"
         "Logs a formatted string message."
     },
     {
-        "wlr-backend-autocreate", cfun_wlr_backend_autocreate, 
-        "(" MOD_NAME "/wlr-backend-autocreate wl-display)\n\n" 
-        "Logs a formatted string message."
+        "wlr-backend-autocreate", cfun_wlr_backend_autocreate,
+        "(" MOD_NAME "/wlr-backend-autocreate wl-display)\n\n"
+        "Creates a wlroots backend object."
+    },
+    {
+        "wlr-renderer-autocreate", cfun_wlr_renderer_autocreate,
+        "(" MOD_NAME "/wlr-renderer-autocreate wlr-backend)\n\n"
+        "Creates a wlroots renderer object."
+    },
+    {
+        "wlr-renderer-init-wl-display", cfun_wlr_renderer_init_wl_display,
+        "(" MOD_NAME "/wlr-renderer-init-wl-display wlr-renderer wl-display)\n\n"
+        "Initializes a wlroots renderer object."
+    },
+    {
+        "wlr-allocator-autocreate", cfun_wlr_allocator_autocreate,
+        "(" MOD_NAME "/wlr-allocator-autocreate wlr-backend wlr-renderer)\n\n"
+        "Creates a wlroots allocator object."
+    },
+    {
+        "wlr-compositor-create", cfun_wlr_compositor_create,
+        "(" MOD_NAME "/wlr-compositor-create wl-display wlr-renderer)\n\n"
+        "Creates a wlroots compositor object."
+    },
+    {
+        "wlr-subcompositor-create", cfun_wlr_subcompositor_create,
+        "(" MOD_NAME "/wlr-subcompositor-create wl-display)\n\n"
+        "Creates a wlroots subcompositor object."
+    },
+    {
+        "wlr-data-device-manager-create", cfun_wlr_data_device_manager_create,
+        "(" MOD_NAME "/wlr-data-device-manager-create wl-display)\n\n"
+        "Creates a wlroots data device manager object."
+    },
+    {
+        "wlr-output-layout-create", cfun_wlr_output_layout_create,
+        "(" MOD_NAME "/wlr-output-layout-create)\n\n"
+        "Creates a wlroots output layout object."
     },
     {NULL, NULL, NULL},
 };
@@ -194,6 +411,9 @@ JANET_MODULE_ENTRY(JanetTable *env)
     /* Import wl module first, so that we can find the wl_* abstract types */
     /* XXX: this will pollute the environment with wl/ stuff, even :export is set to nil */
     jl_import(WL_MOD_FULL_NAME);
+
+    janet_register_abstract_type(&jwlr_at_wlr_backend);
+    janet_register_abstract_type(&jwlr_at_wlr_renderer);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 }
