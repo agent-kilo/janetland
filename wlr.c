@@ -144,11 +144,49 @@ static Janet cfun_wlr_log(int32_t argc, Janet *argv)
 }
 
 
+static int wlr_backend_get(void *p, Janet key, Janet *out) {
+    struct wlr_backend **backend_p = (struct wlr_backend **)p;
+    struct wlr_backend *backend = *backend_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+#define __EVENTS_PREFIX "events."
+
+    int events_prefix_len = strlen(__EVENTS_PREFIX);
+    if (!strncmp(__EVENTS_PREFIX, (const char *)kw, events_prefix_len)) {
+        struct wl_signal *signal = NULL;
+        const uint8_t *kw_suffix = kw + events_prefix_len;
+        if (!janet_cstrcmp(kw_suffix, "destroy")) {
+            signal = &backend->events.destroy;
+        } else if (!janet_cstrcmp(kw_suffix, "new_input")) {
+            signal = &backend->events.new_input;
+        } else if (!janet_cstrcmp(kw_suffix, "new_output")) {
+            signal = &backend->events.new_output;
+        } else {
+            return 0;
+        }
+        struct wl_signal **signal_p = janet_abstract(jl_get_abstract_type_by_name(WL_MOD_NAME "/wl-signal"),
+                                                     sizeof(*signal_p));
+        *signal_p = signal;
+        *out = janet_wrap_abstract(signal_p);
+        return 1;
+    }
+
+#undef __EVENTS_PREFIX
+
+    return 0;
+}
+
 static const JanetAbstractType jwlr_at_wlr_backend = {
     .name = MOD_NAME "/wlr-backend",
     .gc = NULL, /* TODO: close the backend? */
     .gcmark = NULL,
-    JANET_ATEND_GCMARK
+    .get = wlr_backend_get,
+    JANET_ATEND_GET
 };
 
 static Janet cfun_wlr_backend_autocreate(int32_t argc, Janet *argv)
