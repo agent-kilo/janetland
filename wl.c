@@ -102,6 +102,21 @@ static Janet cfun_wl_signal_remove(int32_t argc, Janet *argv)
     return janet_wrap_nil();
 }
 
+static Janet cfun_wl_signal_emit(int32_t argc, Janet *argv)
+{
+    struct wl_signal **signal_p;
+    Janet data;
+
+    janet_fixarity(argc, 2);
+
+    signal_p = janet_getabstract(argv, 0, &jwl_at_wl_signal);
+    data = argv[1];
+
+    wl_signal_emit(*signal_p, &data);
+
+    return janet_wrap_nil();
+}
+
 
 static JanetReg cfuns[] = {
     {
@@ -119,6 +134,11 @@ static JanetReg cfuns[] = {
         "wl-signal-remove", cfun_wl_signal_remove,
         "(" MOD_NAME "/wl-signal-remove wl-listener)\n\n"
         "Removes a listener from a signal."
+    },
+    {
+        "wl-signal-emit", cfun_wl_signal_emit,
+        "(" MOD_NAME "/wl-signal-emit wl-signal data)\n\n"
+        "Emits a signal."
     },
     {NULL, NULL, NULL},
 };
