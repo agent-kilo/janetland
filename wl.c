@@ -2,6 +2,7 @@
 
 #include <wayland-server-core.h>
 
+#include "jl.h"
 #include "types.h"
 
 #define MOD_NAME "wl"
@@ -42,5 +43,7 @@ static JanetReg cfuns[] = {
 
 JANET_MODULE_ENTRY(JanetTable *env)
 {
+    janet_register_abstract_type(&jwl_at_wl_display);
+
     janet_cfuns(env, MOD_NAME, cfuns);
 }

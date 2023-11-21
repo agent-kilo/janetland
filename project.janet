@@ -30,10 +30,10 @@
 
 (declare-native :name (project-module "wlr")
                 :source ["wlr.c"]
-                :header ["types.h"]
+                :header ["jl.h" "types.h"]
                 :cflags [;common-cflags])
 
 (declare-native :name (project-module "wl")
                 :source ["wl.c"]
-                :header ["types.h"]
+                :header ["jl.h" "types.h"]
                 :cflags [;common-cflags])
