@@ -414,6 +414,11 @@ JANET_MODULE_ENTRY(JanetTable *env)
 
     janet_register_abstract_type(&jwlr_at_wlr_backend);
     janet_register_abstract_type(&jwlr_at_wlr_renderer);
+    janet_register_abstract_type(&jwlr_at_wlr_allocator);
+    janet_register_abstract_type(&jwlr_at_wlr_compositor);
+    janet_register_abstract_type(&jwlr_at_wlr_subcompositor);
+    janet_register_abstract_type(&jwlr_at_wlr_data_device_manager);
+    janet_register_abstract_type(&jwlr_at_wlr_output_layout);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 }
