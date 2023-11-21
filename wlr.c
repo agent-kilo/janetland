@@ -4,15 +4,15 @@
 
 #include <wayland-server-core.h>
 
+#include <wlr/backend.h>
 #include <wlr/util/log.h>
 
 #include "jl.h"
 #include "types.h"
 
 #define MOD_NAME "wlr"
-
-
-#define WL_MOD_NAME "janetland/wl"
+#define WL_MOD_NAME "wl"
+#define WL_MOD_FULL_NAME "janetland/wl"
 
 
 JANET_THREAD_LOCAL JanetFunction *jwlr_log_callback_fn;
@@ -138,6 +138,32 @@ static Janet cfun_wlr_log(int32_t argc, Janet *argv)
 }
 
 
+static const JanetAbstractType jwlr_at_wlr_backend = {
+    .name = MOD_NAME "/wlr-backend",
+    .gc = NULL, /* TODO: close the backend? */
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+static Janet cfun_wlr_backend_autocreate(int32_t argc, Janet *argv)
+{
+    struct wl_display **display;
+
+    struct wlr_backend **backend;
+
+    janet_fixarity(argc, 1);
+
+    display = janet_getabstract(argv, 0, jl_get_abstract_type_by_name(WL_MOD_NAME "/wl-display"));
+    backend = janet_abstract(&jwlr_at_wlr_backend, sizeof(*backend));
+    *backend = wlr_backend_autocreate(*display);
+    if (!(*backend)) {
+        janet_panic("failed to create wlroots backend object");
+    }
+
+    return janet_wrap_abstract(backend);
+}
+
+
 static JanetReg cfuns[] = {
     {
         "wlr-log-init", cfun_wlr_log_init, 
@@ -154,22 +180,20 @@ static JanetReg cfuns[] = {
         "(" MOD_NAME "/wlr-log verbosity format & args)\n\n" 
         "Logs a formatted string message."
     },
+    {
+        "wlr-backend-autocreate", cfun_wlr_backend_autocreate, 
+        "(" MOD_NAME "/wlr-backend-autocreate wl-display)\n\n" 
+        "Logs a formatted string message."
+    },
     {NULL, NULL, NULL},
 };
 
 
 JANET_MODULE_ENTRY(JanetTable *env)
 {
-    Janet import_fn = janet_resolve_core("import*");
-    if (!janet_checktype(import_fn, JANET_FUNCTION)) {
-        janet_panic("core function import* not found");
-    }
-    Janet import_argv[] = {
-        janet_cstringv(WL_MOD_NAME),
-    };
     /* Import wl module first, so that we can find the wl_* abstract types */
     /* XXX: this will pollute the environment with wl/ stuff, even :export is set to nil */
-    janet_call(janet_unwrap_function(import_fn), 1, import_argv);
+    jl_import(WL_MOD_FULL_NAME);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 }
