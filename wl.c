@@ -17,17 +17,34 @@ static const JanetAbstractType jwl_at_wl_display = {
 
 static Janet cfun_wl_display_create(int32_t argc, Janet *argv)
 {
-    struct wl_display **display;
+    struct wl_display **display_p;
 
     (void)argv;
     janet_fixarity(argc, 0);
 
-    display = janet_abstract(&jwl_at_wl_display, sizeof(*display));
-    *display = wl_display_create();
-    if (!(*display)) {
+    display_p = janet_abstract(&jwl_at_wl_display, sizeof(*display_p));
+    *display_p = wl_display_create();
+    if (!(*display_p)) {
         janet_panic("failed to create Wayland display object");
     }
-    return janet_wrap_abstract(display);
+    return janet_wrap_abstract(display_p);
+}
+
+
+static Janet cfun_wl_display_add_socket_auto(int32_t argc, Janet *argv)
+{
+    struct wl_display **display_p;
+
+    const char *socket;
+
+    janet_fixarity(argc, 1);
+
+    display_p = janet_getabstract(argv, 0, &jwl_at_wl_display);
+    socket = wl_display_add_socket_auto(*display_p);
+    if (!socket) {
+        janet_panic("failed to create Wayland socket");
+    }
+    return janet_cstringv(socket);
 }
 
 
@@ -126,6 +143,11 @@ static JanetReg cfuns[] = {
         "wl-display-create", cfun_wl_display_create,
         "(" MOD_NAME "/wl-display-create)\n\n"
         "Creates a Wayland display object."
+    },
+    {
+        "wl-display-add-socket-auto", cfun_wl_display_add_socket_auto,
+        "(" MOD_NAME "/wl-display-add-socket-auto wl-display)\n\n"
+        "Adds a Unix socket to the Wayland display."
     },
     {
         "wl-signal-add", cfun_wl_signal_add,
