@@ -112,6 +112,9 @@ static Janet cfun_wl_signal_emit(int32_t argc, Janet *argv)
     signal_p = janet_getabstract(argv, 0, &jwl_at_wl_signal);
     data = argv[1];
 
+    /* Here we pass a raw pointer to the Janet listener function. Depending on the
+       type of your listener, use (util/get-listener-data ...) or
+       (util/get-abstract-listener-data ...) to get the actual value. */
     wl_signal_emit(*signal_p, &data);
 
     return janet_wrap_nil();
