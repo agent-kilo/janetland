@@ -12,6 +12,7 @@
 #include <wlr/types/wlr_subcompositor.h>
 #include <wlr/types/wlr_data_device.h>
 #include <wlr/types/wlr_output_layout.h>
+#include <wlr/types/wlr_scene.h>
 
 #include "jl.h"
 #include "types.h"
@@ -384,6 +385,31 @@ static Janet cfun_wlr_output_layout_create(int32_t argc, Janet *argv)
 }
 
 
+static const JanetAbstractType jwlr_at_wlr_scene = {
+    .name = MOD_NAME "/wlr-scene",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+static Janet cfun_wlr_scene_create(int32_t argc, Janet *argv)
+{
+    (void)argv;
+
+    struct wlr_scene **scene;
+
+    janet_fixarity(argc, 0);
+
+    scene = janet_abstract(&jwlr_at_wlr_scene, sizeof(*scene));
+    *scene = wlr_scene_create();
+    if (!(*scene)) {
+        janet_panic("failed to create wlroots scene object");
+    }
+
+    return janet_wrap_abstract(scene);
+}
+
+
 static JanetReg cfuns[] = {
     {
         "wlr-log-init", cfun_wlr_log_init,
@@ -439,6 +465,11 @@ static JanetReg cfuns[] = {
         "wlr-output-layout-create", cfun_wlr_output_layout_create,
         "(" MOD_NAME "/wlr-output-layout-create)\n\n"
         "Creates a wlroots output layout object."
+    },
+    {
+        "wlr-scene-create", cfun_wlr_scene_create,
+        "(" MOD_NAME "/wlr-scene-create)\n\n"
+        "Creates a wlroots scene object."
     },
     {NULL, NULL, NULL},
 };
