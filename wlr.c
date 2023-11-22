@@ -13,6 +13,7 @@
 #include <wlr/types/wlr_data_device.h>
 #include <wlr/types/wlr_output_layout.h>
 #include <wlr/types/wlr_scene.h>
+#include <wlr/types/wlr_xdg_shell.h>
 
 #include "jl.h"
 #include "types.h"
@@ -424,6 +425,36 @@ static Janet cfun_wlr_scene_attach_output_layout(int32_t argc, Janet *argv)
 }
 
 
+static const JanetAbstractType jwlr_at_wlr_xdg_shell = {
+    .name = MOD_NAME "/wlr-xdg-shell",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+static Janet cfun_wlr_xdg_shell_create(int32_t argc, Janet *argv)
+{
+    struct wl_display **display_p;
+    uint32_t version;
+
+    struct wlr_xdg_shell **xdg_shell_p;
+
+    janet_fixarity(argc, 2);
+
+    display_p = janet_getabstract(argv, 0, jl_get_abstract_type_by_name(WL_MOD_NAME "/wl-display"));
+    /* XXX: int32_t -> uint32_t conversion, to avoid s64/u64 hassle.
+       Versions numbers should be small anyway, right? right?? */
+    version = (uint32_t)janet_getinteger(argv, 1);
+    xdg_shell_p = janet_abstract(&jwlr_at_wlr_xdg_shell, sizeof(*xdg_shell_p));
+    *xdg_shell_p = wlr_xdg_shell_create(*display_p, version);
+    if (!(*xdg_shell_p)) {
+        janet_panic("failed to create wlroots xdg shell object");
+    }
+
+    return janet_wrap_abstract(xdg_shell_p);
+}
+
+
 static JanetReg cfuns[] = {
     {
         "wlr-log-init", cfun_wlr_log_init,
@@ -490,6 +521,11 @@ static JanetReg cfuns[] = {
         "(" MOD_NAME "/wlr-scene-attach-output-layout wlr-scene wlr-output-layout)\n\n"
         "Attaches a wlroots output layout object to a scene object."
     },
+    {
+        "wlr-xdg-shell-create", cfun_wlr_xdg_shell_create,
+        "(" MOD_NAME "/wlr-xdg-shell-create wl-display version)\n\n"
+        "Creates a wlroots xdg shell object."
+    },
     {NULL, NULL, NULL},
 };
 
@@ -507,6 +543,8 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_subcompositor);
     janet_register_abstract_type(&jwlr_at_wlr_data_device_manager);
     janet_register_abstract_type(&jwlr_at_wlr_output_layout);
+    janet_register_abstract_type(&jwlr_at_wlr_scene);
+    janet_register_abstract_type(&jwlr_at_wlr_xdg_shell);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 }
