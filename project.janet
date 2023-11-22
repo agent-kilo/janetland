@@ -26,12 +26,23 @@
   (def stat (os/stat name))
   (and (not (nil? stat)) (= (stat :mode) :file)))
 
+(defn dir-exists? [name]
+  (def stat (os/stat name))
+  (and (not (nil? stat)) (= (stat :mode) :directory)))
+
+(defn ensure-dir [name]
+  (when (not (dir-exists? name))
+    (when (not (os/mkdir name))
+      (error (string/format "failed to create directory %s" name)))))
+
+
+(def generated-headers-dir "./generated_headers")
 
 (def wlr-cflags
   (let [arr @[]]
     (array/concat
      arr
-     @["-DWLR_USE_UNSTABLE"]
+     @["-DWLR_USE_UNSTABLE" (string "-I" generated-headers-dir)]
      (string/split " " (pkg-config "--cflags" "--libs" "wlroots"))
      (string/split " " (pkg-config "--cflags" "--libs" "wayland-server"))
      (string/split " " (pkg-config "--cflags" "--libs" "xkbcommon")))))
@@ -58,8 +69,9 @@
 (task "proto-headers" []
   (def wl-proto-dir (pkg-config "--variable=pkgdatadir" "wayland-protocols"))
   (def wl-scanner (pkg-config "--variable=wayland_scanner" "wayland-scanner"))
+  (ensure-dir generated-headers-dir)
   (map (fn [pfile]
-         (def out-file (string "./" pfile "-protocol.h"))
+         (def out-file (string generated-headers-dir pfile "-protocol.h"))
          (when (file-exists? out-file)
            (printf "%s exists, skipping" out-file)
            (break))
