@@ -85,14 +85,14 @@ void jwl_listener_notify_callback(struct wl_listener *wl_listener, void *data)
 
 static Janet cfun_wl_signal_add(int32_t argc, Janet *argv)
 {
-    struct wl_signal **signal;
+    struct wl_signal **signal_p;
     JanetFunction *notify_fn;
 
     jwl_listener_t *listener;
 
     janet_fixarity(argc, 2);
 
-    signal = janet_getabstract(argv, 0, &jwl_at_wl_signal);
+    signal_p = janet_getabstract(argv, 0, &jwl_at_wl_signal);
     notify_fn = janet_getfunction(argv, 1);
 
     listener = janet_abstract(&jwl_at_listener, sizeof(*listener));
@@ -100,7 +100,7 @@ static Janet cfun_wl_signal_add(int32_t argc, Janet *argv)
     listener->notify_fn = notify_fn;
     janet_gcroot(janet_wrap_function(notify_fn));
 
-    wl_signal_add(*signal, &listener->wl_listener);
+    wl_signal_add(*signal_p, &listener->wl_listener);
 
     return janet_wrap_abstract(listener);
 }
