@@ -31,6 +31,45 @@ static Janet cfun_wl_display_create(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wl_display_destroy(int32_t argc, Janet *argv)
+{
+    struct wl_display **display_p;
+
+    janet_fixarity(argc, 1);
+
+    display_p = janet_getabstract(argv, 0, &jwl_at_wl_display);
+    wl_display_destroy(*display_p);
+
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wl_display_destroy_clients(int32_t argc, Janet *argv)
+{
+    struct wl_display **display_p;
+
+    janet_fixarity(argc, 1);
+
+    display_p = janet_getabstract(argv, 0, &jwl_at_wl_display);
+    wl_display_destroy_clients(*display_p);
+
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wl_display_run(int32_t argc, Janet *argv)
+{
+    struct wl_display **display_p;
+
+    janet_fixarity(argc, 1);
+
+    display_p = janet_getabstract(argv, 0, &jwl_at_wl_display);
+    wl_display_run(*display_p);
+
+    return janet_wrap_nil();
+}
+
+
 static Janet cfun_wl_display_add_socket_auto(int32_t argc, Janet *argv)
 {
     struct wl_display **display_p;
@@ -143,6 +182,21 @@ static JanetReg cfuns[] = {
         "wl-display-create", cfun_wl_display_create,
         "(" MOD_NAME "/wl-display-create)\n\n"
         "Creates a Wayland display object."
+    },
+    {
+        "wl-display-destroy", cfun_wl_display_destroy,
+        "(" MOD_NAME "/wl-display-destroy wl-display)\n\n"
+        "Destroys a Wayland display object."
+    },
+    {
+        "wl-display-destroy-clients", cfun_wl_display_destroy_clients,
+        "(" MOD_NAME "/wl-display-destroy-clients wl-display)\n\n"
+        "Destroys all clients connected to the Wayland display."
+    },
+    {
+        "wl-display-run", cfun_wl_display_run,
+        "(" MOD_NAME "/wl-display-run wl-display)\n\n"
+        "Runs the Wayland event loop."
     },
     {
         "wl-display-add-socket-auto", cfun_wl_display_add_socket_auto,
