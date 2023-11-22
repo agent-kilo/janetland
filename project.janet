@@ -1,5 +1,10 @@
 (declare-project :name "janetland")
 
+
+(def proto-files
+  ["xdg-shell"])
+
+
 (defn spawn-and-wait [& args]
   (def os-env (os/environ))
   (put os-env :out :pipe)
@@ -17,6 +22,11 @@
 (defn project-module [name]
   (string ((dyn :project) :name) "/" name))
 
+(defn file-exists? [name]
+  (def stat (os/stat name))
+  (and (not (nil? stat)) (= (stat :mode) :file)))
+
+
 (def wlr-cflags
   (let [arr @[]]
     (array/concat
@@ -27,6 +37,7 @@
      (string/split " " (pkg-config "--cflags" "--libs" "xkbcommon")))))
 
 (def common-cflags ["-g" "-Wall" "-Wextra"])
+
 
 (declare-native :name (project-module "wlr")
                 :source ["wlr.c"]
@@ -42,3 +53,21 @@
                 :source ["util.c"]
                 :header ["jl.h"]
                 :cflags [;common-cflags])
+
+
+(task "proto-headers" []
+  (def wl-proto-dir (pkg-config "--variable=pkgdatadir" "wayland-protocols"))
+  (def wl-scanner (pkg-config "--variable=wayland_scanner" "wayland-scanner"))
+  (map (fn [pfile]
+         (def out-file (string "./" pfile "-protocol.h"))
+         (when (file-exists? out-file)
+           (printf "%s exists, skipping" out-file)
+           (break))
+         (def scanner-out
+           (spawn-and-wait wl-scanner
+                           "server-header"
+                           (string wl-proto-dir "/stable/" pfile "/" pfile ".xml")
+                           out-file))
+         (print scanner-out)
+         (printf "generated %s" out-file))
+       proto-files))
