@@ -16,6 +16,7 @@
 #include <wlr/types/wlr_xdg_shell.h>
 #include <wlr/types/wlr_cursor.h>
 #include <wlr/types/wlr_xcursor_manager.h>
+#include <wlr/types/wlr_seat.h>
 
 #include "jl.h"
 #include "types.h"
@@ -627,6 +628,79 @@ static Janet cfun_wlr_xcursor_manager_load(int32_t argc, Janet *argv)
 }
 
 
+static const jl_offset_def_t wlr_seat_signal_offsets[] = {
+    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.pointer_grab_begin),
+    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.pointer_grab_end),
+
+    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.keyboard_grab_begin),
+    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.keyboard_grab_end),
+
+    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.touch_grab_begin),
+    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.touch_grab_end),
+
+    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.request_set_cursor),
+
+    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.request_set_selection),
+    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.set_selection),
+
+    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.request_set_primary_selection),
+    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.set_primary_selection),
+
+    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.request_start_drag),
+    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.start_drag),
+
+    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.destroy),
+
+    {NULL, 0},
+};
+
+static int wlr_seat_get(void *p, Janet key, Janet *out) {
+    struct wlr_seat **seat_p = (struct wlr_seat **)p;
+    struct wlr_seat *seat = *seat_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    struct wl_signal **signal_p = get_abstract_struct_signal_member(seat,
+                                                                    janet_unwrap_keyword(key),
+                                                                    wlr_seat_signal_offsets);
+    if (signal_p) {
+        *out = janet_wrap_abstract(signal_p);
+        return 1;
+    }
+    return 0;
+}
+
+static const JanetAbstractType jwlr_at_wlr_seat = {
+    .name = MOD_NAME "/wlr-seat",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = wlr_seat_get,
+    JANET_ATEND_GET
+};
+
+static Janet cfun_wlr_seat_create(int32_t argc, Janet *argv)
+{
+    struct wl_display **display_p;
+    const char *name;
+
+    struct wlr_seat **seat_p;
+
+    janet_fixarity(argc, 2);
+
+    display_p = janet_getabstract(argv, 0, jl_get_abstract_type_by_name(WL_MOD_NAME "/wl-display"));
+    name = (const char *)janet_getstring(argv, 1);
+    seat_p = janet_abstract(&jwlr_at_wlr_seat, sizeof(*seat_p));
+    *seat_p = wlr_seat_create(*display_p, name);
+    if (!(*seat_p)) {
+        janet_panic("failed to create wlroots seat object");
+    }
+
+    return janet_wrap_abstract(seat_p);
+}
+
+
 static JanetReg cfuns[] = {
     {
         "wlr-log-init", cfun_wlr_log_init,
@@ -718,6 +792,11 @@ static JanetReg cfuns[] = {
         "(" MOD_NAME "/wlr-xcursor-manager-load wlr-xcursor-manager scale)\n\n"
         "Loads an xcursor theme at the given scale factor."
     },
+    {
+        "wlr-seat-create", cfun_wlr_seat_create,
+        "(" MOD_NAME "/wlr-seat-create wl-display name)\n\n"
+        "Creates a wlroots seat object."
+    },
     {NULL, NULL, NULL},
 };
 
@@ -739,6 +818,7 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_xdg_shell);
     janet_register_abstract_type(&jwlr_at_wlr_cursor);
     janet_register_abstract_type(&jwlr_at_wlr_xcursor_manager);
+    janet_register_abstract_type(&jwlr_at_wlr_seat);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 }
