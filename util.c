@@ -55,7 +55,7 @@ static JanetReg cfuns[] = {
     },
     {
         "get-abstract-listener-data", cfun_get_abstract_listener_data,
-        "(" MOD_NAME "/get-abstract-listener-data data)\n\n"
+        "(" MOD_NAME "/get-abstract-listener-data data abstract-type)\n\n"
         "Converts a raw data pointer to Janet abstract data types."
     },
 };
