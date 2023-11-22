@@ -2,7 +2,9 @@
 
 
 (def proto-files
-  ["xdg-shell"])
+  ["xdg-shell"
+   "viewporter"
+   "presentation-time"])
 
 
 (defn spawn-and-wait [& args]
@@ -36,7 +38,7 @@
       (error (string/format "failed to create directory %s" name)))))
 
 
-(def generated-headers-dir "./generated_headers")
+(def generated-headers-dir "generated_headers")
 
 (def wlr-cflags
   (let [arr @[]]
@@ -52,7 +54,9 @@
 
 (declare-native :name (project-module "wlr")
                 :source ["wlr.c"]
-                :header ["jl.h" "types.h"]
+                :header ["jl.h"
+                         "types.h"
+                         (string generated-headers-dir "/xdg-shell-protocol.h")]
                 :cflags [;common-cflags  ;wlr-cflags])
 
 (declare-native :name (project-module "wl")
