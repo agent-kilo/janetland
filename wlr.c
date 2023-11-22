@@ -410,6 +410,20 @@ static Janet cfun_wlr_scene_create(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_scene_attach_output_layout(int32_t argc, Janet *argv)
+{
+    struct wlr_scene **scene_p;
+    struct wlr_output_layout **layout_p;
+
+    janet_fixarity(argc, 2);
+
+    scene_p = janet_getabstract(argv, 0, &jwlr_at_wlr_scene);
+    layout_p = janet_getabstract(argv, 1, &jwlr_at_wlr_output_layout);
+
+    return janet_wrap_boolean(wlr_scene_attach_output_layout(*scene_p, *layout_p));
+}
+
+
 static JanetReg cfuns[] = {
     {
         "wlr-log-init", cfun_wlr_log_init,
@@ -470,6 +484,11 @@ static JanetReg cfuns[] = {
         "wlr-scene-create", cfun_wlr_scene_create,
         "(" MOD_NAME "/wlr-scene-create)\n\n"
         "Creates a wlroots scene object."
+    },
+    {
+        "wlr-scene-atttach-output-layout", cfun_wlr_scene_attach_output_layout,
+        "(" MOD_NAME "/wlr-scene-attach-output-layout wlr-scene wlr-output-layout)\n\n"
+        "Attaches a wlroots output layout object to a scene object."
     },
     {NULL, NULL, NULL},
 };
