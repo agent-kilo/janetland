@@ -202,20 +202,20 @@ static const JanetAbstractType jwlr_at_wlr_backend = {
 
 static Janet cfun_wlr_backend_autocreate(int32_t argc, Janet *argv)
 {
-    struct wl_display **display;
+    struct wl_display **display_p;
 
-    struct wlr_backend **backend;
+    struct wlr_backend **backend_p;
 
     janet_fixarity(argc, 1);
 
-    display = janet_getabstract(argv, 0, jl_get_abstract_type_by_name(WL_MOD_NAME "/wl-display"));
-    backend = janet_abstract(&jwlr_at_wlr_backend, sizeof(*backend));
-    *backend = wlr_backend_autocreate(*display);
-    if (!(*backend)) {
+    display_p = janet_getabstract(argv, 0, jl_get_abstract_type_by_name(WL_MOD_NAME "/wl-display"));
+    backend_p = janet_abstract(&jwlr_at_wlr_backend, sizeof(*backend_p));
+    *backend_p = wlr_backend_autocreate(*display_p);
+    if (!(*backend_p)) {
         janet_panic("failed to create wlroots backend object");
     }
 
-    return janet_wrap_abstract(backend);
+    return janet_wrap_abstract(backend_p);
 }
 
 
@@ -228,35 +228,35 @@ static const JanetAbstractType jwlr_at_wlr_renderer = {
 
 static Janet cfun_wlr_renderer_autocreate(int32_t argc, Janet *argv)
 {
-    struct wlr_backend **backend;
+    struct wlr_backend **backend_p;
 
-    struct wlr_renderer **renderer;
+    struct wlr_renderer **renderer_p;
 
     janet_fixarity(argc, 1);
 
-    backend = janet_getabstract(argv, 0, &jwlr_at_wlr_backend);
-    renderer = janet_abstract(&jwlr_at_wlr_renderer, sizeof(*renderer));
-    *renderer = wlr_renderer_autocreate(*backend);
-    if (!(*renderer)) {
+    backend_p = janet_getabstract(argv, 0, &jwlr_at_wlr_backend);
+    renderer_p = janet_abstract(&jwlr_at_wlr_renderer, sizeof(*renderer_p));
+    *renderer_p = wlr_renderer_autocreate(*backend_p);
+    if (!(*renderer_p)) {
         janet_panic("failed to create wlroots renderer object");
     }
 
-    return janet_wrap_abstract(renderer);
+    return janet_wrap_abstract(renderer_p);
 }
 
 
 static Janet cfun_wlr_renderer_init_wl_display(int32_t argc, Janet *argv)
 {
-    struct wlr_renderer **renderer;
-    struct wl_display **display;
+    struct wlr_renderer **renderer_p;
+    struct wl_display **display_p;
 
     bool ret;
 
     janet_fixarity(argc, 2);
 
-    renderer = janet_getabstract(argv, 0, &jwlr_at_wlr_renderer);
-    display = janet_getabstract(argv, 1, jl_get_abstract_type_by_name(WL_MOD_NAME "/wl-display"));
-    ret = wlr_renderer_init_wl_display(*renderer, *display);
+    renderer_p = janet_getabstract(argv, 0, &jwlr_at_wlr_renderer);
+    display_p = janet_getabstract(argv, 1, jl_get_abstract_type_by_name(WL_MOD_NAME "/wl-display"));
+    ret = wlr_renderer_init_wl_display(*renderer_p, *display_p);
 
     return janet_wrap_boolean(ret);
 }
@@ -271,22 +271,22 @@ static const JanetAbstractType jwlr_at_wlr_allocator = {
 
 static Janet cfun_wlr_allocator_autocreate(int32_t argc, Janet *argv)
 {
-    struct wlr_backend **backend;
-    struct wlr_renderer **renderer;
+    struct wlr_backend **backend_p;
+    struct wlr_renderer **renderer_p;
 
-    struct wlr_allocator **allocator;
+    struct wlr_allocator **allocator_p;
 
     janet_fixarity(argc, 2);
 
-    backend = janet_getabstract(argv, 0, &jwlr_at_wlr_backend);
-    renderer = janet_getabstract(argv, 1, &jwlr_at_wlr_renderer);
-    allocator = janet_abstract(&jwlr_at_wlr_allocator, sizeof(*allocator));
-    *allocator = wlr_allocator_autocreate(*backend, *renderer);
-    if (!(*allocator)) {
+    backend_p = janet_getabstract(argv, 0, &jwlr_at_wlr_backend);
+    renderer_p = janet_getabstract(argv, 1, &jwlr_at_wlr_renderer);
+    allocator_p = janet_abstract(&jwlr_at_wlr_allocator, sizeof(*allocator_p));
+    *allocator_p = wlr_allocator_autocreate(*backend_p, *renderer_p);
+    if (!(*allocator_p)) {
         janet_panic("failed to create wlroots allocator object");
     }
 
-    return janet_wrap_abstract(allocator);
+    return janet_wrap_abstract(allocator_p);
 }
 
 
@@ -299,22 +299,22 @@ static const JanetAbstractType jwlr_at_wlr_compositor = {
 
 static Janet cfun_wlr_compositor_create(int32_t argc, Janet *argv)
 {
-    struct wl_display **display;
-    struct wlr_renderer **renderer;
+    struct wl_display **display_p;
+    struct wlr_renderer **renderer_p;
 
-    struct wlr_compositor **compositor;
+    struct wlr_compositor **compositor_p;
 
     janet_fixarity(argc, 2);
 
-    display = janet_getabstract(argv, 0, jl_get_abstract_type_by_name(WL_MOD_NAME "/wl-display"));
-    renderer = janet_getabstract(argv, 1, &jwlr_at_wlr_renderer);
-    compositor = janet_abstract(&jwlr_at_wlr_compositor, sizeof(*compositor));
-    *compositor = wlr_compositor_create(*display, *renderer);
-    if (!(*compositor)) {
+    display_p = janet_getabstract(argv, 0, jl_get_abstract_type_by_name(WL_MOD_NAME "/wl-display"));
+    renderer_p = janet_getabstract(argv, 1, &jwlr_at_wlr_renderer);
+    compositor_p = janet_abstract(&jwlr_at_wlr_compositor, sizeof(*compositor_p));
+    *compositor_p = wlr_compositor_create(*display_p, *renderer_p);
+    if (!(*compositor_p)) {
         janet_panic("failed to create wlroots compositor object");
     }
 
-    return janet_wrap_abstract(compositor);
+    return janet_wrap_abstract(compositor_p);
 }
 
 
@@ -327,20 +327,20 @@ static const JanetAbstractType jwlr_at_wlr_subcompositor = {
 
 static Janet cfun_wlr_subcompositor_create(int32_t argc, Janet *argv)
 {
-    struct wl_display **display;
+    struct wl_display **display_p;
 
-    struct wlr_subcompositor **subcompositor;
+    struct wlr_subcompositor **subcompositor_p;
 
     janet_fixarity(argc, 1);
 
-    display = janet_getabstract(argv, 0, jl_get_abstract_type_by_name(WL_MOD_NAME "/wl-display"));
-    subcompositor = janet_abstract(&jwlr_at_wlr_subcompositor, sizeof(*subcompositor));
-    *subcompositor = wlr_subcompositor_create(*display);
-    if (!(*subcompositor)) {
+    display_p = janet_getabstract(argv, 0, jl_get_abstract_type_by_name(WL_MOD_NAME "/wl-display"));
+    subcompositor_p = janet_abstract(&jwlr_at_wlr_subcompositor, sizeof(*subcompositor_p));
+    *subcompositor_p = wlr_subcompositor_create(*display_p);
+    if (!(*subcompositor_p)) {
         janet_panic("failed to create wlroots subcompositor object");
     }
 
-    return janet_wrap_abstract(subcompositor);
+    return janet_wrap_abstract(subcompositor_p);
 }
 
 
@@ -353,20 +353,20 @@ static const JanetAbstractType jwlr_at_wlr_data_device_manager = {
 
 static Janet cfun_wlr_data_device_manager_create(int32_t argc, Janet *argv)
 {
-    struct wl_display **display;
+    struct wl_display **display_p;
 
-    struct wlr_data_device_manager **manager;
+    struct wlr_data_device_manager **manager_p;
 
     janet_fixarity(argc, 1);
 
-    display = janet_getabstract(argv, 0, jl_get_abstract_type_by_name(WL_MOD_NAME "/wl-display"));
-    manager = janet_abstract(&jwlr_at_wlr_data_device_manager, sizeof(*manager));
-    *manager = wlr_data_device_manager_create(*display);
-    if (!(*manager)) {
+    display_p = janet_getabstract(argv, 0, jl_get_abstract_type_by_name(WL_MOD_NAME "/wl-display"));
+    manager_p = janet_abstract(&jwlr_at_wlr_data_device_manager, sizeof(*manager_p));
+    *manager_p = wlr_data_device_manager_create(*display_p);
+    if (!(*manager_p)) {
         janet_panic("failed to create wlroots data device manager object");
     }
 
-    return janet_wrap_abstract(manager);
+    return janet_wrap_abstract(manager_p);
 }
 
 
@@ -381,17 +381,17 @@ static Janet cfun_wlr_output_layout_create(int32_t argc, Janet *argv)
 {
     (void)argv;
 
-    struct wlr_output_layout **layout;
+    struct wlr_output_layout **layout_p;
 
     janet_fixarity(argc, 0);
 
-    layout = janet_abstract(&jwlr_at_wlr_output_layout, sizeof(*layout));
-    *layout = wlr_output_layout_create();
-    if (!(*layout)) {
+    layout_p = janet_abstract(&jwlr_at_wlr_output_layout, sizeof(*layout_p));
+    *layout_p = wlr_output_layout_create();
+    if (!(*layout_p)) {
         janet_panic("failed to create wlroots output layout object");
     }
 
-    return janet_wrap_abstract(layout);
+    return janet_wrap_abstract(layout_p);
 }
 
 
@@ -406,17 +406,17 @@ static Janet cfun_wlr_scene_create(int32_t argc, Janet *argv)
 {
     (void)argv;
 
-    struct wlr_scene **scene;
+    struct wlr_scene **scene_p;
 
     janet_fixarity(argc, 0);
 
-    scene = janet_abstract(&jwlr_at_wlr_scene, sizeof(*scene));
-    *scene = wlr_scene_create();
-    if (!(*scene)) {
+    scene_p = janet_abstract(&jwlr_at_wlr_scene, sizeof(*scene_p));
+    *scene_p = wlr_scene_create();
+    if (!(*scene_p)) {
         janet_panic("failed to create wlroots scene object");
     }
 
-    return janet_wrap_abstract(scene);
+    return janet_wrap_abstract(scene_p);
 }
 
 
