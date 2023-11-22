@@ -219,6 +219,30 @@ static Janet cfun_wlr_backend_autocreate(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_backend_destroy(int32_t argc, Janet *argv)
+{
+    struct wlr_backend **backend_p;
+
+    janet_fixarity(argc, 1);
+
+    backend_p = janet_getabstract(argv, 0, &jwlr_at_wlr_backend);
+    wlr_backend_destroy(*backend_p);
+
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wlr_backend_start(int32_t argc, Janet *argv)
+{
+    struct wlr_backend **backend_p;
+
+    janet_fixarity(argc, 1);
+
+    backend_p = janet_getabstract(argv, 0, &jwlr_at_wlr_backend);
+    return janet_wrap_boolean(wlr_backend_start(*backend_p));
+}
+
+
 static const JanetAbstractType jwlr_at_wlr_renderer = {
     .name = MOD_NAME "/wlr-renderer",
     .gc = NULL, /* TODO: close the renderer? */
@@ -721,6 +745,16 @@ static JanetReg cfuns[] = {
         "wlr-backend-autocreate", cfun_wlr_backend_autocreate,
         "(" MOD_NAME "/wlr-backend-autocreate wl-display)\n\n"
         "Creates a wlroots backend object."
+    },
+    {
+        "wlr-backend-destroy", cfun_wlr_backend_destroy,
+        "(" MOD_NAME "/wlr-backend-destroy wlr-backend)\n\n"
+        "Destroys a wlroots backend object."
+    },
+    {
+        "wlr-backend-start", cfun_wlr_backend_start,
+        "(" MOD_NAME "/wlr-backend-start wlr-backend)\n\n"
+        "Starts the wlroots backend."
     },
     {
         "wlr-renderer-autocreate", cfun_wlr_renderer_autocreate,
