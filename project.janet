@@ -71,7 +71,7 @@
   (def wl-scanner (pkg-config "--variable=wayland_scanner" "wayland-scanner"))
   (ensure-dir generated-headers-dir)
   (map (fn [pfile]
-         (def out-file (string generated-headers-dir pfile "-protocol.h"))
+         (def out-file (string generated-headers-dir "/" pfile "-protocol.h"))
          (when (file-exists? out-file)
            (printf "%s exists, skipping" out-file)
            (break))
