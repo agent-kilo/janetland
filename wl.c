@@ -25,6 +25,17 @@ static Janet cfun_wl_list_empty(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wl_list_length(int32_t argc, Janet *argv)
+{
+    struct wl_list **list_p;
+
+    janet_fixarity(argc, 1);
+
+    list_p = janet_getabstract(argv, 0, &jwl_at_wl_list);
+    return janet_wrap_integer(wl_list_length(*list_p));
+}
+
+
 static const JanetAbstractType jwl_at_wl_display = {
     .name = MOD_NAME "/wl-display",
     .gc = NULL, /* TODO: close the display? */
@@ -199,6 +210,11 @@ static JanetReg cfuns[] = {
         "wl-list-empty", cfun_wl_list_empty,
         "(" MOD_NAME "/wl-list-empty wl-list)\n\n"
         "Check if a wl-list is empty."
+    },
+    {
+        "wl-list-length", cfun_wl_list_length,
+        "(" MOD_NAME "/wl-list-length wl-list)\n\n"
+        "Returns the length of a wl-list."
     },
     {
         "wl-display-create", cfun_wl_display_create,
