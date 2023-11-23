@@ -410,11 +410,48 @@ static Janet cfun_wlr_data_device_manager_create(int32_t argc, Janet *argv)
 }
 
 
+static const jl_offset_def_t wlr_output_layout_signal_offsets[] = {
+    JWLR_OFFSET_DEF(struct wlr_output_layout, events.add),
+    JWLR_OFFSET_DEF(struct wlr_output_layout, events.change),
+    JWLR_OFFSET_DEF(struct wlr_output_layout, events.destroy),
+    {NULL, 0},
+};
+
+static const jl_offset_def_t wlr_output_layout_list_offsets[] = {
+    JWLR_OFFSET_DEF(struct wlr_output_layout, outputs),
+    {NULL, 0},
+};
+
+static int method_wlr_output_layout_get(void *p, Janet key, Janet *out) {
+    struct wlr_output_layout **layout_p = (struct wlr_output_layout **)p;
+    struct wlr_output_layout *layout = *layout_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    struct wl_signal **signal_p = get_abstract_struct_signal_member(layout, kw, wlr_output_layout_signal_offsets);
+    if (signal_p) {
+        *out = janet_wrap_abstract(signal_p);
+        return 1;
+    }
+
+    struct wl_list **list_p = get_abstract_struct_list_member(layout, kw, wlr_output_layout_list_offsets);
+    if (list_p) {
+        *out = janet_wrap_abstract(list_p);
+        return 1;
+    }
+    return 0;
+}
+
 static const JanetAbstractType jwlr_at_wlr_output_layout = {
     .name = MOD_NAME "/wlr-output-layout",
     .gc = NULL,
     .gcmark = NULL,
-    JANET_ATEND_GCMARK
+    .get = method_wlr_output_layout_get,
+    JANET_ATEND_GET
 };
 
 static Janet cfun_wlr_output_layout_create(int32_t argc, Janet *argv)
@@ -812,6 +849,14 @@ static Janet cfun_wlr_output_init_render(int32_t argc, Janet *argv)
 }
 
 
+static const JanetAbstractType jwlr_at_wlr_output_mode = {
+    .name = MOD_NAME "/wlr-output-mode",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+
 static JanetReg cfuns[] = {
     {
         "wlr-log-init", cfun_wlr_log_init,
@@ -946,6 +991,7 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_xcursor_manager);
     janet_register_abstract_type(&jwlr_at_wlr_seat);
     janet_register_abstract_type(&jwlr_at_wlr_output);
+    janet_register_abstract_type(&jwlr_at_wlr_output_mode);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 }
