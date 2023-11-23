@@ -190,7 +190,7 @@ static const jl_offset_def_t wlr_backend_signal_offsets[] = {
     {NULL, 0},
 };
 
-static int wlr_backend_get(void *p, Janet key, Janet *out) {
+static int method_wlr_backend_get(void *p, Janet key, Janet *out) {
     struct wlr_backend **backend_p = (struct wlr_backend **)p;
     struct wlr_backend *backend = *backend_p;
 
@@ -212,7 +212,7 @@ static const JanetAbstractType jwlr_at_wlr_backend = {
     .name = MOD_NAME "/wlr-backend",
     .gc = NULL, /* TODO: close the backend? */
     .gcmark = NULL,
-    .get = wlr_backend_get,
+    .get = method_wlr_backend_get,
     JANET_ATEND_GET
 };
 
@@ -517,7 +517,7 @@ static const jl_offset_def_t wlr_xdg_shell_signal_offsets[] = {
     {NULL, 0},
 };
 
-static int wlr_xdg_shell_get(void *p, Janet key, Janet *out) {
+static int method_wlr_xdg_shell_get(void *p, Janet key, Janet *out) {
     struct wlr_xdg_shell **xdg_shell_p = (struct wlr_xdg_shell **)p;
     struct wlr_xdg_shell *xdg_shell = *xdg_shell_p;
 
@@ -539,7 +539,7 @@ static const JanetAbstractType jwlr_at_wlr_xdg_shell = {
     .name = MOD_NAME "/wlr-xdg-shell",
     .gc = NULL,
     .gcmark = NULL,
-    .get = wlr_xdg_shell_get,
+    .get = method_wlr_xdg_shell_get,
     JANET_ATEND_GET
 };
 
@@ -598,7 +598,7 @@ static const jl_offset_def_t wlr_cursor_signal_offsets[] = {
     {NULL, 0},
 };
 
-static int wlr_cursor_get(void *p, Janet key, Janet *out) {
+static int method_wlr_cursor_get(void *p, Janet key, Janet *out) {
     struct wlr_cursor **cursor_p = (struct wlr_cursor **)p;
     struct wlr_cursor *cursor = *cursor_p;
 
@@ -620,7 +620,7 @@ static const JanetAbstractType jwlr_at_wlr_cursor = {
     .name = MOD_NAME "/wlr-cursor",
     .gc = NULL,
     .gcmark = NULL,
-    .get = wlr_cursor_get,
+    .get = method_wlr_cursor_get,
     JANET_ATEND_GET
 };
 
@@ -731,7 +731,7 @@ static const jl_offset_def_t wlr_seat_signal_offsets[] = {
     {NULL, 0},
 };
 
-static int wlr_seat_get(void *p, Janet key, Janet *out) {
+static int method_wlr_seat_get(void *p, Janet key, Janet *out) {
     struct wlr_seat **seat_p = (struct wlr_seat **)p;
     struct wlr_seat *seat = *seat_p;
 
@@ -753,7 +753,7 @@ static const JanetAbstractType jwlr_at_wlr_seat = {
     .name = MOD_NAME "/wlr-seat",
     .gc = NULL,
     .gcmark = NULL,
-    .get = wlr_seat_get,
+    .get = method_wlr_seat_get,
     JANET_ATEND_GET
 };
 
@@ -800,7 +800,7 @@ static const jl_offset_def_t wlr_output_list_offsets[] = {
     {NULL, 0},
 };
 
-static int wlr_output_get(void *p, Janet key, Janet *out) {
+static int method_wlr_output_get(void *p, Janet key, Janet *out) {
     struct wlr_output **output_p = (struct wlr_output **)p;
     struct wlr_output *output = *output_p;
 
@@ -828,7 +828,7 @@ static const JanetAbstractType jwlr_at_wlr_output = {
     .name = MOD_NAME "/wlr-output",
     .gc = NULL,
     .gcmark = NULL,
-    .get = wlr_output_get,
+    .get = method_wlr_output_get,
     JANET_ATEND_GET
 };
 
