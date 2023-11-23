@@ -57,17 +57,17 @@
                 :header ["jl.h"
                          "types.h"
                          (string generated-headers-dir "/xdg-shell-protocol.h")]
-                :cflags [;common-cflags  ;wlr-cflags])
+                :cflags [;common-cflags ;wlr-cflags])
 
 (declare-native :name (project-module "wl")
                 :source ["wl.c"]
                 :header ["jl.h" "types.h"]
-                :cflags [;common-cflags  ;wlr-cflags])
+                :cflags [;common-cflags ;wlr-cflags])
 
 (declare-native :name (project-module "util")
                 :source ["util.c"]
                 :header ["jl.h"]
-                :cflags [;common-cflags])
+                :cflags [;common-cflags ;wlr-cflags])
 
 
 (task "proto-headers" []

@@ -29,4 +29,13 @@ static inline const JanetAbstractType *jl_get_abstract_type_by_name(const char *
     return at;
 }
 
+static inline const JanetAbstractType *jl_get_abstract_type_by_key(Janet key)
+{
+    const JanetAbstractType *at = janet_get_abstract_type(key);
+    if (!at) {
+        janet_panicf("cant't find abstract type %v", key);
+    }
+    return at;
+}
+
 #endif
