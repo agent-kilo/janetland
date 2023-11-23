@@ -8,6 +8,23 @@
 #define MOD_NAME "wl"
 
 
+static const JanetAbstractType jwl_at_wl_list = {
+    .name = MOD_NAME "/wl-list",
+    JANET_ATEND_NAME
+};
+
+
+static Janet cfun_wl_list_empty(int32_t argc, Janet *argv)
+{
+    struct wl_list **list_p;
+
+    janet_fixarity(argc, 1);
+
+    list_p = janet_getabstract(argv, 0, &jwl_at_wl_list);
+    return janet_wrap_boolean(wl_list_empty(*list_p));
+}
+
+
 static const JanetAbstractType jwl_at_wl_display = {
     .name = MOD_NAME "/wl-display",
     .gc = NULL, /* TODO: close the display? */
@@ -179,6 +196,11 @@ static Janet cfun_wl_signal_emit(int32_t argc, Janet *argv)
 
 static JanetReg cfuns[] = {
     {
+        "wl-list-empty", cfun_wl_list_empty,
+        "(" MOD_NAME "/wl-list-empty wl-list)\n\n"
+        "Check if a wl-list is empty."
+    },
+    {
         "wl-display-create", cfun_wl_display_create,
         "(" MOD_NAME "/wl-display-create)\n\n"
         "Creates a Wayland display object."
@@ -225,6 +247,7 @@ static JanetReg cfuns[] = {
 
 JANET_MODULE_ENTRY(JanetTable *env)
 {
+    janet_register_abstract_type(&jwl_at_wl_list);
     janet_register_abstract_type(&jwl_at_wl_display);
     janet_register_abstract_type(&jwl_at_wl_signal);
     janet_register_abstract_type(&jwl_at_listener);

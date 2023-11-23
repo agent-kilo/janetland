@@ -28,10 +28,10 @@
 
 JANET_THREAD_LOCAL JanetFunction *jwlr_log_callback_fn;
 
-#define JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct_type, member) \
+#define JWLR_OFFSET_DEF(struct_type, member) \
     {#member, (uint64_t)&(((struct_type *)NULL)->member)}
 
-static struct wl_signal **get_abstract_struct_signal_member(void *p,
+static struct wl_signal **get_abstract_struct_signal_member(const void *p,
                                                             const uint8_t *kw_name,
                                                             const jl_offset_def_t *offsets)
 {
@@ -41,6 +41,21 @@ static struct wl_signal **get_abstract_struct_signal_member(void *p,
             struct wl_signal **signal_p = janet_abstract(at, sizeof(*signal_p));
             *signal_p = (struct wl_signal *)(p + offsets[i].offset);
             return signal_p;
+        }
+    }
+    return NULL;
+}
+
+static struct wl_list **get_abstract_struct_list_member(const void *p,
+                                                        const uint8_t *kw_name,
+                                                        const jl_offset_def_t *offsets)
+{
+    for (int i = 0; NULL != offsets[i].name; i++) {
+        if (!janet_cstrcmp(kw_name, offsets[i].name)) {
+            const JanetAbstractType *at = jl_get_abstract_type_by_name(WL_MOD_NAME "/wl-list");
+            struct wl_list **list_p = janet_abstract(at, sizeof(*list_p));
+            *list_p = (struct wl_list *)(p + offsets[i].offset);
+            return list_p;
         }
     }
     return NULL;
@@ -168,9 +183,9 @@ static Janet cfun_wlr_log(int32_t argc, Janet *argv)
 
 
 static const jl_offset_def_t wlr_backend_signal_offsets[] = {
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_backend, events.destroy),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_backend, events.new_input),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_backend, events.new_output),
+    JWLR_OFFSET_DEF(struct wlr_backend, events.destroy),
+    JWLR_OFFSET_DEF(struct wlr_backend, events.new_input),
+    JWLR_OFFSET_DEF(struct wlr_backend, events.new_output),
     {NULL, 0},
 };
 
@@ -459,8 +474,8 @@ static Janet cfun_wlr_scene_attach_output_layout(int32_t argc, Janet *argv)
 
 
 static const jl_offset_def_t wlr_xdg_shell_signal_offsets[] = {
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_xdg_shell, events.new_surface),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_xdg_shell, events.destroy),
+    JWLR_OFFSET_DEF(struct wlr_xdg_shell, events.new_surface),
+    JWLR_OFFSET_DEF(struct wlr_xdg_shell, events.destroy),
     {NULL, 0},
 };
 
@@ -514,33 +529,33 @@ static Janet cfun_wlr_xdg_shell_create(int32_t argc, Janet *argv)
 
 
 static const jl_offset_def_t wlr_cursor_signal_offsets[] = {
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_cursor, events.motion),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_cursor, events.motion_absolute),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_cursor, events.button),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_cursor, events.axis),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_cursor, events.frame),
+    JWLR_OFFSET_DEF(struct wlr_cursor, events.motion),
+    JWLR_OFFSET_DEF(struct wlr_cursor, events.motion_absolute),
+    JWLR_OFFSET_DEF(struct wlr_cursor, events.button),
+    JWLR_OFFSET_DEF(struct wlr_cursor, events.axis),
+    JWLR_OFFSET_DEF(struct wlr_cursor, events.frame),
 
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_cursor, events.swipe_begin),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_cursor, events.swipe_update),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_cursor, events.swipe_end),
+    JWLR_OFFSET_DEF(struct wlr_cursor, events.swipe_begin),
+    JWLR_OFFSET_DEF(struct wlr_cursor, events.swipe_update),
+    JWLR_OFFSET_DEF(struct wlr_cursor, events.swipe_end),
 
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_cursor, events.pinch_begin),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_cursor, events.pinch_update),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_cursor, events.pinch_end),
+    JWLR_OFFSET_DEF(struct wlr_cursor, events.pinch_begin),
+    JWLR_OFFSET_DEF(struct wlr_cursor, events.pinch_update),
+    JWLR_OFFSET_DEF(struct wlr_cursor, events.pinch_end),
 
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_cursor, events.hold_begin),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_cursor, events.hold_end),
+    JWLR_OFFSET_DEF(struct wlr_cursor, events.hold_begin),
+    JWLR_OFFSET_DEF(struct wlr_cursor, events.hold_end),
 
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_cursor, events.touch_up),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_cursor, events.touch_down),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_cursor, events.touch_motion),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_cursor, events.touch_cancel),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_cursor, events.touch_frame),
+    JWLR_OFFSET_DEF(struct wlr_cursor, events.touch_up),
+    JWLR_OFFSET_DEF(struct wlr_cursor, events.touch_down),
+    JWLR_OFFSET_DEF(struct wlr_cursor, events.touch_motion),
+    JWLR_OFFSET_DEF(struct wlr_cursor, events.touch_cancel),
+    JWLR_OFFSET_DEF(struct wlr_cursor, events.touch_frame),
 
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_cursor, events.tablet_tool_axis),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_cursor, events.tablet_tool_proximity),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_cursor, events.tablet_tool_tip),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_cursor, events.tablet_tool_button),
+    JWLR_OFFSET_DEF(struct wlr_cursor, events.tablet_tool_axis),
+    JWLR_OFFSET_DEF(struct wlr_cursor, events.tablet_tool_proximity),
+    JWLR_OFFSET_DEF(struct wlr_cursor, events.tablet_tool_tip),
+    JWLR_OFFSET_DEF(struct wlr_cursor, events.tablet_tool_button),
 
     {NULL, 0},
 };
@@ -653,27 +668,27 @@ static Janet cfun_wlr_xcursor_manager_load(int32_t argc, Janet *argv)
 
 
 static const jl_offset_def_t wlr_seat_signal_offsets[] = {
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.pointer_grab_begin),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.pointer_grab_end),
+    JWLR_OFFSET_DEF(struct wlr_seat, events.pointer_grab_begin),
+    JWLR_OFFSET_DEF(struct wlr_seat, events.pointer_grab_end),
 
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.keyboard_grab_begin),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.keyboard_grab_end),
+    JWLR_OFFSET_DEF(struct wlr_seat, events.keyboard_grab_begin),
+    JWLR_OFFSET_DEF(struct wlr_seat, events.keyboard_grab_end),
 
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.touch_grab_begin),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.touch_grab_end),
+    JWLR_OFFSET_DEF(struct wlr_seat, events.touch_grab_begin),
+    JWLR_OFFSET_DEF(struct wlr_seat, events.touch_grab_end),
 
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.request_set_cursor),
+    JWLR_OFFSET_DEF(struct wlr_seat, events.request_set_cursor),
 
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.request_set_selection),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.set_selection),
+    JWLR_OFFSET_DEF(struct wlr_seat, events.request_set_selection),
+    JWLR_OFFSET_DEF(struct wlr_seat, events.set_selection),
 
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.request_set_primary_selection),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.set_primary_selection),
+    JWLR_OFFSET_DEF(struct wlr_seat, events.request_set_primary_selection),
+    JWLR_OFFSET_DEF(struct wlr_seat, events.set_primary_selection),
 
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.request_start_drag),
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.start_drag),
+    JWLR_OFFSET_DEF(struct wlr_seat, events.request_start_drag),
+    JWLR_OFFSET_DEF(struct wlr_seat, events.start_drag),
 
-    JWLR_EVENTS_SIGNAL_OFFSET_DEF(struct wlr_seat, events.destroy),
+    JWLR_OFFSET_DEF(struct wlr_seat, events.destroy),
 
     {NULL, 0},
 };
@@ -722,6 +737,77 @@ static Janet cfun_wlr_seat_create(int32_t argc, Janet *argv)
     }
 
     return janet_wrap_abstract(seat_p);
+}
+
+
+static const jl_offset_def_t wlr_output_signal_offsets[] = {
+    JWLR_OFFSET_DEF(struct wlr_output, events.frame),
+    JWLR_OFFSET_DEF(struct wlr_output, events.damage),
+    JWLR_OFFSET_DEF(struct wlr_output, events.needs_frame),
+    JWLR_OFFSET_DEF(struct wlr_output, events.precommit),
+    JWLR_OFFSET_DEF(struct wlr_output, events.commit),
+    JWLR_OFFSET_DEF(struct wlr_output, events.present),
+    JWLR_OFFSET_DEF(struct wlr_output, events.bind),
+    JWLR_OFFSET_DEF(struct wlr_output, events.enable),
+    JWLR_OFFSET_DEF(struct wlr_output, events.mode),
+    JWLR_OFFSET_DEF(struct wlr_output, events.description),
+    JWLR_OFFSET_DEF(struct wlr_output, events.destroy),
+    {NULL, 0},
+};
+
+static const jl_offset_def_t wlr_output_list_offsets[] = {
+    JWLR_OFFSET_DEF(struct wlr_output, resources),
+    JWLR_OFFSET_DEF(struct wlr_output, modes),
+    JWLR_OFFSET_DEF(struct wlr_output, cursors),
+    {NULL, 0},
+};
+
+static int wlr_output_get(void *p, Janet key, Janet *out) {
+    struct wlr_output **output_p = (struct wlr_output **)p;
+    struct wlr_output *output = *output_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    struct wl_signal **signal_p = get_abstract_struct_signal_member(output, kw, wlr_output_signal_offsets);
+    if (signal_p) {
+        *out = janet_wrap_abstract(signal_p);
+        return 1;
+    }
+
+    struct wl_list **list_p = get_abstract_struct_list_member(output, kw, wlr_output_list_offsets);
+    if (list_p) {
+        *out = janet_wrap_abstract(list_p);
+        return 1;
+    }
+    return 0;
+}
+
+static const JanetAbstractType jwlr_at_wlr_output = {
+    .name = MOD_NAME "/wlr-output",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = wlr_output_get,
+    JANET_ATEND_GET
+};
+
+
+static Janet cfun_wlr_output_init_render(int32_t argc, Janet *argv)
+{
+    struct wlr_output **output_p;
+    struct wlr_allocator **allocator_p;
+    struct wlr_renderer **renderer_p;
+
+    janet_fixarity(argc, 3);
+
+    output_p = janet_getabstract(argv, 0, &jwlr_at_wlr_output);
+    allocator_p = janet_getabstract(argv, 1, &jwlr_at_wlr_allocator);
+    renderer_p = janet_getabstract(argv, 2, &jwlr_at_wlr_renderer);
+
+    return janet_wrap_boolean(wlr_output_init_render(*output_p, *allocator_p, *renderer_p));
 }
 
 
@@ -831,6 +917,11 @@ static JanetReg cfuns[] = {
         "(" MOD_NAME "/wlr-seat-create wl-display name)\n\n"
         "Creates a wlroots seat object."
     },
+    {
+        "wlr-output-init-render", cfun_wlr_output_init_render,
+        "(" MOD_NAME "/wlr-output-init-render wlr-output wlr-allocator wlr-renderer)\n\n"
+        "Configures the output object to use specified allocator & renderer."
+    },
     {NULL, NULL, NULL},
 };
 
@@ -853,6 +944,7 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_cursor);
     janet_register_abstract_type(&jwlr_at_wlr_xcursor_manager);
     janet_register_abstract_type(&jwlr_at_wlr_seat);
+    janet_register_abstract_type(&jwlr_at_wlr_output);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 }
