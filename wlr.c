@@ -574,6 +574,107 @@ static Janet cfun_wlr_xdg_shell_create(int32_t argc, Janet *argv)
 }
 
 
+static const jl_offset_def_t wlr_xdg_surface_signal_offsets[] = {
+    JWLR_OFFSET_DEF(struct wlr_xdg_surface, events.destroy),
+    JWLR_OFFSET_DEF(struct wlr_xdg_surface, events.ping_timeout),
+    JWLR_OFFSET_DEF(struct wlr_xdg_surface, events.new_popup),
+    JWLR_OFFSET_DEF(struct wlr_xdg_surface, events.map),
+    JWLR_OFFSET_DEF(struct wlr_xdg_surface, events.unmap),
+    JWLR_OFFSET_DEF(struct wlr_xdg_surface, events.configure),
+    JWLR_OFFSET_DEF(struct wlr_xdg_surface, events.ack_configure),
+    {NULL, 0},
+};
+
+static const jl_offset_def_t wlr_xdg_surface_list_offsets[] = {
+    JWLR_OFFSET_DEF(struct wlr_xdg_surface, popups),
+    JWLR_OFFSET_DEF(struct wlr_xdg_surface, configure_list),
+};
+
+static const jl_key_def_t wlr_xdg_surface_role_defs[] = {
+    {"wlr-xdg-surface-role-none", WLR_XDG_SURFACE_ROLE_NONE},
+    {"wlr-xdg-surface-role-toplevel", WLR_XDG_SURFACE_ROLE_TOPLEVEL},
+    {"wlr-xdg-surface-role-popup", WLR_XDG_SURFACE_ROLE_POPUP},
+};
+
+static int method_wlr_xdg_surface_get(void *p, Janet key, Janet *out) {
+    struct wlr_xdg_surface **xdg_surface_p = (struct wlr_xdg_surface **)p;
+    struct wlr_xdg_surface *xdg_surface = *xdg_surface_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    struct wl_signal **signal_p = get_abstract_struct_signal_member(xdg_surface, kw, wlr_xdg_surface_signal_offsets);
+    if (signal_p) {
+        *out = janet_wrap_abstract(signal_p);
+        return 1;
+    }
+
+    struct wl_list **list_p = get_abstract_struct_list_member(xdg_surface, kw, wlr_xdg_surface_list_offsets);
+    if (list_p) {
+        *out = janet_wrap_abstract(list_p);
+        return 1;
+    }
+
+    if (!janet_cstrcmp(kw, "role")) {
+        *out = janet_ckeywordv(wlr_xdg_surface_role_defs[xdg_surface->role].name);
+        return 1;
+    }
+
+    return 0;
+}
+
+static const JanetAbstractType jwlr_at_wlr_xdg_surface = {
+    .name = MOD_NAME "/wlr-xdg-surface",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_xdg_surface_get,
+    JANET_ATEND_GET
+};
+
+
+static const jl_offset_def_t wlr_xdg_toplevel_signal_offsets[] = {
+    JWLR_OFFSET_DEF(struct wlr_xdg_toplevel, events.request_maximize),
+    JWLR_OFFSET_DEF(struct wlr_xdg_toplevel, events.request_fullscreen),
+    JWLR_OFFSET_DEF(struct wlr_xdg_toplevel, events.request_minimize),
+    JWLR_OFFSET_DEF(struct wlr_xdg_toplevel, events.request_move),
+    JWLR_OFFSET_DEF(struct wlr_xdg_toplevel, events.request_resize),
+    JWLR_OFFSET_DEF(struct wlr_xdg_toplevel, events.request_show_window_menu),
+    JWLR_OFFSET_DEF(struct wlr_xdg_toplevel, events.set_parent),
+    JWLR_OFFSET_DEF(struct wlr_xdg_toplevel, events.set_title),
+    JWLR_OFFSET_DEF(struct wlr_xdg_toplevel, events.set_app_id),
+    {NULL, 0},
+};
+
+static int method_wlr_xdg_toplevel_get(void *p, Janet key, Janet *out) {
+    struct wlr_xdg_toplevel **toplevel_p = (struct wlr_xdg_toplevel **)p;
+    struct wlr_xdg_toplevel *toplevel = *toplevel_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    struct wl_signal **signal_p = get_abstract_struct_signal_member(toplevel,
+                                                                    janet_unwrap_keyword(key),
+                                                                    wlr_xdg_toplevel_signal_offsets);
+    if (signal_p) {
+        *out = janet_wrap_abstract(signal_p);
+        return 1;
+    }
+    return 0;
+}
+
+static const JanetAbstractType jwlr_at_wlr_xdg_toplevel = {
+    .name = MOD_NAME "/wlr-xdg-toplevel",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_xdg_toplevel_get,
+    JANET_ATEND_GET
+};
+
+
 static const jl_offset_def_t wlr_cursor_signal_offsets[] = {
     JWLR_OFFSET_DEF(struct wlr_cursor, events.motion),
     JWLR_OFFSET_DEF(struct wlr_cursor, events.motion_absolute),
@@ -1103,6 +1204,8 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_output_layout_output);
     janet_register_abstract_type(&jwlr_at_wlr_scene);
     janet_register_abstract_type(&jwlr_at_wlr_xdg_shell);
+    janet_register_abstract_type(&jwlr_at_wlr_xdg_surface);
+    janet_register_abstract_type(&jwlr_at_wlr_xdg_toplevel);
     janet_register_abstract_type(&jwlr_at_wlr_cursor);
     janet_register_abstract_type(&jwlr_at_wlr_xcursor_manager);
     janet_register_abstract_type(&jwlr_at_wlr_seat);
