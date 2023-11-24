@@ -1,6 +1,7 @@
 #include <janet.h>
 
 #include <wlr/types/wlr_output.h>
+#include <wlr/types/wlr_output_layout.h>
 
 #include "jl.h"
 #include "types.h"
@@ -55,6 +56,8 @@ static Janet cfun_get_abstract_listener_data(int32_t argc, Janet *argv)
 static const jl_offset_def_t link_offsets[] =
 {
     {WLR_MOD_NAME "/wlr-output-mode", offsetof(struct wlr_output_mode, link)},
+    {WLR_MOD_NAME "/wlr-output-cursor", offsetof(struct wlr_output_cursor, link)},
+    {WLR_MOD_NAME "/wlr-output-layout-output", offsetof(struct wlr_output_layout_output , link)},
     {NULL, 0},
 };
 

@@ -472,6 +472,14 @@ static Janet cfun_wlr_output_layout_create(int32_t argc, Janet *argv)
 }
 
 
+static const JanetAbstractType jwlr_at_wlr_output_layout_output = {
+    .name = MOD_NAME "/wlr-output-layout-output",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+
 static const JanetAbstractType jwlr_at_wlr_scene = {
     .name = MOD_NAME "/wlr-scene",
     .gc = NULL,
@@ -833,6 +841,21 @@ static const JanetAbstractType jwlr_at_wlr_output = {
 };
 
 
+static const JanetAbstractType jwlr_at_wlr_output_mode = {
+    .name = MOD_NAME "/wlr-output-mode",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+static const JanetAbstractType jwlr_at_wlr_output_cursor = {
+    .name = MOD_NAME "/wlr-output-cursor",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+
 static Janet cfun_wlr_output_init_render(int32_t argc, Janet *argv)
 {
     struct wlr_output **output_p;
@@ -849,12 +872,79 @@ static Janet cfun_wlr_output_init_render(int32_t argc, Janet *argv)
 }
 
 
-static const JanetAbstractType jwlr_at_wlr_output_mode = {
-    .name = MOD_NAME "/wlr-output-mode",
-    .gc = NULL,
-    .gcmark = NULL,
-    JANET_ATEND_GCMARK
-};
+static Janet cfun_wlr_output_preferred_mode(int32_t argc, Janet *argv)
+{
+    struct wlr_output **output_p;
+
+    struct wlr_output_mode **output_mode_p;
+
+    janet_fixarity(argc, 1);
+
+    output_p = janet_getabstract(argv, 0, &jwlr_at_wlr_output);
+    output_mode_p = janet_abstract(&jwlr_at_wlr_output_mode, sizeof(*output_mode_p));
+    *output_mode_p = wlr_output_preferred_mode(*output_p);
+    if (!(*output_mode_p)) {
+        janet_panic("failed to get preferred mode for output");
+    }
+
+    return janet_wrap_abstract(output_mode_p);
+}
+
+
+static Janet cfun_wlr_output_set_mode(int32_t argc, Janet *argv)
+{
+    struct wlr_output **output_p;
+    struct wlr_output_mode **output_mode_p;
+
+    janet_fixarity(argc, 2);
+
+    output_p = janet_getabstract(argv, 0, &jwlr_at_wlr_output);
+    output_mode_p = janet_getabstract(argv, 1, &jwlr_at_wlr_output_mode);
+
+    wlr_output_set_mode(*output_p, *output_mode_p);
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wlr_output_enable(int32_t argc, Janet *argv)
+{
+    struct wlr_output **output_p;
+    bool enabled;
+
+    janet_fixarity(argc, 2);
+
+    output_p = janet_getabstract(argv, 0, &jwlr_at_wlr_output);
+    enabled = (bool)janet_getboolean(argv, 1);
+
+    wlr_output_enable(*output_p, enabled);
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wlr_output_commit(int32_t argc, Janet *argv)
+{
+    struct wlr_output **output_p;
+
+    janet_fixarity(argc, 2);
+
+    output_p = janet_getabstract(argv, 0, &jwlr_at_wlr_output);
+    return janet_wrap_boolean(wlr_output_commit(*output_p));
+}
+
+
+static Janet cfun_wlr_output_layout_add_auto(int32_t argc, Janet *argv)
+{
+    struct wlr_output_layout **layout_p;
+    struct wlr_output **output_p;
+
+    janet_fixarity(argc, 2);
+
+    layout_p = janet_getabstract(argv, 0, &jwlr_at_wlr_output_layout);
+    output_p = janet_getabstract(argv, 1, &jwlr_at_wlr_output);
+
+    wlr_output_layout_add_auto(*layout_p, *output_p);
+    return janet_wrap_nil();
+}
 
 
 static JanetReg cfuns[] = {
@@ -968,6 +1058,31 @@ static JanetReg cfuns[] = {
         "(" MOD_NAME "/wlr-output-init-render wlr-output wlr-allocator wlr-renderer)\n\n"
         "Configures the output object to use specified allocator & renderer."
     },
+    {
+        "wlr-output-preferred-mode", cfun_wlr_output_preferred_mode,
+        "(" MOD_NAME "/wlr-output-preferred-mode wlr-output)\n\n"
+        "Retrieves a preferred mode for an output object."
+    },
+    {
+        "wlr-output-set-mode", cfun_wlr_output_set_mode,
+        "(" MOD_NAME "/wlr-output-set-mode wlr-output wlr-output-mode)\n\n"
+        "Sets a mode for an output object."
+    },
+    {
+        "wlr-output-enable", cfun_wlr_output_enable,
+        "(" MOD_NAME "/wlr-output-enable wlr-output bool)\n\n"
+        "Sets whether an output object is enabled or not."
+    },
+    {
+        "wlr-output-commit", cfun_wlr_output_commit,
+        "(" MOD_NAME "/wlr-output-commit wlr-output)\n\n"
+        "Commits an output object."
+    },
+    {
+        "wlr-output-layout-add-auto", cfun_wlr_output_layout_add_auto,
+        "(" MOD_NAME "/wlr-output-layout-add-auto wlr-output-layout wlr-output)\n\n"
+        "Adds an output object to an output layout."
+    },
     {NULL, NULL, NULL},
 };
 
@@ -985,6 +1100,7 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_subcompositor);
     janet_register_abstract_type(&jwlr_at_wlr_data_device_manager);
     janet_register_abstract_type(&jwlr_at_wlr_output_layout);
+    janet_register_abstract_type(&jwlr_at_wlr_output_layout_output);
     janet_register_abstract_type(&jwlr_at_wlr_scene);
     janet_register_abstract_type(&jwlr_at_wlr_xdg_shell);
     janet_register_abstract_type(&jwlr_at_wlr_cursor);
@@ -992,6 +1108,7 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_seat);
     janet_register_abstract_type(&jwlr_at_wlr_output);
     janet_register_abstract_type(&jwlr_at_wlr_output_mode);
+    janet_register_abstract_type(&jwlr_at_wlr_output_cursor);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 }
