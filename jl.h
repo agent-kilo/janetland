@@ -71,4 +71,20 @@ static inline void *jl_get_abs_obj_pointer_by_name(const Janet *argv, int32_t n,
     return jl_get_abs_obj_pointer(argv, n, at);
 }
 
+static inline void *jl_value_to_data_pointer(Janet value)
+{
+    switch (janet_type(value)) {
+    case JANET_NIL:
+        return NULL;
+    case JANET_POINTER:
+        return janet_unwrap_pointer(value);
+    case JANET_ABSTRACT: {
+        void **data_p = janet_unwrap_abstract(value);
+        return *data_p;
+    }
+    default:
+        janet_panicf("expected abstract type or a pointer, got %v", value);
+    }
+}
+
 #endif

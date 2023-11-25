@@ -411,6 +411,36 @@ static Janet cfun_wlr_output_layout_create(int32_t argc, Janet *argv)
 }
 
 
+static const jl_offset_def_t wlr_scene_list_offsets[] = {
+    JWLR_OFFSET_DEF(struct wlr_scene, outputs),
+};
+
+static int method_wlr_scene_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_scene **scene_p = (struct wlr_scene **)p;
+    struct wlr_scene *scene = *scene_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    struct wl_list **list_p = get_abstract_struct_list_member(scene, kw, wlr_scene_list_offsets);
+    if (list_p) {
+        *out = janet_wrap_abstract(list_p);
+        return 1;
+    }
+
+    if (!janet_cstrcmp(kw, "tree")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(&scene->tree, &jwlr_at_wlr_scene_tree));
+        return 1;
+    }
+
+    return 0;
+}
+
+
 static Janet cfun_wlr_scene_create(int32_t argc, Janet *argv)
 {
     (void)argv;
@@ -542,13 +572,19 @@ static int method_wlr_xdg_toplevel_get(void *p, Janet key, Janet *out) {
         janet_panicf("expected keyword, got %v", key);
     }
 
-    struct wl_signal **signal_p = get_abstract_struct_signal_member(toplevel,
-                                                                    janet_unwrap_keyword(key),
-                                                                    wlr_xdg_toplevel_signal_offsets);
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    struct wl_signal **signal_p = get_abstract_struct_signal_member(toplevel, kw, wlr_xdg_toplevel_signal_offsets);
     if (signal_p) {
         *out = janet_wrap_abstract(signal_p);
         return 1;
     }
+
+    if (!janet_cstrcmp(kw, "base")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(toplevel->base, &jwlr_at_wlr_xdg_surface));
+        return 1;
+    }
+
     return 0;
 }
 
@@ -623,6 +659,22 @@ static int method_wlr_xdg_surface_get(void *p, Janet key, Janet *out) {
     }
 
     return 0;
+}
+
+static void method_wlr_xdg_surface_put(void *p, Janet key, Janet value) {
+    struct wlr_xdg_surface **surface_p = (struct wlr_xdg_surface **)p;
+    struct wlr_xdg_surface *surface = *surface_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    if (!janet_cstrcmp(kw, "data")) {
+        surface->data = jl_value_to_data_pointer(value);
+        return;
+    }
 }
 
 
@@ -982,6 +1034,84 @@ static Janet cfun_wlr_scene_xdg_surface_create(int32_t argc, Janet *argv)
         janet_panic("failed to create wlroots scene-graph node");
     }
     return janet_wrap_abstract(jl_pointer_to_abs_obj(ret, &jwlr_at_wlr_scene_tree));
+}
+
+
+static const jl_offset_def_t wlr_scene_tree_list_offsets[] = {
+    JWLR_OFFSET_DEF(struct wlr_scene_tree, children),
+    {NULL, 0},
+};
+
+static int method_wlr_scene_tree_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_scene_tree **tree_p = (struct wlr_scene_tree **)p;
+    struct wlr_scene_tree *tree = *tree_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    struct wl_list **list_p = get_abstract_struct_list_member(tree, kw, wlr_scene_tree_list_offsets);
+    if (list_p) {
+        *out = janet_wrap_abstract(list_p);
+        return 1;
+    }
+
+    if (!janet_cstrcmp(kw, "node")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(&tree->node, &jwlr_at_wlr_scene_node));
+        return 1;
+    }
+
+    return 0;
+}
+
+
+static const jl_offset_def_t wlr_scene_node_signal_offsets[] = {
+    JWLR_OFFSET_DEF(struct wlr_scene_node, events.destroy),
+    {NULL, 0},
+};
+
+static int method_wlr_scene_node_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_scene_node **node_p = (struct wlr_scene_node **)p;
+    struct wlr_scene_node *node = *node_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    struct wl_signal **signal_p = get_abstract_struct_signal_member(node, kw, wlr_scene_node_signal_offsets);
+    if (signal_p) {
+        *out = janet_wrap_abstract(signal_p);
+        return 1;
+    }
+
+    if (!janet_cstrcmp(kw, "data")) {
+        *out = janet_wrap_pointer(node->data);
+        return 1;
+    }
+
+    return 0;
+}
+
+static void method_wlr_scene_node_put(void *p, Janet key, Janet value) {
+    struct wlr_scene_node **node_p = (struct wlr_scene_node **)p;
+    struct wlr_scene_node *node = *node_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    if (!janet_cstrcmp(kw, "data")) {
+        node->data = jl_value_to_data_pointer(value);
+        return;
+    }
 }
 
 

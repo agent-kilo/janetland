@@ -74,11 +74,13 @@ static const JanetAbstractType jwlr_at_wlr_output_layout_output = {
 };
 
 
+static int method_wlr_scene_get(void *p, Janet key, Janet *out);
 static const JanetAbstractType jwlr_at_wlr_scene = {
     .name = MOD_NAME "/wlr-scene",
     .gc = NULL,
     .gcmark = NULL,
-    JANET_ATEND_GCMARK
+    .get = method_wlr_scene_get,
+    JANET_ATEND_GET
 };
 
 
@@ -121,12 +123,14 @@ static const JanetAbstractType jwlr_at_wlr_xdg_toplevel = {
 
 
 static int method_wlr_xdg_surface_get(void *p, Janet key, Janet *out);
+static void method_wlr_xdg_surface_put(void *p, Janet key, Janet value);
 static const JanetAbstractType jwlr_at_wlr_xdg_surface = {
     .name = MOD_NAME "/wlr-xdg-surface",
     .gc = NULL,
     .gcmark = NULL,
     .get = method_wlr_xdg_surface_get,
-    JANET_ATEND_GET
+    .put = method_wlr_xdg_surface_put,
+    JANET_ATEND_PUT
 };
 
 
@@ -184,11 +188,25 @@ static const JanetAbstractType jwlr_at_wlr_output_cursor = {
 };
 
 
+static int method_wlr_scene_tree_get(void *p, Janet key, Janet *out);
 static const JanetAbstractType jwlr_at_wlr_scene_tree = {
     .name = MOD_NAME "/wlr-scene-tree",
     .gc = NULL,
     .gcmark = NULL,
-    JANET_ATEND_GCMARK
+    .get = method_wlr_scene_tree_get,
+    JANET_ATEND_GET
+};
+
+
+static int method_wlr_scene_node_get(void *p, Janet key, Janet *out);
+static void method_wlr_scene_node_put(void *p, Janet key, Janet value);
+static const JanetAbstractType jwlr_at_wlr_scene_node = {
+    .name = MOD_NAME "/wlr-scene-node",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_scene_node_get,
+    .put = method_wlr_scene_node_put,
+    JANET_ATEND_PUT
 };
 
 

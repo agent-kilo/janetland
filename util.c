@@ -3,6 +3,7 @@
 #include <wlr/types/wlr_output.h>
 #include <wlr/types/wlr_output_layout.h>
 #include <wlr/types/wlr_xdg_shell.h>
+#include <wlr/types/wlr_scene.h>
 
 #include "jl.h"
 #include "types.h"
@@ -53,6 +54,7 @@ static const jl_offset_def_t link_offsets[] =
     {WLR_MOD_NAME "/wlr-output-layout-output", offsetof(struct wlr_output_layout_output , link)},
     {WLR_MOD_NAME "/wlr-xdg-surface", offsetof(struct wlr_xdg_surface , link)},
     {WLR_MOD_NAME "/wlr-xdg-popup", offsetof(struct wlr_xdg_popup , link)},
+    {WLR_MOD_NAME "/wlr-scene-node", offsetof(struct wlr_scene_node , link)},
     {NULL, 0},
 };
 
