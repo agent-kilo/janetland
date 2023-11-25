@@ -574,6 +574,58 @@ static Janet cfun_wlr_xdg_shell_create(int32_t argc, Janet *argv)
 }
 
 
+static const JanetAbstractType jwlr_at_wlr_surface = {
+    .name = MOD_NAME "/wlr-surface",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+
+static const jl_offset_def_t wlr_xdg_popup_signal_offsets[] = {
+    JWLR_OFFSET_DEF(struct wlr_xdg_popup, events.reposition),
+    {NULL, 0},
+};
+
+static int method_wlr_xdg_popup_get(void *p, Janet key, Janet *out) {
+    struct wlr_xdg_popup **popup_p = (struct wlr_xdg_popup **)p;
+    struct wlr_xdg_popup *popup = *popup_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    struct wl_signal **signal_p = get_abstract_struct_signal_member(popup, kw, wlr_xdg_popup_signal_offsets);
+    if (signal_p) {
+        *out = janet_wrap_abstract(signal_p);
+        return 1;
+    }
+
+    if (!janet_cstrcmp(kw, "parent")) {
+        if (!(popup->parent)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
+        struct wlr_surface **surface = janet_abstract(&jwlr_at_wlr_surface, sizeof(*surface));
+        *surface = popup->parent;
+        *out = janet_wrap_abstract(surface);
+        return 1;
+    }
+
+    return 0;
+}
+
+static const JanetAbstractType jwlr_at_wlr_xdg_popup = {
+    .name = MOD_NAME "/wlr-xdg-popup",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_xdg_popup_get,
+    JANET_ATEND_GET
+};
+
+
 static const jl_offset_def_t wlr_xdg_toplevel_signal_offsets[] = {
     JWLR_OFFSET_DEF(struct wlr_xdg_toplevel, events.request_maximize),
     JWLR_OFFSET_DEF(struct wlr_xdg_toplevel, events.request_fullscreen),
@@ -667,6 +719,10 @@ static int method_wlr_xdg_surface_get(void *p, Janet key, Janet *out) {
         toplevel_p = janet_abstract(&jwlr_at_wlr_xdg_toplevel, sizeof(*toplevel_p));
         *toplevel_p = surface->toplevel;
         *out = janet_wrap_abstract(toplevel_p);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "data")) {
+        *out = janet_wrap_pointer(surface->data);
         return 1;
     }
 
@@ -1055,6 +1111,30 @@ static Janet cfun_wlr_output_layout_add_auto(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_xdg_surface_from_wlr_surface(int32_t argc, Janet *argv)
+{
+    struct wlr_surface **surface_p;
+
+    struct wlr_xdg_surface **xdg_surface_p;
+
+    janet_fixarity(argc, 1);
+
+    surface_p = janet_getabstract(argv, 0, &jwlr_at_wlr_surface);
+    xdg_surface_p = janet_abstract(&jwlr_at_wlr_xdg_surface, sizeof(*xdg_surface_p));
+    *xdg_surface_p = wlr_xdg_surface_from_wlr_surface(*surface_p);
+
+    return janet_wrap_abstract(xdg_surface_p);
+}
+
+
+static const JanetAbstractType jwlr_at_wlr_scene_tree = {
+    .name = MOD_NAME "/wlr-scene-tree",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+
 static JanetReg cfuns[] = {
     {
         "wlr-log-init", cfun_wlr_log_init,
@@ -1191,6 +1271,11 @@ static JanetReg cfuns[] = {
         "(" MOD_NAME "/wlr-output-layout-add-auto wlr-output-layout wlr-output)\n\n"
         "Adds an output object to an output layout."
     },
+    {
+        "wlr-xdg-surface-from-wlr-surface", cfun_wlr_xdg_surface_from_wlr_surface,
+        "(" MOD_NAME "/wlr-xdg-surface-from-wlr-surface wlr-surface)\n\n"
+        "Wraps a surface object with an xdg surface object."
+    },
     {NULL, NULL, NULL},
 };
 
@@ -1211,14 +1296,17 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_output_layout_output);
     janet_register_abstract_type(&jwlr_at_wlr_scene);
     janet_register_abstract_type(&jwlr_at_wlr_xdg_shell);
+    janet_register_abstract_type(&jwlr_at_wlr_surface);
     janet_register_abstract_type(&jwlr_at_wlr_xdg_surface);
     janet_register_abstract_type(&jwlr_at_wlr_xdg_toplevel);
+    janet_register_abstract_type(&jwlr_at_wlr_xdg_popup);
     janet_register_abstract_type(&jwlr_at_wlr_cursor);
     janet_register_abstract_type(&jwlr_at_wlr_xcursor_manager);
     janet_register_abstract_type(&jwlr_at_wlr_seat);
     janet_register_abstract_type(&jwlr_at_wlr_output);
     janet_register_abstract_type(&jwlr_at_wlr_output_mode);
     janet_register_abstract_type(&jwlr_at_wlr_output_cursor);
+    janet_register_abstract_type(&jwlr_at_wlr_scene_tree);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 }

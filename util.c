@@ -60,6 +60,7 @@ static const jl_offset_def_t link_offsets[] =
     {WLR_MOD_NAME "/wlr-output-cursor", offsetof(struct wlr_output_cursor, link)},
     {WLR_MOD_NAME "/wlr-output-layout-output", offsetof(struct wlr_output_layout_output , link)},
     {WLR_MOD_NAME "/wlr-xdg-surface", offsetof(struct wlr_xdg_surface , link)},
+    {WLR_MOD_NAME "/wlr-xdg-popup", offsetof(struct wlr_xdg_popup , link)},
     {NULL, 0},
 };
 
@@ -100,6 +101,24 @@ static Janet cfun_wl_list_to_array(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_pointer_to_abstract_object(int32_t argc, Janet *argv)
+{
+    void *ptr;
+
+    void **abs_p;
+    const JanetAbstractType *at;
+
+    janet_fixarity(argc, 2);
+
+    ptr = janet_getpointer(argv, 0);
+    at = jl_get_abstract_type_by_key(argv[1]);
+    abs_p = janet_abstract(at, sizeof(ptr));
+    *abs_p = ptr;
+
+    return janet_wrap_abstract(abs_p);
+}
+
+
 static JanetReg cfuns[] = {
     {
         "get-listener-data", cfun_get_listener_data,
@@ -115,6 +134,11 @@ static JanetReg cfuns[] = {
         "wl-list-to-array", cfun_wl_list_to_array,
         "(" MOD_NAME "/wl-list-to-array wl-list element-abstract-type)\n\n"
         "Converts a wl-list to a Janet array containing elements of element-abstract-type."
+    },
+    {
+        "pointer-to-abstract-object", cfun_pointer_to_abstract_object,
+        "(" MOD_NAME "/pointer-to-abstract-object pointer abs-type)\n\n"
+        "Converts a raw pointer to an object of type abs-type."
     },
 };
 
