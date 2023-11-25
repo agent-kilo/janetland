@@ -73,6 +73,7 @@ static inline void *jl_get_abs_obj_pointer_by_name(const Janet *argv, int32_t n,
 
 static inline void *jl_value_to_data_pointer(Janet value)
 {
+    /* XXX: Should be able to set the data pointer to refer to arbitrary Janet types */
     switch (janet_type(value)) {
     case JANET_NIL:
         return NULL;
