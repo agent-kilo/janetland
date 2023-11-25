@@ -16,23 +16,23 @@ static const JanetAbstractType jwl_at_wl_list = {
 
 static Janet cfun_wl_list_empty(int32_t argc, Janet *argv)
 {
-    struct wl_list **list_p;
+    struct wl_list *list;
 
     janet_fixarity(argc, 1);
 
-    list_p = janet_getabstract(argv, 0, &jwl_at_wl_list);
-    return janet_wrap_boolean(wl_list_empty(*list_p));
+    list = jl_get_abs_obj_pointer(argv, 0, &jwl_at_wl_list);
+    return janet_wrap_boolean(wl_list_empty(list));
 }
 
 
 static Janet cfun_wl_list_length(int32_t argc, Janet *argv)
 {
-    struct wl_list **list_p;
+    struct wl_list *list;
 
     janet_fixarity(argc, 1);
 
-    list_p = janet_getabstract(argv, 0, &jwl_at_wl_list);
-    return janet_wrap_integer(wl_list_length(*list_p));
+    list = jl_get_abs_obj_pointer(argv, 0, &jwl_at_wl_list);
+    return janet_wrap_integer(wl_list_length(list));
 }
 
 
@@ -45,28 +45,28 @@ static const JanetAbstractType jwl_at_wl_display = {
 
 static Janet cfun_wl_display_create(int32_t argc, Janet *argv)
 {
-    struct wl_display **display_p;
-
     (void)argv;
+
+    struct wl_display *display;
+
     janet_fixarity(argc, 0);
 
-    display_p = janet_abstract(&jwl_at_wl_display, sizeof(*display_p));
-    *display_p = wl_display_create();
-    if (!(*display_p)) {
+    display = wl_display_create();
+    if (!display) {
         janet_panic("failed to create Wayland display object");
     }
-    return janet_wrap_abstract(display_p);
+    return janet_wrap_abstract(jl_pointer_to_abs_obj(display, &jwl_at_wl_display));
 }
 
 
 static Janet cfun_wl_display_destroy(int32_t argc, Janet *argv)
 {
-    struct wl_display **display_p;
+    struct wl_display *display;
 
     janet_fixarity(argc, 1);
 
-    display_p = janet_getabstract(argv, 0, &jwl_at_wl_display);
-    wl_display_destroy(*display_p);
+    display = jl_get_abs_obj_pointer(argv, 0, &jwl_at_wl_display);
+    wl_display_destroy(display);
 
     return janet_wrap_nil();
 }
@@ -74,12 +74,12 @@ static Janet cfun_wl_display_destroy(int32_t argc, Janet *argv)
 
 static Janet cfun_wl_display_destroy_clients(int32_t argc, Janet *argv)
 {
-    struct wl_display **display_p;
+    struct wl_display *display;
 
     janet_fixarity(argc, 1);
 
-    display_p = janet_getabstract(argv, 0, &jwl_at_wl_display);
-    wl_display_destroy_clients(*display_p);
+    display = jl_get_abs_obj_pointer(argv, 0, &jwl_at_wl_display);
+    wl_display_destroy_clients(display);
 
     return janet_wrap_nil();
 }
@@ -87,12 +87,12 @@ static Janet cfun_wl_display_destroy_clients(int32_t argc, Janet *argv)
 
 static Janet cfun_wl_display_run(int32_t argc, Janet *argv)
 {
-    struct wl_display **display_p;
+    struct wl_display *display;
 
     janet_fixarity(argc, 1);
 
-    display_p = janet_getabstract(argv, 0, &jwl_at_wl_display);
-    wl_display_run(*display_p);
+    display = jl_get_abs_obj_pointer(argv, 0, &jwl_at_wl_display);
+    wl_display_run(display);
 
     return janet_wrap_nil();
 }
@@ -100,14 +100,14 @@ static Janet cfun_wl_display_run(int32_t argc, Janet *argv)
 
 static Janet cfun_wl_display_add_socket_auto(int32_t argc, Janet *argv)
 {
-    struct wl_display **display_p;
+    struct wl_display *display;
 
     const char *socket;
 
     janet_fixarity(argc, 1);
 
-    display_p = janet_getabstract(argv, 0, &jwl_at_wl_display);
-    socket = wl_display_add_socket_auto(*display_p);
+    display = jl_get_abs_obj_pointer(argv, 0, &jwl_at_wl_display);
+    socket = wl_display_add_socket_auto(display);
     if (!socket) {
         janet_panic("failed to create Wayland socket");
     }
@@ -128,7 +128,7 @@ typedef struct {
 } jwl_listener_t;
 
 static const JanetAbstractType jwl_at_listener = {
-    .name = MOD_NAME "/wl-listener",
+    .name = MOD_NAME "/listener",
     .gc = NULL,
     .gcmark = NULL,
     JANET_ATEND_GCMARK
@@ -152,14 +152,14 @@ void jwl_listener_notify_callback(struct wl_listener *wl_listener, void *data)
 
 static Janet cfun_wl_signal_add(int32_t argc, Janet *argv)
 {
-    struct wl_signal **signal_p;
+    struct wl_signal *signal;
     JanetFunction *notify_fn;
 
     jwl_listener_t *listener;
 
     janet_fixarity(argc, 2);
 
-    signal_p = janet_getabstract(argv, 0, &jwl_at_wl_signal);
+    signal = jl_get_abs_obj_pointer(argv, 0, &jwl_at_wl_signal);
     notify_fn = janet_getfunction(argv, 1);
 
     listener = janet_abstract(&jwl_at_listener, sizeof(*listener));
@@ -167,7 +167,7 @@ static Janet cfun_wl_signal_add(int32_t argc, Janet *argv)
     listener->notify_fn = notify_fn;
     janet_gcroot(janet_wrap_function(notify_fn));
 
-    wl_signal_add(*signal_p, &listener->wl_listener);
+    wl_signal_add(signal, &listener->wl_listener);
 
     return janet_wrap_abstract(listener);
 }
@@ -188,18 +188,18 @@ static Janet cfun_wl_signal_remove(int32_t argc, Janet *argv)
 
 static Janet cfun_wl_signal_emit(int32_t argc, Janet *argv)
 {
-    struct wl_signal **signal_p;
+    struct wl_signal *signal;
     Janet data;
 
     janet_fixarity(argc, 2);
 
-    signal_p = janet_getabstract(argv, 0, &jwl_at_wl_signal);
+    signal = jl_get_abs_obj_pointer(argv, 0, &jwl_at_wl_signal);
     data = argv[1];
 
     /* Here we pass a raw pointer to the Janet listener function. Depending on the
        type of your listener, use (util/get-listener-data ...) or
        (util/get-abstract-listener-data ...) to get the actual value. */
-    wl_signal_emit(*signal_p, &data);
+    wl_signal_emit(signal, &data);
 
     return janet_wrap_nil();
 }
@@ -249,7 +249,7 @@ static JanetReg cfuns[] = {
     },
     {
         "wl-signal-remove", cfun_wl_signal_remove,
-        "(" MOD_NAME "/wl-signal-remove wl-listener)\n\n"
+        "(" MOD_NAME "/wl-signal-remove listener)\n\n"
         "Removes a listener from a signal."
     },
     {

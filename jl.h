@@ -19,16 +19,6 @@ static inline Janet jl_import(const char *name)
     return janet_call(janet_unwrap_function(import_fn), 1, import_argv);
 }
 
-static inline const JanetAbstractType *jl_get_abstract_type_by_name(const char *name)
-{
-    Janet at_name = janet_csymbolv(name);
-    const JanetAbstractType *at = janet_get_abstract_type(at_name);
-    if (!at) {
-        janet_panicf("cant't find abstract type %s", name);
-    }
-    return at;
-}
-
 static inline const JanetAbstractType *jl_get_abstract_type_by_key(Janet key)
 {
     const JanetAbstractType *at = janet_get_abstract_type(key);
@@ -36,6 +26,49 @@ static inline const JanetAbstractType *jl_get_abstract_type_by_key(Janet key)
         janet_panicf("cant't find abstract type %v", key);
     }
     return at;
+}
+
+static inline const JanetAbstractType *jl_get_abstract_type_by_name(const char *name)
+{
+    Janet at_key = janet_csymbolv(name);
+    return jl_get_abstract_type_by_key(at_key);
+}
+
+static inline void **jl_pointer_to_abs_obj(void *ptr, const JanetAbstractType *at)
+{
+    void **ptr_p = janet_abstract(at, sizeof(ptr));
+    *ptr_p = ptr;
+    return ptr_p;
+}
+
+static inline void **jl_pointer_to_abs_obj_by_key(void *ptr, Janet key)
+{
+    const JanetAbstractType *at = jl_get_abstract_type_by_key(key);
+    return jl_pointer_to_abs_obj(ptr, at);
+}
+
+static inline void **jl_pointer_to_abs_obj_by_name(void *ptr, const char *name)
+{
+    const JanetAbstractType *at = jl_get_abstract_type_by_name(name);
+    return jl_pointer_to_abs_obj(ptr, at);
+}
+
+static inline void *jl_get_abs_obj_pointer(const Janet *argv, int32_t n, const JanetAbstractType *at)
+{
+    void **ptr_p = janet_getabstract(argv, n, at);
+    return *ptr_p;
+}
+
+static inline void *jl_get_abs_obj_pointer_by_key(const Janet *argv, int32_t n, Janet key)
+{
+    const JanetAbstractType *at = jl_get_abstract_type_by_key(key);
+    return jl_get_abs_obj_pointer(argv, n, at);
+}
+
+static inline void *jl_get_abs_obj_pointer_by_name(const Janet *argv, int32_t n, const char *name)
+{
+    const JanetAbstractType *at = jl_get_abstract_type_by_name(name);
+    return jl_get_abs_obj_pointer(argv, n, at);
 }
 
 #endif

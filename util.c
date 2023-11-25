@@ -36,21 +36,13 @@ static Janet cfun_get_abstract_listener_data(int32_t argc, Janet *argv)
 {
     void *data_p;
 
-    const JanetAbstractType *at;
-    void **abs_p;
-
     janet_fixarity(argc, 2);
 
     data_p = janet_getpointer(argv, 0);
     if (!data_p) {
         return janet_wrap_nil();
     }
-
-    at = jl_get_abstract_type_by_key(argv[1]);
-    abs_p = janet_abstract(at, sizeof(data_p));
-    *abs_p = data_p;
-
-    return janet_wrap_abstract(abs_p);
+    return janet_wrap_abstract(jl_pointer_to_abs_obj_by_key(data_p, argv[1]));
 }
 
 
@@ -66,7 +58,7 @@ static const jl_offset_def_t link_offsets[] =
 
 static Janet cfun_wl_list_to_array(int32_t argc, Janet *argv)
 {
-    struct wl_list **list_p;
+    struct wl_list *list;
     const uint8_t *element_at_name;
 
     const JanetAbstractType *element_at;
@@ -75,7 +67,7 @@ static Janet cfun_wl_list_to_array(int32_t argc, Janet *argv)
 
     janet_fixarity(argc, 2);
 
-    list_p = janet_getabstract(argv, 0, jl_get_abstract_type_by_name(WL_MOD_NAME "/wl-list"));
+    list = jl_get_abs_obj_pointer_by_name(argv, 0, WL_MOD_NAME "/wl-list");
     element_at_name = janet_getsymbol(argv, 1);
 
     element_at = jl_get_abstract_type_by_key(argv[1]);
@@ -89,12 +81,10 @@ static Janet cfun_wl_list_to_array(int32_t argc, Janet *argv)
     }
 
     arr = janet_array(0);
-    for (void *p = ((void *)((*list_p)->next)) - link_offset;
-         p + link_offset != (void *)(*list_p);
+    for (void *p = ((void *)(list->next)) - link_offset;
+         p + link_offset != (void *)list;
          p = ((void *)(((struct wl_list *)(p + link_offset))->next)) - link_offset) {
-        void **pp = janet_abstract(element_at, sizeof(p));
-        *pp = p;
-        janet_array_push(arr, janet_wrap_abstract(pp));
+        janet_array_push(arr, janet_wrap_abstract(jl_pointer_to_abs_obj(p, element_at)));
     }
 
     return janet_wrap_array(arr);
@@ -103,19 +93,7 @@ static Janet cfun_wl_list_to_array(int32_t argc, Janet *argv)
 
 static Janet cfun_pointer_to_abstract_object(int32_t argc, Janet *argv)
 {
-    void *ptr;
-
-    void **abs_p;
-    const JanetAbstractType *at;
-
-    janet_fixarity(argc, 2);
-
-    ptr = janet_getpointer(argv, 0);
-    at = jl_get_abstract_type_by_key(argv[1]);
-    abs_p = janet_abstract(at, sizeof(ptr));
-    *abs_p = ptr;
-
-    return janet_wrap_abstract(abs_p);
+    return cfun_get_abstract_listener_data(argc, argv);
 }
 
 
