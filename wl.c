@@ -4,14 +4,11 @@
 
 #include "jl.h"
 #include "types.h"
+#include "wl_abs_types.h"
 
+#ifndef MOD_NAME
 #define MOD_NAME "wl"
-
-
-static const JanetAbstractType jwl_at_wl_list = {
-    .name = MOD_NAME "/wl-list",
-    JANET_ATEND_NAME
-};
+#endif
 
 
 static Janet cfun_wl_list_empty(int32_t argc, Janet *argv)
@@ -35,13 +32,6 @@ static Janet cfun_wl_list_length(int32_t argc, Janet *argv)
     return janet_wrap_integer(wl_list_length(list));
 }
 
-
-static const JanetAbstractType jwl_at_wl_display = {
-    .name = MOD_NAME "/wl-display",
-    .gc = NULL, /* TODO: close the display? */
-    .gcmark = NULL,
-    JANET_ATEND_GCMARK
-};
 
 static Janet cfun_wl_display_create(int32_t argc, Janet *argv)
 {
@@ -115,24 +105,11 @@ static Janet cfun_wl_display_add_socket_auto(int32_t argc, Janet *argv)
 }
 
 
-static const JanetAbstractType jwl_at_wl_signal = {
-    .name = MOD_NAME "/wl-signal",
-    .gc = NULL,
-    .gcmark = NULL,
-    JANET_ATEND_GCMARK
-};
-
 typedef struct {
     struct wl_listener wl_listener;
     JanetFunction *notify_fn;
 } jwl_listener_t;
 
-static const JanetAbstractType jwl_at_listener = {
-    .name = MOD_NAME "/listener",
-    .gc = NULL,
-    .gcmark = NULL,
-    JANET_ATEND_GCMARK
-};
 
 void jwl_listener_notify_callback(struct wl_listener *wl_listener, void *data)
 {
@@ -149,6 +126,7 @@ void jwl_listener_notify_callback(struct wl_listener *wl_listener, void *data)
         janet_stacktrace(fiber, ret);
     }
 }
+
 
 static Janet cfun_wl_signal_add(int32_t argc, Janet *argv)
 {
@@ -172,6 +150,7 @@ static Janet cfun_wl_signal_add(int32_t argc, Janet *argv)
     return janet_wrap_abstract(listener);
 }
 
+
 static Janet cfun_wl_signal_remove(int32_t argc, Janet *argv)
 {
     jwl_listener_t *listener;
@@ -185,6 +164,7 @@ static Janet cfun_wl_signal_remove(int32_t argc, Janet *argv)
 
     return janet_wrap_nil();
 }
+
 
 static Janet cfun_wl_signal_emit(int32_t argc, Janet *argv)
 {
@@ -264,9 +244,9 @@ static JanetReg cfuns[] = {
 JANET_MODULE_ENTRY(JanetTable *env)
 {
     janet_register_abstract_type(&jwl_at_wl_list);
-    janet_register_abstract_type(&jwl_at_wl_display);
     janet_register_abstract_type(&jwl_at_wl_signal);
     janet_register_abstract_type(&jwl_at_listener);
+    janet_register_abstract_type(&jwl_at_wl_display);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 }

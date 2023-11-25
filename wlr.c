@@ -21,8 +21,12 @@
 
 #include "jl.h"
 #include "types.h"
+#include "wlr_abs_types.h"
 
+#ifndef MOD_NAME
 #define MOD_NAME "wlr"
+#endif
+
 #define WL_MOD_NAME "wl"
 #define WL_MOD_FULL_NAME "janetland/wl"
 
@@ -204,13 +208,6 @@ static int method_wlr_backend_get(void *p, Janet key, Janet *out) {
     return 0;
 }
 
-static const JanetAbstractType jwlr_at_wlr_backend = {
-    .name = MOD_NAME "/wlr-backend",
-    .gc = NULL, /* TODO: close the backend? */
-    .gcmark = NULL,
-    .get = method_wlr_backend_get,
-    JANET_ATEND_GET
-};
 
 static Janet cfun_wlr_backend_autocreate(int32_t argc, Janet *argv)
 {
@@ -253,13 +250,6 @@ static Janet cfun_wlr_backend_start(int32_t argc, Janet *argv)
 }
 
 
-static const JanetAbstractType jwlr_at_wlr_renderer = {
-    .name = MOD_NAME "/wlr-renderer",
-    .gc = NULL, /* TODO: close the renderer? */
-    .gcmark = NULL,
-    JANET_ATEND_GCMARK
-};
-
 static Janet cfun_wlr_renderer_autocreate(int32_t argc, Janet *argv)
 {
     struct wlr_backend *backend;
@@ -294,13 +284,6 @@ static Janet cfun_wlr_renderer_init_wl_display(int32_t argc, Janet *argv)
 }
 
 
-static const JanetAbstractType jwlr_at_wlr_allocator = {
-    .name = MOD_NAME "/wlr-allocator",
-    .gc = NULL,
-    .gcmark = NULL,
-    JANET_ATEND_GCMARK
-};
-
 static Janet cfun_wlr_allocator_autocreate(int32_t argc, Janet *argv)
 {
     struct wlr_backend *backend;
@@ -319,13 +302,6 @@ static Janet cfun_wlr_allocator_autocreate(int32_t argc, Janet *argv)
     return janet_wrap_abstract(jl_pointer_to_abs_obj(allocator, &jwlr_at_wlr_allocator));
 }
 
-
-static const JanetAbstractType jwlr_at_wlr_compositor = {
-    .name = MOD_NAME "/wlr-compositor",
-    .gc = NULL,
-    .gcmark = NULL,
-    JANET_ATEND_GCMARK
-};
 
 static Janet cfun_wlr_compositor_create(int32_t argc, Janet *argv)
 {
@@ -347,13 +323,6 @@ static Janet cfun_wlr_compositor_create(int32_t argc, Janet *argv)
 }
 
 
-static const JanetAbstractType jwlr_at_wlr_subcompositor = {
-    .name = MOD_NAME "/wlr-subcompositor",
-    .gc = NULL,
-    .gcmark = NULL,
-    JANET_ATEND_GCMARK
-};
-
 static Janet cfun_wlr_subcompositor_create(int32_t argc, Janet *argv)
 {
     struct wl_display *display;
@@ -370,13 +339,6 @@ static Janet cfun_wlr_subcompositor_create(int32_t argc, Janet *argv)
     return janet_wrap_abstract(jl_pointer_to_abs_obj(subcompositor, &jwlr_at_wlr_subcompositor));
 }
 
-
-static const JanetAbstractType jwlr_at_wlr_data_device_manager = {
-    .name = MOD_NAME "/wlr-data-device-manager",
-    .gc = NULL,
-    .gcmark = NULL,
-    JANET_ATEND_GCMARK
-};
 
 static Janet cfun_wlr_data_device_manager_create(int32_t argc, Janet *argv)
 {
@@ -432,13 +394,6 @@ static int method_wlr_output_layout_get(void *p, Janet key, Janet *out) {
     return 0;
 }
 
-static const JanetAbstractType jwlr_at_wlr_output_layout = {
-    .name = MOD_NAME "/wlr-output-layout",
-    .gc = NULL,
-    .gcmark = NULL,
-    .get = method_wlr_output_layout_get,
-    JANET_ATEND_GET
-};
 
 static Janet cfun_wlr_output_layout_create(int32_t argc, Janet *argv)
 {
@@ -455,21 +410,6 @@ static Janet cfun_wlr_output_layout_create(int32_t argc, Janet *argv)
     return janet_wrap_abstract(jl_pointer_to_abs_obj(layout, &jwlr_at_wlr_output_layout));
 }
 
-
-static const JanetAbstractType jwlr_at_wlr_output_layout_output = {
-    .name = MOD_NAME "/wlr-output-layout-output",
-    .gc = NULL,
-    .gcmark = NULL,
-    JANET_ATEND_GCMARK
-};
-
-
-static const JanetAbstractType jwlr_at_wlr_scene = {
-    .name = MOD_NAME "/wlr-scene",
-    .gc = NULL,
-    .gcmark = NULL,
-    JANET_ATEND_GCMARK
-};
 
 static Janet cfun_wlr_scene_create(int32_t argc, Janet *argv)
 {
@@ -525,13 +465,6 @@ static int method_wlr_xdg_shell_get(void *p, Janet key, Janet *out) {
     return 0;
 }
 
-static const JanetAbstractType jwlr_at_wlr_xdg_shell = {
-    .name = MOD_NAME "/wlr-xdg-shell",
-    .gc = NULL,
-    .gcmark = NULL,
-    .get = method_wlr_xdg_shell_get,
-    JANET_ATEND_GET
-};
 
 static Janet cfun_wlr_xdg_shell_create(int32_t argc, Janet *argv)
 {
@@ -552,14 +485,6 @@ static Janet cfun_wlr_xdg_shell_create(int32_t argc, Janet *argv)
     }
     return janet_wrap_abstract(jl_pointer_to_abs_obj(xdg_shell, &jwlr_at_wlr_xdg_shell));
 }
-
-
-static const JanetAbstractType jwlr_at_wlr_surface = {
-    .name = MOD_NAME "/wlr-surface",
-    .gc = NULL,
-    .gcmark = NULL,
-    JANET_ATEND_GCMARK
-};
 
 
 static const jl_offset_def_t wlr_xdg_popup_signal_offsets[] = {
@@ -595,14 +520,6 @@ static int method_wlr_xdg_popup_get(void *p, Janet key, Janet *out) {
     return 0;
 }
 
-static const JanetAbstractType jwlr_at_wlr_xdg_popup = {
-    .name = MOD_NAME "/wlr-xdg-popup",
-    .gc = NULL,
-    .gcmark = NULL,
-    .get = method_wlr_xdg_popup_get,
-    JANET_ATEND_GET
-};
-
 
 static const jl_offset_def_t wlr_xdg_toplevel_signal_offsets[] = {
     JWLR_OFFSET_DEF(struct wlr_xdg_toplevel, events.request_maximize),
@@ -634,14 +551,6 @@ static int method_wlr_xdg_toplevel_get(void *p, Janet key, Janet *out) {
     }
     return 0;
 }
-
-static const JanetAbstractType jwlr_at_wlr_xdg_toplevel = {
-    .name = MOD_NAME "/wlr-xdg-toplevel",
-    .gc = NULL,
-    .gcmark = NULL,
-    .get = method_wlr_xdg_toplevel_get,
-    JANET_ATEND_GET
-};
 
 
 static const jl_offset_def_t wlr_xdg_surface_signal_offsets[] = {
@@ -700,6 +609,14 @@ static int method_wlr_xdg_surface_get(void *p, Janet key, Janet *out) {
         *out = janet_wrap_abstract(jl_pointer_to_abs_obj(surface->toplevel, &jwlr_at_wlr_xdg_toplevel));
         return 1;
     }
+    if (!janet_cstrcmp(kw, "popup")) {
+        if (!(surface->popup)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(surface->popup, &jwlr_at_wlr_xdg_popup));
+        return 1;
+    }
     if (!janet_cstrcmp(kw, "data")) {
         *out = janet_wrap_pointer(surface->data);
         return 1;
@@ -707,14 +624,6 @@ static int method_wlr_xdg_surface_get(void *p, Janet key, Janet *out) {
 
     return 0;
 }
-
-static const JanetAbstractType jwlr_at_wlr_xdg_surface = {
-    .name = MOD_NAME "/wlr-xdg-surface",
-    .gc = NULL,
-    .gcmark = NULL,
-    .get = method_wlr_xdg_surface_get,
-    JANET_ATEND_GET
-};
 
 
 static const jl_offset_def_t wlr_cursor_signal_offsets[] = {
@@ -767,13 +676,6 @@ static int method_wlr_cursor_get(void *p, Janet key, Janet *out) {
     return 0;
 }
 
-static const JanetAbstractType jwlr_at_wlr_cursor = {
-    .name = MOD_NAME "/wlr-cursor",
-    .gc = NULL,
-    .gcmark = NULL,
-    .get = method_wlr_cursor_get,
-    JANET_ATEND_GET
-};
 
 static Janet cfun_wlr_cursor_create(int32_t argc, Janet *argv)
 {
@@ -805,13 +707,6 @@ static Janet cfun_wlr_cursor_attach_output_layout(int32_t argc, Janet *argv)
     return janet_wrap_nil();
 }
 
-
-static const JanetAbstractType jwlr_at_wlr_xcursor_manager = {
-    .name = MOD_NAME "/wlr-xcursor-manager",
-    .gc = NULL,
-    .gcmark = NULL,
-    JANET_ATEND_GCMARK
-};
 
 static Janet cfun_wlr_xcursor_manager_create(int32_t argc, Janet *argv)
 {
@@ -896,13 +791,6 @@ static int method_wlr_seat_get(void *p, Janet key, Janet *out) {
     return 0;
 }
 
-static const JanetAbstractType jwlr_at_wlr_seat = {
-    .name = MOD_NAME "/wlr-seat",
-    .gc = NULL,
-    .gcmark = NULL,
-    .get = method_wlr_seat_get,
-    JANET_ATEND_GET
-};
 
 static Janet cfun_wlr_seat_create(int32_t argc, Janet *argv)
 {
@@ -968,29 +856,6 @@ static int method_wlr_output_get(void *p, Janet key, Janet *out) {
     }
     return 0;
 }
-
-static const JanetAbstractType jwlr_at_wlr_output = {
-    .name = MOD_NAME "/wlr-output",
-    .gc = NULL,
-    .gcmark = NULL,
-    .get = method_wlr_output_get,
-    JANET_ATEND_GET
-};
-
-
-static const JanetAbstractType jwlr_at_wlr_output_mode = {
-    .name = MOD_NAME "/wlr-output-mode",
-    .gc = NULL,
-    .gcmark = NULL,
-    JANET_ATEND_GCMARK
-};
-
-static const JanetAbstractType jwlr_at_wlr_output_cursor = {
-    .name = MOD_NAME "/wlr-output-cursor",
-    .gc = NULL,
-    .gcmark = NULL,
-    JANET_ATEND_GCMARK
-};
 
 
 static Janet cfun_wlr_output_init_render(int32_t argc, Janet *argv)
@@ -1100,12 +965,24 @@ static Janet cfun_wlr_xdg_surface_from_wlr_surface(int32_t argc, Janet *argv)
 }
 
 
-static const JanetAbstractType jwlr_at_wlr_scene_tree = {
-    .name = MOD_NAME "/wlr-scene-tree",
-    .gc = NULL,
-    .gcmark = NULL,
-    JANET_ATEND_GCMARK
-};
+static Janet cfun_wlr_scene_xdg_surface_create(int32_t argc, Janet *argv)
+{
+    struct wlr_scene_tree *parent;
+    struct wlr_xdg_surface *surface;
+
+    struct wlr_scene_tree *ret;
+
+    janet_fixarity(argc, 2);
+
+    parent = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_tree);
+    surface = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_xdg_surface);
+
+    ret = wlr_scene_xdg_surface_create(parent, surface);
+    if (!ret) {
+        janet_panic("failed to create wlroots scene-graph node");
+    }
+    return janet_wrap_abstract(jl_pointer_to_abs_obj(ret, &jwlr_at_wlr_scene_tree));
+}
 
 
 static JanetReg cfuns[] = {
@@ -1248,6 +1125,11 @@ static JanetReg cfuns[] = {
         "wlr-xdg-surface-from-wlr-surface", cfun_wlr_xdg_surface_from_wlr_surface,
         "(" MOD_NAME "/wlr-xdg-surface-from-wlr-surface wlr-surface)\n\n"
         "Wraps a surface object with an xdg surface object."
+    },
+    {
+        "wlr-scene-xdg-surface-create", cfun_wlr_scene_xdg_surface_create,
+        "(" MOD_NAME "/wlr-scene-xdg-surface-create wlr-scene-tree xdg-surface)\n\n"
+        "Adds a node displaying an xdg_surface and all of its sub-surfaces to the scene-graph."
     },
     {NULL, NULL, NULL},
 };

@@ -56,12 +56,13 @@
                 :source ["wlr.c"]
                 :header ["jl.h"
                          "types.h"
+                         "wlr_abs_types.h"
                          (string generated-headers-dir "/xdg-shell-protocol.h")]
                 :cflags [;common-cflags ;wlr-cflags])
 
 (declare-native :name (project-module "wl")
                 :source ["wl.c"]
-                :header ["jl.h" "types.h"]
+                :header ["jl.h" "types.h" "wl_abs_types.h"]
                 :cflags [;common-cflags ;wlr-cflags])
 
 (declare-native :name (project-module "util")
