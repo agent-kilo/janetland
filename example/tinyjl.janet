@@ -56,6 +56,8 @@
                       (handle-wlr-output-destroy server output listener data))))
 
   (array/push (server :outputs) output)
+  (wlr-log :debug "(length (server :outputs)) = %v" (length (server :outputs)))
+
   (wlr-output-layout-add-auto (server :output-layout) wlr-output))
 
 
