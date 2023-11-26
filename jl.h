@@ -1,6 +1,15 @@
 #ifndef __JL_H__
 #define __JL_H__
 
+
+#define WL_MOD_NAME "wl"
+#define WL_MOD_FULL_NAME "janetland/wl"
+#define WLR_MOD_NAME "wlr"
+#define WLR_MOD_FULL_NAME "janetland/wlr"
+#define UTIL_MOD_NAME "util"
+#define UTIL_MOD_FULL_NAME "janetland/util"
+
+
 #define jl_log(verb, fmt, ...) \
     wlr_log(verb, "[JL]" fmt, ##__VA_ARGS__)
 

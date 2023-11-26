@@ -11,11 +11,10 @@
 #include "jl.h"
 #include "types.h"
 
-#define MOD_NAME "util"
-#define WL_MOD_NAME "wl"
-#define WL_MOD_FULL_NAME "janetland/wl"
-#define WLR_MOD_NAME "wlr"
-#define WLR_MOD_FULL_NAME "janetland/wlr"
+
+#ifndef MOD_NAME
+#define MOD_NAME UTIL_MOD_NAME
+#endif
 
 
 static Janet cfun_get_listener_data(int32_t argc, Janet *argv)

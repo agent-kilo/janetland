@@ -6,8 +6,9 @@
 #include "types.h"
 #include "wl_abs_types.h"
 
+
 #ifndef MOD_NAME
-#define MOD_NAME "wl"
+#define MOD_NAME WL_MOD_NAME
 #endif
 
 

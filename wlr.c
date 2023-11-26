@@ -23,14 +23,10 @@
 #include "types.h"
 #include "wlr_abs_types.h"
 
+
 #ifndef MOD_NAME
-#define MOD_NAME "wlr"
+#define MOD_NAME WLR_MOD_NAME
 #endif
-
-#define WL_MOD_NAME "wl"
-#define WL_MOD_FULL_NAME "janetland/wl"
-
-#define UTIL_MOD_NAME "util"
 
 
 JANET_THREAD_LOCAL JanetFunction *jwlr_log_callback_fn;
