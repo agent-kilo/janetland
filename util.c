@@ -1,3 +1,6 @@
+#include <time.h>
+#include <errno.h>
+
 #include <janet.h>
 
 #include <wlr/types/wlr_output.h>
@@ -99,6 +102,48 @@ static Janet cfun_pointer_to_abstract_object(int32_t argc, Janet *argv)
 }
 
 
+static const jl_key_def_t clock_id_defs[] = {
+    {"realtime", CLOCK_REALTIME},
+    {"monotonic", CLOCK_MONOTONIC},
+    {"process-cputime-id", CLOCK_PROCESS_CPUTIME_ID},
+    {"thread-cputime-id", CLOCK_THREAD_CPUTIME_ID},
+    {NULL, 0},
+};
+
+static const JanetAbstractType jutil_at_timespec = {
+    .name = MOD_NAME "/timespec",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+static clockid_t jutil_get_clock_id(const Janet *argv, int32_t n)
+{
+    const uint8_t *kw = janet_getkeyword(argv, n);
+    for (int i = 0; clock_id_defs[i].name; i++) {
+        if (!janet_cstrcmp(kw, clock_id_defs[i].name)) {
+            return clock_id_defs[i].key;
+        }
+    }
+    janet_panicf("unknown clock id: %v", argv[n]);
+}
+
+static Janet cfun_clock_gettime(int32_t argc, Janet *argv)
+{
+    clockid_t clk_id;
+    struct timespec *tspec;
+
+    janet_fixarity(argc, 1);
+
+    clk_id = jutil_get_clock_id(argv, 0);
+    tspec = janet_abstract(&jutil_at_timespec, sizeof(*tspec));
+    if (clock_gettime(clk_id, tspec) < 0) {
+        janet_panicf("failed to get time with clock id %v: %d", argv[0], errno);
+    }
+    return janet_wrap_abstract(tspec);
+}
+
+
 static JanetReg cfuns[] = {
     {
         "get-listener-data", cfun_get_listener_data,
@@ -120,6 +165,11 @@ static JanetReg cfuns[] = {
         "(" MOD_NAME "/pointer-to-abstract-object pointer abs-type)\n\n"
         "Converts a raw pointer to an object of type abs-type."
     },
+    {
+        "clock-gettime", cfun_clock_gettime,
+        "(" MOD_NAME "/clock-gettime clock-id)\n\n"
+        "Calls the clock_gettime C function."
+    },
 };
 
 
@@ -128,6 +178,8 @@ JANET_MODULE_ENTRY(JanetTable *env)
     /* Import these module first, so that we can find the abstract types */
     jl_import(WL_MOD_FULL_NAME);
     jl_import(WLR_MOD_FULL_NAME);
+
+    janet_register_abstract_type(&jutil_at_timespec);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 

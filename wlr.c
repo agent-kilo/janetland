@@ -30,6 +30,8 @@
 #define WL_MOD_NAME "wl"
 #define WL_MOD_FULL_NAME "janetland/wl"
 
+#define UTIL_MOD_NAME "util"
+
 
 JANET_THREAD_LOCAL JanetFunction *jwlr_log_callback_fn;
 
@@ -1115,6 +1117,52 @@ static void method_wlr_scene_node_put(void *p, Janet key, Janet value) {
 }
 
 
+static Janet cfun_wlr_scene_get_scene_output(int32_t argc, Janet *argv)
+{
+    struct wlr_scene *scene;
+    struct wlr_output *output;
+
+    struct wlr_scene_output *scene_output;
+
+    janet_fixarity(argc, 2);
+
+    scene = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene);
+    output = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_output);
+
+    scene_output = wlr_scene_get_scene_output(scene, output);
+    if (!scene_output) {
+        janet_panic("failed to create wlroots scene output object");
+    }
+    return janet_wrap_abstract(jl_pointer_to_abs_obj(scene_output, &jwlr_at_wlr_scene_output));
+}
+
+
+static Janet cfun_wlr_scene_output_commit(int32_t argc, Janet *argv)
+{
+    struct wlr_scene_output *scene_output;
+
+    janet_fixarity(argc, 1);
+
+    scene_output = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_output);
+    return janet_wrap_boolean(wlr_scene_output_commit(scene_output));
+}
+
+
+static Janet cfun_wlr_scene_output_send_frame_done(int32_t argc, Janet *argv)
+{
+    struct wlr_scene_output *scene_output;
+    struct timespec *now;
+
+    janet_fixarity(argc, 2);
+
+    scene_output = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_output);
+    now = janet_getabstract(argv, 1, jl_get_abstract_type_by_name(UTIL_MOD_NAME "/timespec"));
+
+    wlr_scene_output_send_frame_done(scene_output, now);
+    return janet_wrap_nil();
+}
+
+
 static JanetReg cfuns[] = {
     {
         "wlr-log-init", cfun_wlr_log_init,
@@ -1261,6 +1309,21 @@ static JanetReg cfuns[] = {
         "(" MOD_NAME "/wlr-scene-xdg-surface-create wlr-scene-tree xdg-surface)\n\n"
         "Adds a node displaying an xdg_surface and all of its sub-surfaces to the scene-graph."
     },
+    {
+        "wlr-scene-get-scene-output", cfun_wlr_scene_get_scene_output,
+        "(" MOD_NAME "/wlr-scene-get-scene-output wlr-scene wlr-output)\n\n"
+        "Converts a wl-output object to a wl-scene-output object."
+    },
+    {
+        "wlr-scene-output-commit", cfun_wlr_scene_output_commit,
+        "(" MOD_NAME "/wlr-scene-output-commit wlr-scene-output)\n\n"
+        "Commits a wlr-scene-output."
+    },
+    {
+        "wlr-scene-output-send-frame-done", cfun_wlr_scene_output_send_frame_done,
+        "(" MOD_NAME "/wlr-scene-output-send-frame-done wlr-scene-output timespec)\n\n"
+        "Marks that we are done with the output frame."
+    },
     {NULL, NULL, NULL},
 };
 
@@ -1280,6 +1343,9 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_output_layout);
     janet_register_abstract_type(&jwlr_at_wlr_output_layout_output);
     janet_register_abstract_type(&jwlr_at_wlr_scene);
+    janet_register_abstract_type(&jwlr_at_wlr_scene_output);
+    janet_register_abstract_type(&jwlr_at_wlr_scene_tree);
+    janet_register_abstract_type(&jwlr_at_wlr_scene_node);
     janet_register_abstract_type(&jwlr_at_wlr_xdg_shell);
     janet_register_abstract_type(&jwlr_at_wlr_surface);
     janet_register_abstract_type(&jwlr_at_wlr_xdg_surface);
@@ -1291,7 +1357,6 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_output);
     janet_register_abstract_type(&jwlr_at_wlr_output_mode);
     janet_register_abstract_type(&jwlr_at_wlr_output_cursor);
-    janet_register_abstract_type(&jwlr_at_wlr_scene_tree);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 }

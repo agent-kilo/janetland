@@ -84,6 +84,14 @@ static const JanetAbstractType jwlr_at_wlr_scene = {
 };
 
 
+static const JanetAbstractType jwlr_at_wlr_scene_output = {
+    .name = MOD_NAME "/wlr-scene-output",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GET
+};
+
+
 static int method_wlr_xdg_shell_get(void *p, Janet key, Janet *out);
 static const JanetAbstractType jwlr_at_wlr_xdg_shell = {
     .name = MOD_NAME "/wlr-xdg-shell",
