@@ -218,4 +218,12 @@ static const JanetAbstractType jwlr_at_wlr_scene_node = {
 };
 
 
+static const JanetAbstractType jwlr_at_wlr_input_device = {
+    .name = MOD_NAME "/wlr-input-device",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+
 #endif

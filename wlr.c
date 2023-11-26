@@ -1353,6 +1353,7 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_output);
     janet_register_abstract_type(&jwlr_at_wlr_output_mode);
     janet_register_abstract_type(&jwlr_at_wlr_output_cursor);
+    janet_register_abstract_type(&jwlr_at_wlr_input_device);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 }
