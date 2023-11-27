@@ -66,9 +66,96 @@
            (get-abstract-listener-data data 'wlr/wlr-input-device)))
 
 
+(defn handle-xdg-surface-map [server listener data]
+  (wlr-log :debug "#### handle-xdg-surface-map ####")
+  )
+
+
+(defn handle-xdg-surface-unmap [server listener data]
+  (wlr-log :debug "#### handle-xdg-surface-unmap ####")
+  )
+
+
+(defn handle-xdg-surface-destroy [server listener data]
+  (wlr-log :debug "#### handle-xdg-surface-destroy ####")
+  )
+
+
+(defn handle-xdg-toplevel-request-move [server listener data]
+  (wlr-log :debug "#### handle-xdg-toplevel-request-move ####")
+  )
+
+
+(defn handle-xdg-toplevel-request-resize [server listener data]
+  (wlr-log :debug "#### handle-xdg-toplevel-request-resize ####")
+  )
+
+
+(defn handle-xdg-toplevel-request-maximize [server listener data]
+  (wlr-log :debug "#### handle-xdg-toplevel-request-maximize ####")
+  )
+
+
+(defn handle-xdg-toplevel-request-fullscreen [server listener data]
+  (wlr-log :debug "#### handle-xdg-toplevel-request-fullscreen ####")
+  )
+
+
 (defn handle-xdg-shell-new-surface [server listener data]
-  (wlr-log :debug "#### handle-xdg-shell-new-surface #### data = %p"
-           (get-abstract-listener-data data 'wlr/wlr-xdg-surface)))
+  "Fired when a new surface appears."
+
+  (def xdg-surface (get-abstract-listener-data data 'wlr/wlr-xdg-surface))
+
+  (wlr-log :debug "#### handle-xdg-shell-new-surface #### data = %p" xdg-surface)
+  (wlr-log :debug "#### (xdg-surface :role) = %p" (xdg-surface :role))
+
+  (when (= (xdg-surface :role) :popup)
+    (def parent (wlr-xdg-surface-from-wlr-surface ((xdg-surface :popup) :parent)))
+    (def parent-tree (pointer-to-abstract-object (parent :data) 'wlr/wlr-scene-tree))
+    (set (xdg-surface :data) (wlr-scene-xdg-surface-create parent-tree xdg-surface))
+    (break))
+
+  (def view @{:server server
+              :xdg-toplevel (xdg-surface :toplevel)
+              :scene-tree (wlr-scene-xdg-surface-create ((server :scene) :tree)
+                                                        ((xdg-surface :toplevel) :base))})
+
+  (wlr-log :debug "#### (view :scene-tree) = %p" (view :scene-tree))
+  # XXX: not working yet
+  #(set (((view :scene-tree) :node) :data) view)
+  (set (xdg-surface :data) (view :scene-tree))
+
+  (put view :xdg-surface-map-listener
+     (wl-signal-add (xdg-surface :events.map)
+                    (fn [listener data]
+                      (handle-xdg-surface-map server listener data))))
+  (put view :xdg-surface-unmap-listener
+     (wl-signal-add (xdg-surface :events.unmap)
+                    (fn [listener data]
+                      (handle-xdg-surface-unmap server listener data))))
+  (put view :xdg-surface-destroy-listener
+     (wl-signal-add (xdg-surface :events.destroy)
+                    (fn [listener data]
+                      (handle-xdg-surface-destroy server listener data))))
+
+  (def toplevel (xdg-surface :toplevel))
+
+  (put view :xdg-toplevel-request-move-listener
+     (wl-signal-add (toplevel :events.request_move)
+                    (fn [listener data]
+                      (handle-xdg-toplevel-request-move server listener data))))
+  (put view :xdg-toplevel-request-resize-listener
+     (wl-signal-add (toplevel :events.request_resize)
+                    (fn [listener data]
+                      (handle-xdg-toplevel-request-resize server listener data))))
+  (put view :xdg-toplevel-request-maximize-listener
+     (wl-signal-add (toplevel :events.request_maximize)
+                    (fn [listener data]
+                      (handle-xdg-toplevel-request-maximize server listener data))))
+  (put view :xdg-toplevel-request-fullscreen-listener
+     (wl-signal-add (toplevel :events.request_fullscreen)
+                    (fn [listener data]
+                      (handle-xdg-toplevel-request-fullscreen server listener data)))))
 
 
 (defn main [&]
