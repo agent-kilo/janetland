@@ -2,7 +2,7 @@
 #define __WLR_ABS_TYPES_H__
 
 #ifndef MOD_NAME
-#define MOD_NAME "wlr"
+#define MOD_NAME WLR_MOD_NAME
 #endif
 
 
@@ -126,6 +126,16 @@ static const JanetAbstractType jwlr_at_wlr_xdg_toplevel = {
     .gc = NULL,
     .gcmark = NULL,
     .get = method_wlr_xdg_toplevel_get,
+    JANET_ATEND_GET
+};
+
+
+static int method_wlr_xdg_toplevel_resize_event_get(void *p, Janet key, Janet *out);
+static const JanetAbstractType jwlr_at_wlr_xdg_toplevel_resize_event = {
+    .name = MOD_NAME "/wlr-xdg-toplevel-resize-even",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_xdg_toplevel_resize_event_get,
     JANET_ATEND_GET
 };
 

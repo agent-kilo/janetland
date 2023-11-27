@@ -4,7 +4,7 @@
 #include <wayland-server-core.h>
 
 #ifndef MOD_NAME
-#define MOD_NAME "wl"
+#define MOD_NAME WL_MOD_NAME
 #endif
 
 static const JanetAbstractType jwl_at_wl_list = {
