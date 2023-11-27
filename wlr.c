@@ -1372,6 +1372,44 @@ static int method_wlr_pointer_motion_absolute_event_get(void *p, Janet key, Jane
 }
 
 
+static int method_wlr_pointer_button_event_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_pointer_button_event **event_p = (struct wlr_pointer_button_event **)p;
+    struct wlr_pointer_button_event *event = *event_p;
+    
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    if (!janet_cstrcmp(kw, "pointer")) {
+        if (!(event->pointer)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(event->pointer, &jwlr_at_wlr_pointer));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "time-msec")) {
+        /* uint32_t -> uint64_t */
+        *out = janet_wrap_u64(event->time_msec);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "button")) {
+        /* uint32_t -> uint64_t */
+        *out = janet_wrap_u64(event->button);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "state")) {
+        *out = janet_ckeywordv(wlr_button_state_defs[event->state].name);
+        return 1;
+    }
+
+    return 0;
+}
+
+
 static Janet cfun_wlr_scene_get_scene_output(int32_t argc, Janet *argv)
 {
     struct wlr_scene *scene;
