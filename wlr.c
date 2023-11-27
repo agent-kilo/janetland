@@ -947,6 +947,37 @@ static Janet cfun_wlr_seat_create(int32_t argc, Janet *argv)
 }
 
 
+static const jl_key_def_t wlr_button_state_defs[] = {
+    {"released", WLR_BUTTON_RELEASED},
+    {"pressed", WLR_BUTTON_PRESSED},
+    {NULL, 0},
+};
+
+static Janet cfun_wlr_seat_pointer_notify_button(int32_t argc, Janet *argv)
+{
+    struct wlr_seat *seat;
+    uint32_t time;
+    uint32_t button;
+    enum wlr_button_state state;
+
+    uint32_t serial;
+
+    janet_fixarity(argc, 4);
+
+    seat = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_seat);
+    /* uint64_t -> uint32_t conversion */
+    time = (uint32_t)janet_getuinteger64(argv, 1);
+    button = (uint32_t)janet_getuinteger64(argv, 2);
+    state = jl_get_key_def(argv, 3, wlr_button_state_defs);
+
+    serial = wlr_seat_pointer_notify_button(seat, time, button, state);
+    /* XXX: Janet doesn't have a 32-bit unsigned type, so this converts
+       serial to int32_t. It should be fine as long as we don't do
+       arithmetic on the returned serial numbers */
+    return janet_wrap_integer(serial);
+}
+
+
 static const jl_offset_def_t wlr_output_signal_offsets[] = {
     JWLR_OFFSET_DEF(struct wlr_output, events.frame),
     JWLR_OFFSET_DEF(struct wlr_output, events.damage),
@@ -1511,6 +1542,11 @@ static JanetReg cfuns[] = {
         "wlr-seat-create", cfun_wlr_seat_create,
         "(" MOD_NAME "/wlr-seat-create wl-display name)\n\n"
         "Creates a wlroots seat object."
+    },
+    {
+        "wlr-seat-pointer-notify-button", cfun_wlr_seat_pointer_notify_button,
+        "(" MOD_NAME "/wlr-seat-pointer-notify-button wl-seat time button state)\n\n"
+        "Notifies the seat object that there's a button event."
     },
     {
         "wlr-output-init-render", cfun_wlr_output_init_render,
