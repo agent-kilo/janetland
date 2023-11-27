@@ -180,6 +180,14 @@ static const JanetAbstractType jwlr_at_wlr_seat = {
 };
 
 
+static const JanetAbstractType jwlr_at_wlr_seat_client = {
+    .name = MOD_NAME "/wlr-seat-client",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+
 static int method_wlr_output_get(void *p, Janet key, Janet *out);
 static const JanetAbstractType jwlr_at_wlr_output = {
     .name = MOD_NAME "/wlr-output",

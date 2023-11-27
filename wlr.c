@@ -602,7 +602,7 @@ static int method_wlr_xdg_toplevel_resize_event_get(void *p, Janet key, Janet *o
             *out = janet_wrap_nil();
             return 1;
         }
-        *out = jl_pointer_to_abs_obj(event->toplevel, &jwlr_at_wlr_xdg_toplevel);
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(event->toplevel, &jwlr_at_wlr_xdg_toplevel));
         return 1;
     }
     if (!janet_cstrcmp(kw, "seat")) {
@@ -610,7 +610,7 @@ static int method_wlr_xdg_toplevel_resize_event_get(void *p, Janet key, Janet *o
             *out = janet_wrap_nil();
             return 1;
         }
-        *out = jl_pointer_to_abs_obj(event->seat, &jwlr_at_wlr_seat_client);
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(event->seat, &jwlr_at_wlr_seat_client));
         return 1;
     }
     if (!janet_cstrcmp(kw, "serial")) {
