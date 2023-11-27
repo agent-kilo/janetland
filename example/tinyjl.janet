@@ -117,7 +117,7 @@
   (wlr-xdg-surface-schedule-configure ((view :xdg-toplevel) :base)))
 
 
-(defn handle-xdg-toplevel-request-fullscreen [server listener data]
+(defn handle-xdg-toplevel-request-fullscreen [view listener data]
   (wlr-log :debug "#### handle-xdg-toplevel-request-fullscreen ####")
   (wlr-xdg-surface-schedule-configure ((view :xdg-toplevel) :base)))
 
@@ -164,19 +164,19 @@
   (put view :xdg-toplevel-request-move-listener
      (wl-signal-add (toplevel :events.request_move)
                     (fn [listener data]
-                      (handle-xdg-toplevel-request-move server listener data))))
+                      (handle-xdg-toplevel-request-move view listener data))))
   (put view :xdg-toplevel-request-resize-listener
      (wl-signal-add (toplevel :events.request_resize)
                     (fn [listener data]
-                      (handle-xdg-toplevel-request-resize server listener data))))
+                      (handle-xdg-toplevel-request-resize view listener data))))
   (put view :xdg-toplevel-request-maximize-listener
      (wl-signal-add (toplevel :events.request_maximize)
                     (fn [listener data]
-                      (handle-xdg-toplevel-request-maximize server listener data))))
+                      (handle-xdg-toplevel-request-maximize view listener data))))
   (put view :xdg-toplevel-request-fullscreen-listener
      (wl-signal-add (toplevel :events.request_fullscreen)
                     (fn [listener data]
-                      (handle-xdg-toplevel-request-fullscreen server listener data)))))
+                      (handle-xdg-toplevel-request-fullscreen view listener data)))))
 
 
 (defn main [&]
