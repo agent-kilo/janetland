@@ -587,6 +587,48 @@ static int method_wlr_xdg_toplevel_get(void *p, Janet key, Janet *out) {
 }
 
 
+static int method_wlr_xdg_toplevel_resize_event_get(void *p, Janet key, Janet *out) {
+    struct wlr_xdg_toplevel_resize_event **event_p = (struct wlr_xdg_toplevel_resize_event **)p;
+    struct wlr_xdg_toplevel_resize_event *event = *event_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    if (!janet_cstrcmp(kw, "toplevel")) {
+        if (!(event->toplevel)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
+        *out = jl_pointer_to_abs_obj(event->toplevel, &jwlr_at_wlr_xdg_toplevel);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "seat")) {
+        if (!(event->seat)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
+        *out = jl_pointer_to_abs_obj(event->seat, &jwlr_at_wlr_seat_client);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "serial")) {
+        /* XXX: uint32_t -> int32_t conversion */
+        *out = janet_wrap_integer(event->serial);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "edges")) {
+        /* Janet doesn't have a 32-bit unsigned type, but we need to do
+           arithmetics on the edge flags, so store them in a u64 to be safe */
+        *out = janet_wrap_u64(event->edges);
+        return 1;
+    }
+
+    return 0;
+}
+
+
 static const jl_offset_def_t wlr_xdg_surface_signal_offsets[] = {
     JWLR_OFFSET_DEF(struct wlr_xdg_surface, events.destroy),
     JWLR_OFFSET_DEF(struct wlr_xdg_surface, events.ping_timeout),
@@ -1023,6 +1065,24 @@ static Janet cfun_wlr_xdg_surface_from_wlr_surface(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_xdg_surface_schedule_configure(int32_t argc, Janet *argv)
+{
+    struct wlr_xdg_surface *surface;
+
+    uint32_t serial;
+
+    janet_fixarity(argc, 1);
+
+    surface = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_xdg_surface);
+    serial = wlr_xdg_surface_schedule_configure(surface);
+
+    /* XXX: Janet doesn't have a 32-bit unsigned type, so this converts
+       serial to int32_t. It should be fine as long as we don't do
+       arithmetic on the returned serial numbers */
+    return janet_wrap_integer(serial);
+}
+
+
 static Janet cfun_wlr_scene_xdg_surface_create(int32_t argc, Janet *argv)
 {
     struct wlr_scene_tree *parent;
@@ -1309,6 +1369,11 @@ static JanetReg cfuns[] = {
         "Wraps a surface object with an xdg surface object."
     },
     {
+        "wlr-xdg-surface-schedule-configure", cfun_wlr_xdg_surface_schedule_configure,
+        "(" MOD_NAME "/wlr-xdg-surface-schedule-configure wlr-xdg-surface)\n\n"
+        "Sends a configure for the xdg surface."
+    },
+    {
         "wlr-scene-xdg-surface-create", cfun_wlr_scene_xdg_surface_create,
         "(" MOD_NAME "/wlr-scene-xdg-surface-create wlr-scene-tree xdg-surface)\n\n"
         "Adds a node displaying an xdg_surface and all of its sub-surfaces to the scene-graph."
@@ -1354,6 +1419,7 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_surface);
     janet_register_abstract_type(&jwlr_at_wlr_xdg_surface);
     janet_register_abstract_type(&jwlr_at_wlr_xdg_toplevel);
+    janet_register_abstract_type(&jwlr_at_wlr_xdg_toplevel_resize_event);
     janet_register_abstract_type(&jwlr_at_wlr_xdg_popup);
     janet_register_abstract_type(&jwlr_at_wlr_cursor);
     janet_register_abstract_type(&jwlr_at_wlr_xcursor_manager);
