@@ -186,17 +186,41 @@
 
 (defn handle-cursor-motion [server listener data]
   (def event (get-abstract-listener-data data 'wlr/wlr-pointer-motion-event))
+
+  (wlr-log :debug "#### handle-cursor-motion #### data = %p" event)
+  (wlr-log :debug "#### (event :time-msec) = %p" (event :time-msec))
+  (wlr-log :debug "#### (event :delta-x) = %p" (event :delta-x))
+  (wlr-log :debug "#### (event :delta-y) = %p" (event :delta-y))
+
   (wlr-cursor-move (server :cursor) ((event :pointer) :base) (event :delta-x) (event :delta-y))
   (process-cursor-motion server (event :time-msec)))
 
 
 (defn handle-cursor-motion-absolute [server listener data]
   (def event (get-abstract-listener-data data 'wlr/wlr-pointer-motion-absolute-event))
+
+  (wlr-log :debug "#### handle-cursor-motion-absolute #### data = %p" event)
+  (wlr-log :debug "#### (event :time-msec) = %p" (event :time-msec))
+  (wlr-log :debug "#### (event :x) = %p" (event :x))
+  (wlr-log :debug "#### (event :y) = %p" (event :y))
+
   (wlr-cursor-warp-absolute (server :cursor) ((event :pointer) :base) (event :x) (event :y))
   (process-cursor-motion server (event :time-msec)))
 
 
 (defn handle-cursor-button [server listener data]
+  (def event (get-abstract-listener-data data 'wlr/wlr-pointer-button-event))
+
+  (wlr-log :debug "#### handle-cursor-button #### data = %p" event)
+  (wlr-log :debug "#### (event :time-msec) = %p" (event :time-msec))
+  (wlr-log :debug "#### (event :button) = %p" (event :button))
+  (wlr-log :debug "#### (event :state) = %p" (event :state))
+
+  (wlr-seat-pointer-notify-button (server :seat)
+                                  (event :time-msec)
+                                  (event :button)
+                                  (event :state))
+  # TODO
   )
 
 
