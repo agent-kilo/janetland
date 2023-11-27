@@ -15,6 +15,11 @@
   )
 
 
+(defn begin-interactive [view mode edges]
+  # TODO
+  )
+
+
 (defn handle-wlr-output-frame [server wlr-output listener data]
   (wlr-log :debug "#### handle-wlr-output-frame ####")
   (def scene-output (wlr-scene-get-scene-output (server :scene) wlr-output))
@@ -96,24 +101,25 @@
   (wl-signal-remove (view :xdg-toplevel-request-fullscreen-listener)))
 
 
-(defn handle-xdg-toplevel-request-move [server listener data]
+(defn handle-xdg-toplevel-request-move [view listener data]
   (wlr-log :debug "#### handle-xdg-toplevel-request-move ####")
-  )
+  (begin-interactive view :cursor-move 0))
 
 
-(defn handle-xdg-toplevel-request-resize [server listener data]
+(defn handle-xdg-toplevel-request-resize [view listener data]
   (wlr-log :debug "#### handle-xdg-toplevel-request-resize ####")
-  )
+  (def event (get-abstract-listener-data data 'wlr/wlr-xdg-toplevel-resize-event))
+  (begin-interactive view :cursor-resize (event :edges)))
 
 
-(defn handle-xdg-toplevel-request-maximize [server listener data]
+(defn handle-xdg-toplevel-request-maximize [view listener data]
   (wlr-log :debug "#### handle-xdg-toplevel-request-maximize ####")
-  )
+  (wlr-xdg-surface-schedule-configure ((view :xdg-toplevel) :base)))
 
 
 (defn handle-xdg-toplevel-request-fullscreen [server listener data]
   (wlr-log :debug "#### handle-xdg-toplevel-request-fullscreen ####")
-  )
+  (wlr-xdg-surface-schedule-configure ((view :xdg-toplevel) :base)))
 
 
 (defn handle-xdg-shell-new-surface [server listener data]
