@@ -191,7 +191,9 @@
 
 
 (defn handle-cursor-motion-absolute [server listener data]
-  )
+  (def event (get-abstract-listener-data data 'wlr/wlr-pointer-motion-absolute-event))
+  (wlr-cursor-warp-absolute (server :cursor) ((event :pointer) :base) (event :x) (event :y))
+  (process-cursor-motion server (event :time-msec)))
 
 
 (defn handle-cursor-button [server listener data]
