@@ -651,6 +651,14 @@ static int method_wlr_xdg_surface_get(void *p, Janet key, Janet *out) {
         *out = janet_wrap_abstract(jl_pointer_to_abs_obj(surface->popup, &jwlr_at_wlr_xdg_popup));
         return 1;
     }
+    if (!janet_cstrcmp(kw, "surface")) {
+        if (!(surface->surface)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(surface->surface, &jwlr_at_wlr_surface));
+        return 1;
+    }
     if (!janet_cstrcmp(kw, "data")) {
         *out = janet_wrap_pointer(surface->data);
         return 1;
