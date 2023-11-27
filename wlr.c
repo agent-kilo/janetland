@@ -67,18 +67,8 @@ static const jl_key_def_t log_defs[] = {
     {"info", WLR_INFO},
     {"debug", WLR_DEBUG},
     {"log-importance-last", WLR_LOG_IMPORTANCE_LAST},
+    {NULL, 0},
 };
-
-static enum wlr_log_importance jwlr_get_log_importance(const Janet *argv, int32_t n)
-{
-    const uint8_t *kw = janet_getkeyword(argv, n);
-    for (int i = 0; i < WLR_LOG_IMPORTANCE_LAST; i++) {
-        if (!janet_cstrcmp(kw, log_defs[i].name)) {
-            return log_defs[i].key;
-        }
-    }
-    janet_panicf("unknown log type %v", argv[n]);
-}
 
 void jwlr_log_callback(enum wlr_log_importance importance, const char *fmt, va_list args)
 {
@@ -126,7 +116,7 @@ static Janet cfun_wlr_log_init(int32_t argc, Janet *argv)
 
     janet_arity(argc, 1, 2);
 
-    verbosity = jwlr_get_log_importance(argv, 0);
+    verbosity = jl_get_key_def(argv, 0, log_defs);
     cb = janet_optfunction(argv, argc, 1, NULL);
     if (cb) {
         if (jwlr_log_callback_fn) {
@@ -165,7 +155,7 @@ static Janet cfun_wlr_log(int32_t argc, Janet *argv)
 
     janet_arity(argc, 2, -1);
 
-    verb = jwlr_get_log_importance(argv, 0);
+    verb = jl_get_key_def(argv, 0, log_defs);
     fmt_argv = &(argv[1]);
     fmt_argc = argc - 1;
 
@@ -649,6 +639,7 @@ static const jl_key_def_t wlr_xdg_surface_role_defs[] = {
     {"none", WLR_XDG_SURFACE_ROLE_NONE},
     {"toplevel", WLR_XDG_SURFACE_ROLE_TOPLEVEL},
     {"popup", WLR_XDG_SURFACE_ROLE_POPUP},
+    {NULL, 0},
 };
 
 static int method_wlr_xdg_surface_get(void *p, Janet key, Janet *out) {
