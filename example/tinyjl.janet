@@ -66,19 +66,31 @@
            (get-abstract-listener-data data 'wlr/wlr-input-device)))
 
 
-(defn handle-xdg-surface-map [server listener data]
+(defn handle-xdg-surface-map [view listener data]
   (wlr-log :debug "#### handle-xdg-surface-map ####")
+  (array/push ((view :server) :views) view)
+  (wlr-log :debug "#### (length ((view :server) :views)) = %v" (length ((view :server) :views)))
+  # TODO
+  #(focus-view view (((view :xdg-toplevel) :base) :surface))
   )
 
 
-(defn handle-xdg-surface-unmap [server listener data]
+(defn handle-xdg-surface-unmap [view listener data]
   (wlr-log :debug "#### handle-xdg-surface-unmap ####")
-  )
+  (remove-element ((view :server) :views) view)
+  # TODO: grabbed cursor
+  (wlr-log :debug "#### (length ((view :server) :views)) = %v" (length ((view :server) :views))))
 
 
-(defn handle-xdg-surface-destroy [server listener data]
+(defn handle-xdg-surface-destroy [view listener data]
   (wlr-log :debug "#### handle-xdg-surface-destroy ####")
-  )
+  (wl-signal-remove (view :xdg-surface-map-listener))
+  (wl-signal-remove (view :xdg-surface-unmap-listener))
+  (wl-signal-remove (view :xdg-surface-destroy-listener))
+  (wl-signal-remove (view :xdg-toplevel-request-move-listener))
+  (wl-signal-remove (view :xdg-toplevel-request-resize-listener))
+  (wl-signal-remove (view :xdg-toplevel-request-maximize-listener))
+  (wl-signal-remove (view :xdg-toplevel-request-fullscreen-listener)))
 
 
 (defn handle-xdg-toplevel-request-move [server listener data]
@@ -128,15 +140,15 @@
   (put view :xdg-surface-map-listener
      (wl-signal-add (xdg-surface :events.map)
                     (fn [listener data]
-                      (handle-xdg-surface-map server listener data))))
+                      (handle-xdg-surface-map view listener data))))
   (put view :xdg-surface-unmap-listener
      (wl-signal-add (xdg-surface :events.unmap)
                     (fn [listener data]
-                      (handle-xdg-surface-unmap server listener data))))
+                      (handle-xdg-surface-unmap view listener data))))
   (put view :xdg-surface-destroy-listener
      (wl-signal-add (xdg-surface :events.destroy)
                     (fn [listener data]
-                      (handle-xdg-surface-destroy server listener data))))
+                      (handle-xdg-surface-destroy view listener data))))
 
   (def toplevel (xdg-surface :toplevel))
 
@@ -189,6 +201,7 @@
 
   (put server :xdg-shell (wlr-xdg-shell-create (server :display) 3))
 
+  (put server :views @[])
   (put server :xdg-shell-new-surface-listener
     (wl-signal-add ((server :xdg-shell) :events.new_surface)
                    (fn [listener data]
