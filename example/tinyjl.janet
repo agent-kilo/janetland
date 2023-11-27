@@ -10,6 +10,11 @@
       (break))))
 
 
+(defn focus-view [view surface]
+  # TODO
+  )
+
+
 (defn handle-wlr-output-frame [server wlr-output listener data]
   (wlr-log :debug "#### handle-wlr-output-frame ####")
   (def scene-output (wlr-scene-get-scene-output (server :scene) wlr-output))
@@ -70,9 +75,7 @@
   (wlr-log :debug "#### handle-xdg-surface-map ####")
   (array/push ((view :server) :views) view)
   (wlr-log :debug "#### (length ((view :server) :views)) = %v" (length ((view :server) :views)))
-  # TODO
-  #(focus-view view (((view :xdg-toplevel) :base) :surface))
-  )
+  (focus-view view (((view :xdg-toplevel) :base) :surface)))
 
 
 (defn handle-xdg-surface-unmap [view listener data]
