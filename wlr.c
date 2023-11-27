@@ -604,9 +604,9 @@ static const jl_offset_def_t wlr_xdg_surface_list_offsets[] = {
 };
 
 static const jl_key_def_t wlr_xdg_surface_role_defs[] = {
-    {"wlr-xdg-surface-role-none", WLR_XDG_SURFACE_ROLE_NONE},
-    {"wlr-xdg-surface-role-toplevel", WLR_XDG_SURFACE_ROLE_TOPLEVEL},
-    {"wlr-xdg-surface-role-popup", WLR_XDG_SURFACE_ROLE_POPUP},
+    {"none", WLR_XDG_SURFACE_ROLE_NONE},
+    {"toplevel", WLR_XDG_SURFACE_ROLE_TOPLEVEL},
+    {"popup", WLR_XDG_SURFACE_ROLE_POPUP},
 };
 
 static int method_wlr_xdg_surface_get(void *p, Janet key, Janet *out) {
