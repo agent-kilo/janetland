@@ -811,6 +811,24 @@ static Janet cfun_wlr_cursor_move(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_cursor_warp_absolute(int32_t argc, Janet *argv)
+{
+    struct wlr_cursor *cursor;
+    struct wlr_input_device *dev;
+    double x, y;
+
+    janet_fixarity(argc, 4);
+
+    cursor = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_cursor);
+    dev = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_input_device);
+    x = janet_getnumber(argv, 2);
+    y = janet_getnumber(argv, 3);
+
+    wlr_cursor_warp_absolute(cursor, dev, x, y);
+    return janet_wrap_nil();
+}
+
+
 static Janet cfun_wlr_cursor_attach_output_layout(int32_t argc, Janet *argv)
 {
     struct wlr_cursor *cursor;
@@ -1295,6 +1313,43 @@ static int method_wlr_pointer_motion_event_get(void *p, Janet key, Janet *out)
 }
 
 
+static int method_wlr_pointer_motion_absolute_event_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_pointer_motion_absolute_event **event_p = (struct wlr_pointer_motion_absolute_event **)p;
+    struct wlr_pointer_motion_absolute_event *event = *event_p;
+    
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    if (!janet_cstrcmp(kw, "pointer")) {
+        if (!(event->pointer)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(event->pointer, &jwlr_at_wlr_pointer));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "time-msec")) {
+        /* uint32_t -> uint64_t */
+        *out = janet_wrap_u64(event->time_msec);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "x")) {
+        *out = janet_wrap_number(event->x);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "y")) {
+        *out = janet_wrap_number(event->y);
+        return 1;
+    }
+
+    return 0;
+}
+
+
 static Janet cfun_wlr_scene_get_scene_output(int32_t argc, Janet *argv)
 {
     struct wlr_scene *scene;
@@ -1431,6 +1486,11 @@ static JanetReg cfuns[] = {
         "wlr-cursor-move", cfun_wlr_cursor_move,
         "(" MOD_NAME "/wlr-cursor-move wlr-cursor wlr-input-device delta-x delta-y)\n\n"
         "Moves the cursor."
+    },
+    {
+        "wlr-cursor-warp-absolute", cfun_wlr_cursor_warp_absolute,
+        "(" MOD_NAME "/wlr-cursor-warp-absolute wlr-cursor wlr-input-device x y)\n\n"
+        "Moves the cursor using absolute coordinates."
     },
     {
         "wlr-cursor-attach-output-layout", cfun_wlr_cursor_attach_output_layout,

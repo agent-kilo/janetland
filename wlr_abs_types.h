@@ -264,11 +264,13 @@ static const JanetAbstractType jwlr_at_wlr_pointer_motion_event = {
 };
 
 
+static int method_wlr_pointer_motion_absolute_event_get(void *p, Janet key, Janet *out);
 static const JanetAbstractType jwlr_at_wlr_pointer_motion_absolute_event = {
     .name = MOD_NAME "/wlr-pointer-motion-absolute-event",
     .gc = NULL,
     .gcmark = NULL,
-    JANET_ATEND_GCMARK
+    .get = method_wlr_pointer_motion_absolute_event_get,
+    JANET_ATEND_GET
 };
 
 
