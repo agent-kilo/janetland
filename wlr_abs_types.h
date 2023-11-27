@@ -244,4 +244,48 @@ static const JanetAbstractType jwlr_at_wlr_input_device = {
 };
 
 
+static int method_wlr_pointer_get(void *p, Janet key, Janet *out);
+static const JanetAbstractType jwlr_at_wlr_pointer = {
+    .name = MOD_NAME "/wlr-pointer",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_pointer_get,
+    JANET_ATEND_GET
+};
+
+
+static int method_wlr_pointer_motion_event_get(void *p, Janet key, Janet *out);
+static const JanetAbstractType jwlr_at_wlr_pointer_motion_event = {
+    .name = MOD_NAME "/wlr-pointer-motion-event",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_pointer_motion_event_get,
+    JANET_ATEND_GET
+};
+
+
+static const JanetAbstractType jwlr_at_wlr_pointer_motion_absolute_event = {
+    .name = MOD_NAME "/wlr-pointer-motion-absolute-event",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+
+static const JanetAbstractType jwlr_at_wlr_pointer_button_event = {
+    .name = MOD_NAME "/wlr-pointer-button-event",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+
+static const JanetAbstractType jwlr_at_wlr_pointer_axis_event = {
+    .name = MOD_NAME "/wlr-pointer-axis-event",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+
 #endif

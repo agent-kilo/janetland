@@ -20,6 +20,11 @@
   )
 
 
+(defn process-cursor-motion [server time]
+  # TODO
+  )
+
+
 (defn handle-wlr-output-frame [server wlr-output listener data]
   (wlr-log :debug "#### handle-wlr-output-frame ####")
   (def scene-output (wlr-scene-get-scene-output (server :scene) wlr-output))
@@ -179,6 +184,28 @@
                       (handle-xdg-toplevel-request-fullscreen view listener data)))))
 
 
+(defn handle-cursor-motion [server listener data]
+  (def event (get-abstract-listener-data data 'wlr/wlr-pointer-motion-event))
+  (wlr-cursor-move (server :cursor) ((event :pointer) :base) (event :delta-x) (event :delta-y))
+  (process-cursor-motion server (event :time-msec)))
+
+
+(defn handle-cursor-motion-absolute [server listener data]
+  )
+
+
+(defn handle-cursor-button [server listener data]
+  )
+
+
+(defn handle-cursor-axis [server listener data]
+  )
+
+
+(defn handle-cursor-frame [server listener data]
+  )
+
+
 (defn main [&]
   (wlr-log-init :debug)
 
@@ -224,6 +251,27 @@
 
   (wlr-log :debug "#### (wlr-xcursor-manager-load xcursor-manager 1) = %p"
            (wlr-xcursor-manager-load (server :xcursor-manager) 1))
+
+  (put server :cursor-motion-listener
+     (wl-signal-add ((server :cursor) :events.motion)
+                    (fn [listener data]
+                      (handle-cursor-motion server listener data))))
+  (put server :cursor-motion-absolute-listener
+     (wl-signal-add ((server :cursor) :events.motion_absolute)
+                    (fn [listener data]
+                      (handle-cursor-motion-absolute server listener data))))
+  (put server :cursor-button-listener
+     (wl-signal-add ((server :cursor) :events.button)
+                    (fn [listener data]
+                      (handle-cursor-button server listener data))))
+  (put server :cursor-axis-listener
+     (wl-signal-add ((server :cursor) :events.axis)
+                    (fn [listener data]
+                      (handle-cursor-axis server listener data))))
+  (put server :cursor-frame-listener
+     (wl-signal-add ((server :cursor) :events.frame)
+                    (fn [listener data]
+                      (handle-cursor-frame server listener data))))
 
   (put server :backend-new-input-listener
      (wl-signal-add ((server :backend) :events.new_input)

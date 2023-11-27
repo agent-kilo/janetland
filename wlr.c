@@ -793,6 +793,24 @@ static Janet cfun_wlr_cursor_create(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_cursor_move(int32_t argc, Janet *argv)
+{
+    struct wlr_cursor *cursor;
+    struct wlr_input_device *dev;
+    double dx, dy;
+
+    janet_fixarity(argc, 4);
+
+    cursor = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_cursor);
+    dev = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_input_device);
+    dx = janet_getnumber(argv, 2);
+    dy = janet_getnumber(argv, 3);
+
+    wlr_cursor_move(cursor, dev, dx, dy);
+    return janet_wrap_nil();
+}
+
+
 static Janet cfun_wlr_cursor_attach_output_layout(int32_t argc, Janet *argv)
 {
     struct wlr_cursor *cursor;
@@ -1181,6 +1199,102 @@ static void method_wlr_scene_node_put(void *p, Janet key, Janet value) {
 }
 
 
+static const jl_offset_def_t wlr_pointer_signal_offsets[] = {
+    JWLR_OFFSET_DEF(struct wlr_pointer, events.motion),
+    JWLR_OFFSET_DEF(struct wlr_pointer, events.motion_absolute),
+    JWLR_OFFSET_DEF(struct wlr_pointer, events.button),
+    JWLR_OFFSET_DEF(struct wlr_pointer, events.axis),
+    JWLR_OFFSET_DEF(struct wlr_pointer, events.frame),
+    JWLR_OFFSET_DEF(struct wlr_pointer, events.swipe_begin),
+    JWLR_OFFSET_DEF(struct wlr_pointer, events.swipe_update),
+    JWLR_OFFSET_DEF(struct wlr_pointer, events.swipe_end),
+    JWLR_OFFSET_DEF(struct wlr_pointer, events.pinch_begin),
+    JWLR_OFFSET_DEF(struct wlr_pointer, events.pinch_update),
+    JWLR_OFFSET_DEF(struct wlr_pointer, events.pinch_end),
+    JWLR_OFFSET_DEF(struct wlr_pointer, events.hold_begin),
+    JWLR_OFFSET_DEF(struct wlr_pointer, events.hold_end),
+    {NULL, 0},
+};
+
+static int method_wlr_pointer_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_pointer **pointer_p = (struct wlr_pointer **)p;
+    struct wlr_pointer *pointer = *pointer_p;
+    
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    struct wl_signal **signal_p = get_abstract_struct_signal_member(pointer, kw, wlr_pointer_signal_offsets);
+    if (signal_p) {
+        *out = janet_wrap_abstract(signal_p);
+        return 1;
+    }
+
+    if (!janet_cstrcmp(kw, "base")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(&pointer->base, &jwlr_at_wlr_input_device));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "output-name")) {
+        *out = janet_cstringv(pointer->output_name);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "data")) {
+        *out = janet_wrap_pointer(pointer->data);
+        return 1;
+    }
+
+    return 0;
+}
+
+
+static int method_wlr_pointer_motion_event_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_pointer_motion_event **event_p = (struct wlr_pointer_motion_event **)p;
+    struct wlr_pointer_motion_event *event = *event_p;
+    
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    if (!janet_cstrcmp(kw, "pointer")) {
+        if (!(event->pointer)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(event->pointer, &jwlr_at_wlr_pointer));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "time-msec")) {
+        /* uint32_t -> uint64_t */
+        *out = janet_wrap_u64(event->time_msec);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "delta-x")) {
+        *out = janet_wrap_number(event->delta_x);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "delta-y")) {
+        *out = janet_wrap_number(event->delta_y);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "unaccel-dx")) {
+        *out = janet_wrap_number(event->unaccel_dx);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "unaccel-dy")) {
+        *out = janet_wrap_number(event->unaccel_dy);
+        return 1;
+    }
+
+    return 0;
+}
+
+
 static Janet cfun_wlr_scene_get_scene_output(int32_t argc, Janet *argv)
 {
     struct wlr_scene *scene;
@@ -1314,6 +1428,11 @@ static JanetReg cfuns[] = {
         "Creates a wlroots cursor object."
     },
     {
+        "wlr-cursor-move", cfun_wlr_cursor_move,
+        "(" MOD_NAME "/wlr-cursor-move wlr-cursor wlr-input-device delta-x delta-y)\n\n"
+        "Moves the cursor."
+    },
+    {
         "wlr-cursor-attach-output-layout", cfun_wlr_cursor_attach_output_layout,
         "(" MOD_NAME "/wlr-cursor-attach-output-layout wlr-cursor wlr-output-layout)\n\n"
         "Attaches a wlroots output layout object to a cursor object."
@@ -1428,6 +1547,11 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_output_mode);
     janet_register_abstract_type(&jwlr_at_wlr_output_cursor);
     janet_register_abstract_type(&jwlr_at_wlr_input_device);
+    janet_register_abstract_type(&jwlr_at_wlr_pointer);
+    janet_register_abstract_type(&jwlr_at_wlr_pointer_motion_event);
+    janet_register_abstract_type(&jwlr_at_wlr_pointer_motion_absolute_event);
+    janet_register_abstract_type(&jwlr_at_wlr_pointer_button_event);
+    janet_register_abstract_type(&jwlr_at_wlr_pointer_axis_event);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 }
