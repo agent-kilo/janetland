@@ -31,9 +31,6 @@
 
 JANET_THREAD_LOCAL JanetFunction *jwlr_log_callback_fn;
 
-#define JWLR_OFFSET_DEF(struct_type, member) \
-    {#member, (uint64_t)&(((struct_type *)NULL)->member)}
-
 static struct wl_signal **get_abstract_struct_signal_member(void *p,
                                                             const uint8_t *kw_name,
                                                             const jl_offset_def_t *offsets)
@@ -69,6 +66,7 @@ static const jl_key_def_t log_defs[] = {
     {"log-importance-last", WLR_LOG_IMPORTANCE_LAST},
     {NULL, 0},
 };
+
 
 void jwlr_log_callback(enum wlr_log_importance importance, const char *fmt, va_list args)
 {
@@ -619,29 +617,6 @@ static int method_wlr_xdg_toplevel_resize_event_get(void *p, Janet key, Janet *o
 }
 
 
-static const jl_offset_def_t wlr_xdg_surface_signal_offsets[] = {
-    JWLR_OFFSET_DEF(struct wlr_xdg_surface, events.destroy),
-    JWLR_OFFSET_DEF(struct wlr_xdg_surface, events.ping_timeout),
-    JWLR_OFFSET_DEF(struct wlr_xdg_surface, events.new_popup),
-    JWLR_OFFSET_DEF(struct wlr_xdg_surface, events.map),
-    JWLR_OFFSET_DEF(struct wlr_xdg_surface, events.unmap),
-    JWLR_OFFSET_DEF(struct wlr_xdg_surface, events.configure),
-    JWLR_OFFSET_DEF(struct wlr_xdg_surface, events.ack_configure),
-    {NULL, 0},
-};
-
-static const jl_offset_def_t wlr_xdg_surface_list_offsets[] = {
-    JWLR_OFFSET_DEF(struct wlr_xdg_surface, popups),
-    JWLR_OFFSET_DEF(struct wlr_xdg_surface, configure_list),
-};
-
-static const jl_key_def_t wlr_xdg_surface_role_defs[] = {
-    {"none", WLR_XDG_SURFACE_ROLE_NONE},
-    {"toplevel", WLR_XDG_SURFACE_ROLE_TOPLEVEL},
-    {"popup", WLR_XDG_SURFACE_ROLE_POPUP},
-    {NULL, 0},
-};
-
 static int method_wlr_xdg_surface_get(void *p, Janet key, Janet *out) {
     struct wlr_xdg_surface **surface_p = (struct wlr_xdg_surface **)p;
     struct wlr_xdg_surface *surface = *surface_p;
@@ -952,12 +927,6 @@ static Janet cfun_wlr_seat_create(int32_t argc, Janet *argv)
 }
 
 
-static const jl_key_def_t wlr_button_state_defs[] = {
-    {"released", WLR_BUTTON_RELEASED},
-    {"pressed", WLR_BUTTON_PRESSED},
-    {NULL, 0},
-};
-
 static Janet cfun_wlr_seat_pointer_notify_button(int32_t argc, Janet *argv)
 {
     struct wlr_seat *seat;
@@ -980,6 +949,30 @@ static Janet cfun_wlr_seat_pointer_notify_button(int32_t argc, Janet *argv)
        serial to int32_t. It should be fine as long as we don't do
        arithmetic on the returned serial numbers */
     return janet_wrap_integer(serial);
+}
+
+
+static Janet cfun_wlr_seat_pointer_notify_axis(int32_t argc, Janet *argv)
+{
+    struct wlr_seat *seat;
+    uint32_t time;
+    enum wlr_axis_orientation orientation;
+    double value;
+    int32_t value_discrete;
+    enum wlr_axis_source source;
+
+    janet_fixarity(argc, 6);
+
+    seat = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_seat);
+    /* uint64_t -> uint32_t conversion */
+    time = (uint32_t)janet_getuinteger64(argv, 1);
+    orientation = jl_get_key_def(argv, 2, wlr_axis_orientation_defs);
+    value = janet_getnumber(argv, 3);
+    value_discrete = janet_getinteger(argv, 4);
+    source = jl_get_key_def(argv, 5, wlr_axis_source_defs);
+
+    wlr_seat_pointer_notify_axis(seat, time, orientation, value, value_discrete, source);
+    return janet_wrap_nil();
 }
 
 
@@ -1424,20 +1417,6 @@ static int method_wlr_pointer_button_event_get(void *p, Janet key, Janet *out)
 }
 
 
-static const jl_key_def_t wlr_axis_source_defs[] = {
-    {"wheel", WLR_AXIS_SOURCE_WHEEL},
-    {"finger", WLR_AXIS_SOURCE_FINGER},
-    {"continuous", WLR_AXIS_SOURCE_CONTINUOUS},
-    {"wheel-tilt", WLR_AXIS_SOURCE_WHEEL_TILT},
-    {NULL, 0},
-};
-
-static const jl_key_def_t wlr_axis_orientation_defs[] = {
-    {"vertical", WLR_AXIS_ORIENTATION_VERTICAL},
-    {"horizontal", WLR_AXIS_ORIENTATION_HORIZONTAL},
-    {NULL, 0},
-};
-
 static int method_wlr_pointer_axis_event_get(void *p, Janet key, Janet *out)
 {
     struct wlr_pointer_axis_event **event_p = (struct wlr_pointer_axis_event **)p;
@@ -1650,6 +1629,11 @@ static JanetReg cfuns[] = {
         "wlr-seat-pointer-notify-button", cfun_wlr_seat_pointer_notify_button,
         "(" MOD_NAME "/wlr-seat-pointer-notify-button wl-seat time button state)\n\n"
         "Notifies the seat object that there's a button event."
+    },
+    {
+        "wlr-seat-pointer-notify-axis", cfun_wlr_seat_pointer_notify_axis,
+        "(" MOD_NAME "/wlr-seat-pointer-notify-axis wl-seat time orientation value value-discrete source)\n\n"
+        "Notifies the seat object that there's an axis event."
     },
     {
         "wlr-output-init-render", cfun_wlr_output_init_render,
