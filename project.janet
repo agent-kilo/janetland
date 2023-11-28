@@ -65,6 +65,11 @@
                 :header ["jl.h" "types.h" "wl_abs_types.h"]
                 :cflags [;common-cflags ;wlr-cflags])
 
+(declare-native :name (project-module "xkb")
+                :source ["xkb.c"]
+                :header ["jl.h" "types.h"]
+                :cflags [;common-cflags ;wlr-cflags])
+
 (declare-native :name (project-module "util")
                 :source ["util.c"]
                 :header ["jl.h"]

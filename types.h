@@ -17,6 +17,33 @@ static inline int32_t jl_get_key_def(const Janet *argv, int32_t n, const jl_key_
     janet_panicf("unknown key: %v", argv[n]);
 }
 
+static inline uint32_t jl_get_key_flags(const Janet *argv, int32_t n, const jl_key_def_t *def_table)
+{
+    uint32_t flags = 0;
+
+    switch (janet_type(argv[n])) {
+    case JANET_KEYWORD:
+        flags = (uint32_t)jl_get_key_def(argv, n, def_table);
+        break;
+    case JANET_TUPLE:
+    case JANET_ARRAY: {
+        JanetView flags_view = janet_getindexed(argv, n);
+        for (int32_t i = 0; i < flags_view.len; i++) {
+            if (!janet_checktype(flags_view.items[i], JANET_KEYWORD)) {
+                janet_panicf("expected keyword flags, got %v", flags_view.items[i]);
+            }
+            flags |= (uint32_t)jl_get_key_def(flags_view.items, i, def_table);
+        }
+        break;
+    }
+    default:
+        janet_panicf("bad slot #%d: expected keyword or sequence of keywords, got %v",
+                     n, argv[n]);
+    }
+
+    return flags;
+}
+
 typedef struct {
     const char *name;
     uint64_t offset;

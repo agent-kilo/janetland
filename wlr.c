@@ -910,23 +910,14 @@ static const jl_key_def_t wl_seat_capability_defs[] = {
 static Janet cfun_wlr_seat_set_capabilities(int32_t argc, Janet *argv)
 {
     struct wlr_seat *seat;
-    JanetView caps_view;
-
-    uint32_t caps = 0;
+    uint32_t caps;
 
     janet_fixarity(argc, 2);
-
     seat = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_seat);
-    caps_view = janet_getindexed(argv, 1);
-
-    for (int32_t i = 0; i < caps_view.len; i++) {
-        if (!janet_checktype(caps_view.items[i], JANET_KEYWORD)) {
-            janet_panicf("expected keyword for seat capabilities, got %v", caps_view.items[i]);
-        }
-        caps |= (uint32_t)jl_get_key_def(caps_view.items, i, wl_seat_capability_defs);
-    }
+    caps = jl_get_key_flags(argv, 1, wl_seat_capability_defs);
 
     wlr_seat_set_capabilities(seat, caps);
+
     return janet_wrap_nil();
 }
 

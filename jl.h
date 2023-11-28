@@ -6,6 +6,8 @@
 #define WL_MOD_FULL_NAME "janetland/wl"
 #define WLR_MOD_NAME "wlr"
 #define WLR_MOD_FULL_NAME "janetland/wlr"
+#define XKB_MOD_NAME "xkb"
+#define XKB_MOD_FULL_NAME "janetland/xkb"
 #define UTIL_MOD_NAME "util"
 #define UTIL_MOD_FULL_NAME "janetland/util"
 
