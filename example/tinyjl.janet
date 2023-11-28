@@ -35,6 +35,15 @@
   [nil nil nil nil])
 
 
+(defn server-new-keyboard [server device]
+  # TODO
+  )
+
+
+(defn server-new-pointer [server device]
+  (wlr-cursor-attach-input-device (server :cursor) device))
+
+
 (defn handle-wlr-output-frame [server wlr-output listener data]
   (wlr-log :debug "#### handle-wlr-output-frame ####")
   (def scene-output (wlr-scene-get-scene-output (server :scene) wlr-output))
@@ -87,8 +96,27 @@
 
 
 (defn handle-backend-new-input [server listener data]
-  (wlr-log :debug "#### handle-backend-new-input #### data = %p"
-           (get-abstract-listener-data data 'wlr/wlr-input-device)))
+  (def device (get-abstract-listener-data data 'wlr/wlr-input-device))
+
+  (wlr-log :debug "#### handle-backend-new-input #### data = %p" device)
+  (wlr-log :debug "#### (device :type) = %p" (device :type))
+
+  (case (device :type)
+    :keyboard (server-new-keyboard server device)
+    :pointer (server-new-pointer server device))
+
+  (def caps @[:pointer])
+  (when (not (empty? (server :keyboards)))
+    (array/push caps :keyboard))
+  (wlr-seat-set-capabilities (server :seat) caps))
+
+
+(defn handle-seat-request-set-cursor [server listener data]
+  )
+
+
+(defn handle-seat-request-set-selection [server listener data]
+  )
 
 
 (defn handle-xdg-surface-map [view listener data]
@@ -251,11 +279,11 @@
                                 (event :orientation)
                                 (event :delta)
                                 (event :delta-discrete)
-                                (event :source))
-  )
+                                (event :source)))
 
 
 (defn handle-cursor-frame [server listener data]
+  (wlr-log :debug "#### handle-cursor-frame ####")
   (wlr-seat-pointer-notify-frame (server :seat)))
 
 
@@ -326,12 +354,22 @@
                     (fn [listener data]
                       (handle-cursor-frame server listener data))))
 
+  (put server :keyboards @[])
   (put server :backend-new-input-listener
      (wl-signal-add ((server :backend) :events.new_input)
                     (fn [listener data]
                       (handle-backend-new-input server listener data))))
 
   (put server :seat (wlr-seat-create (server :display) "seat0"))
+
+  (put server :seat-request-set-cursor-listener
+     (wl-signal-add ((server :seat) :events.request_set_cursor)
+                    (fn [listener data]
+                      (handle-seat-request-set-cursor server listener data))))
+  (put server :seat-request-set-selection-listener
+     (wl-signal-add ((server :seat) :events.request_set_selection)
+                    (fn [listener data]
+                      (handle-seat-request-set-selection server listener data))))
 
   (put server :socket (wl-display-add-socket-auto (server :display)))
 
