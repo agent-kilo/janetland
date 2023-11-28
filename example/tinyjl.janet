@@ -36,8 +36,34 @@
 
 
 (defn server-new-keyboard [server device]
-  # TODO
-  )
+  (def wlr-keyboard (wlr-keyboard-from-input-device device))
+  (def keyboard @{})
+  (put keyboard :server server)
+  (put keyboard :wlr-keyboard wlr-keyboard)
+
+  (def context (xkb-context-new :no-flags))
+  (def keymap (xkb-keymap-new-from-names context nil :no-flags))
+
+  (wlr-keyboard-set-keymap wlr-keyboard keymap)
+  (xkb-keymap-unref keymap)
+  (xkb-context-unref context)
+  (wlr-keyboard-set-repeat-info wlr-keyboard 25 600);
+
+  (put keyboard :wlr-keyboard-modifiers-listener
+     (wl-signal-add (wlr-keyboard :events.modifiers)
+                    (fn [listener data]
+                      (handle-wlr-keyboard-modifiers keyboard listener data))))
+  (put keyboard :wlr-keyboard-key-listener
+     (wl-signal-add (wlr-keyboard :events.key)
+                    (fn [listener data]
+                      (handle-wlr-keyboard-key keyboard listener data))))
+  (put keyboard :wlr-keyboard-key-destroy
+     (wl-signal-add (wlr-keyboard :events.destroy)
+                    (fn [listener data]
+                      (handle-wlr-keyboard-destroy keyboard listener data))))
+
+  (wlr-seat-set-keyboard (server :seat) wlr-keyboard)
+  (array/push (server :keyboards) keyboard))
 
 
 (defn server-new-pointer [server device]
