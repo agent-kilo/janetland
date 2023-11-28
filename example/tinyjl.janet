@@ -25,6 +25,16 @@
   )
 
 
+(defn reset-cursor-mode [server]
+  (put server :cursor-mode :passthrough)
+  (put server :grabbed-view nil))
+
+
+(defn desktop-view-at [server x y]
+  # TODO
+  [nil nil nil nil])
+
+
 (defn handle-wlr-output-frame [server wlr-output listener data]
   (wlr-log :debug "#### handle-wlr-output-frame ####")
   (def scene-output (wlr-scene-get-scene-output (server :scene) wlr-output))
@@ -220,8 +230,10 @@
                                   (event :time-msec)
                                   (event :button)
                                   (event :state))
-  # TODO
-  )
+  (if (= (event :state) :released)
+    (reset-cursor-mode server)
+    (let [[view surface _sx _sy] (desktop-view-at server ((server :cursor) :x) ((server :cursor) :y))]
+      (focus-view view surface))))
 
 
 (defn handle-cursor-axis [server listener data]
