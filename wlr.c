@@ -1257,6 +1257,58 @@ static void method_wlr_scene_node_put(void *p, Janet key, Janet value) {
     }
 }
 
+static const jl_offset_def_t wlr_input_device_signal_offsets[] = {
+    JWLR_OFFSET_DEF(struct wlr_input_device, events.destroy),
+    {NULL, 0},
+};
+
+static int method_wlr_input_device_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_input_device **device_p = (struct wlr_input_device **)p;
+    struct wlr_input_device *device = *device_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    struct wl_signal **signal_p = get_abstract_struct_signal_member(device, kw, wlr_input_device_signal_offsets);
+    if (signal_p) {
+        *out = janet_wrap_abstract(signal_p);
+        return 1;
+    }
+
+    if (!janet_cstrcmp(kw, "type")) {
+        *out = janet_ckeywordv(wlr_input_device_defs[device->type].name);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "vendor")) {
+        /* XXX: unsigned int -> int32_t conversion */
+        *out = janet_wrap_integer(device->vendor);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "product")) {
+        /* XXX: unsigned int -> int32_t conversion */
+        *out = janet_wrap_integer(device->product);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "name")) {
+        if (!(device->name)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
+        *out = janet_cstringv(device->name);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "data")) {
+        *out = janet_wrap_pointer(device->data);
+        return 1;
+    }
+
+    return 0;
+}
+
 
 static const jl_offset_def_t wlr_pointer_signal_offsets[] = {
     JWLR_OFFSET_DEF(struct wlr_pointer, events.motion),

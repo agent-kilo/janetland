@@ -262,11 +262,23 @@ static const JanetAbstractType jwlr_at_wlr_scene_node = {
 };
 
 
+static const jl_key_def_t wlr_input_device_defs[] = {
+    {"keyboard", WLR_INPUT_DEVICE_KEYBOARD},
+    {"pointer", WLR_INPUT_DEVICE_POINTER},
+    {"touch", WLR_INPUT_DEVICE_TOUCH},
+    {"tablet-tool", WLR_INPUT_DEVICE_TABLET_TOOL},
+    {"tablet-pad", WLR_INPUT_DEVICE_TABLET_PAD},
+    {"switch", WLR_INPUT_DEVICE_SWITCH},
+    {NULL, 0},
+};
+
+static int method_wlr_input_device_get(void *p, Janet key, Janet *out);
 static const JanetAbstractType jwlr_at_wlr_input_device = {
     .name = MOD_NAME "/wlr-input-device",
     .gc = NULL,
     .gcmark = NULL,
-    JANET_ATEND_GCMARK
+    .get = method_wlr_input_device_get,
+    JANET_ATEND_GET
 };
 
 
