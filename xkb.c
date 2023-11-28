@@ -43,6 +43,19 @@ static Janet cfun_xkb_context_new(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_xkb_context_unref(int32_t argc, Janet *argv)
+{
+    struct xkb_context *context;
+
+    janet_fixarity(argc, 1);
+
+    context = jl_get_abs_obj_pointer(argv, 0, &jxkb_at_xkb_context);
+    xkb_context_unref(context);
+
+    return janet_wrap_nil();
+}
+
+
 static int method_xkb_rule_names_gcmark(void *p, size_t len)
 {
     (void)len;
@@ -159,6 +172,19 @@ static Janet cfun_xkb_keymap_new_from_names(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_xkb_keymap_unref(int32_t argc, Janet *argv)
+{
+    struct xkb_keymap *keymap;
+
+    janet_fixarity(argc, 1);
+
+    keymap = jl_get_abs_obj_pointer(argv, 0, &jxkb_at_xkb_keymap);
+    xkb_keymap_unref(keymap);
+
+    return janet_wrap_nil();
+}
+
+
 static JanetReg cfuns[] = {
     {
         "xkb-context-new", cfun_xkb_context_new,
@@ -166,9 +192,19 @@ static JanetReg cfuns[] = {
         "Creates a new xkb context."
     },
     {
+        "xkb-context-unref", cfun_xkb_context_unref,
+        "(" MOD_NAME "/xkb-context-unref xkb-context)\n\n"
+        "Decreases the reference count and maybe free an xkb context."
+    },
+    {
         "xkb-keymap-new-from-names", cfun_xkb_keymap_new_from_names,
         "(" MOD_NAME "/xkb-keymap-new-from-names xkb-context xkb-rule-names xkb-keymap-compile-flags)\n\n"
         "Creates a new keymap from names."
+    },
+    {
+        "xkb-keymap-unref", cfun_xkb_keymap_unref,
+        "(" MOD_NAME "/xkb-keymap-unref xkb-keymap)\n\n"
+        "Decreases the reference count and maybe free an xkb keymap."
     },
     {
         "xkb-rule-names", cfun_xkb_rule_names,
