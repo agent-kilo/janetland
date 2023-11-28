@@ -976,6 +976,18 @@ static Janet cfun_wlr_seat_pointer_notify_axis(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_seat_pointer_notify_frame(int32_t argc, Janet *argv)
+{
+    struct wlr_seat *seat;
+
+    janet_fixarity(argc, 1);
+
+    seat = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_seat);
+    wlr_seat_pointer_notify_frame(seat);
+    return janet_wrap_nil();
+}
+
+
 static const jl_offset_def_t wlr_output_signal_offsets[] = {
     JWLR_OFFSET_DEF(struct wlr_output, events.frame),
     JWLR_OFFSET_DEF(struct wlr_output, events.damage),
@@ -1634,6 +1646,11 @@ static JanetReg cfuns[] = {
         "wlr-seat-pointer-notify-axis", cfun_wlr_seat_pointer_notify_axis,
         "(" MOD_NAME "/wlr-seat-pointer-notify-axis wl-seat time orientation value value-discrete source)\n\n"
         "Notifies the seat object that there's an axis event."
+    },
+    {
+        "wlr-seat-pointer-notify-frame", cfun_wlr_seat_pointer_notify_frame,
+        "(" MOD_NAME "/wlr-seat-pointer-notify-frame wl-seat)\n\n"
+        "Notifies the seat object that there's an frame event."
     },
     {
         "wlr-output-init-render", cfun_wlr_output_init_render,
