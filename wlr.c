@@ -169,13 +169,6 @@ static Janet cfun_wlr_log(int32_t argc, Janet *argv)
 }
 
 
-static const jl_offset_def_t wlr_backend_signal_offsets[] = {
-    JWLR_OFFSET_DEF(struct wlr_backend, events.destroy),
-    JWLR_OFFSET_DEF(struct wlr_backend, events.new_input),
-    JWLR_OFFSET_DEF(struct wlr_backend, events.new_output),
-    {NULL, 0},
-};
-
 static int method_wlr_backend_get(void *p, Janet key, Janet *out) {
     struct wlr_backend **backend_p = (struct wlr_backend **)p;
     struct wlr_backend *backend = *backend_p;
@@ -344,18 +337,6 @@ static Janet cfun_wlr_data_device_manager_create(int32_t argc, Janet *argv)
 }
 
 
-static const jl_offset_def_t wlr_output_layout_signal_offsets[] = {
-    JWLR_OFFSET_DEF(struct wlr_output_layout, events.add),
-    JWLR_OFFSET_DEF(struct wlr_output_layout, events.change),
-    JWLR_OFFSET_DEF(struct wlr_output_layout, events.destroy),
-    {NULL, 0},
-};
-
-static const jl_offset_def_t wlr_output_layout_list_offsets[] = {
-    JWLR_OFFSET_DEF(struct wlr_output_layout, outputs),
-    {NULL, 0},
-};
-
 static int method_wlr_output_layout_get(void *p, Janet key, Janet *out) {
     struct wlr_output_layout **layout_p = (struct wlr_output_layout **)p;
     struct wlr_output_layout *layout = *layout_p;
@@ -396,10 +377,6 @@ static Janet cfun_wlr_output_layout_create(int32_t argc, Janet *argv)
     return janet_wrap_abstract(jl_pointer_to_abs_obj(layout, &jwlr_at_wlr_output_layout));
 }
 
-
-static const jl_offset_def_t wlr_scene_list_offsets[] = {
-    JWLR_OFFSET_DEF(struct wlr_scene, outputs),
-};
 
 static int method_wlr_scene_get(void *p, Janet key, Janet *out)
 {
@@ -457,12 +434,6 @@ static Janet cfun_wlr_scene_attach_output_layout(int32_t argc, Janet *argv)
 }
 
 
-static const jl_offset_def_t wlr_xdg_shell_signal_offsets[] = {
-    JWLR_OFFSET_DEF(struct wlr_xdg_shell, events.new_surface),
-    JWLR_OFFSET_DEF(struct wlr_xdg_shell, events.destroy),
-    {NULL, 0},
-};
-
 static int method_wlr_xdg_shell_get(void *p, Janet key, Janet *out) {
     struct wlr_xdg_shell **xdg_shell_p = (struct wlr_xdg_shell **)p;
     struct wlr_xdg_shell *xdg_shell = *xdg_shell_p;
@@ -503,11 +474,6 @@ static Janet cfun_wlr_xdg_shell_create(int32_t argc, Janet *argv)
 }
 
 
-static const jl_offset_def_t wlr_xdg_popup_signal_offsets[] = {
-    JWLR_OFFSET_DEF(struct wlr_xdg_popup, events.reposition),
-    {NULL, 0},
-};
-
 static int method_wlr_xdg_popup_get(void *p, Janet key, Janet *out) {
     struct wlr_xdg_popup **popup_p = (struct wlr_xdg_popup **)p;
     struct wlr_xdg_popup *popup = *popup_p;
@@ -536,19 +502,6 @@ static int method_wlr_xdg_popup_get(void *p, Janet key, Janet *out) {
     return 0;
 }
 
-
-static const jl_offset_def_t wlr_xdg_toplevel_signal_offsets[] = {
-    JWLR_OFFSET_DEF(struct wlr_xdg_toplevel, events.request_maximize),
-    JWLR_OFFSET_DEF(struct wlr_xdg_toplevel, events.request_fullscreen),
-    JWLR_OFFSET_DEF(struct wlr_xdg_toplevel, events.request_minimize),
-    JWLR_OFFSET_DEF(struct wlr_xdg_toplevel, events.request_move),
-    JWLR_OFFSET_DEF(struct wlr_xdg_toplevel, events.request_resize),
-    JWLR_OFFSET_DEF(struct wlr_xdg_toplevel, events.request_show_window_menu),
-    JWLR_OFFSET_DEF(struct wlr_xdg_toplevel, events.set_parent),
-    JWLR_OFFSET_DEF(struct wlr_xdg_toplevel, events.set_title),
-    JWLR_OFFSET_DEF(struct wlr_xdg_toplevel, events.set_app_id),
-    {NULL, 0},
-};
 
 static int method_wlr_xdg_toplevel_get(void *p, Janet key, Janet *out) {
     struct wlr_xdg_toplevel **toplevel_p = (struct wlr_xdg_toplevel **)p;
@@ -692,38 +645,6 @@ static void method_wlr_xdg_surface_put(void *p, Janet key, Janet value) {
 }
 
 
-static const jl_offset_def_t wlr_cursor_signal_offsets[] = {
-    JWLR_OFFSET_DEF(struct wlr_cursor, events.motion),
-    JWLR_OFFSET_DEF(struct wlr_cursor, events.motion_absolute),
-    JWLR_OFFSET_DEF(struct wlr_cursor, events.button),
-    JWLR_OFFSET_DEF(struct wlr_cursor, events.axis),
-    JWLR_OFFSET_DEF(struct wlr_cursor, events.frame),
-
-    JWLR_OFFSET_DEF(struct wlr_cursor, events.swipe_begin),
-    JWLR_OFFSET_DEF(struct wlr_cursor, events.swipe_update),
-    JWLR_OFFSET_DEF(struct wlr_cursor, events.swipe_end),
-
-    JWLR_OFFSET_DEF(struct wlr_cursor, events.pinch_begin),
-    JWLR_OFFSET_DEF(struct wlr_cursor, events.pinch_update),
-    JWLR_OFFSET_DEF(struct wlr_cursor, events.pinch_end),
-
-    JWLR_OFFSET_DEF(struct wlr_cursor, events.hold_begin),
-    JWLR_OFFSET_DEF(struct wlr_cursor, events.hold_end),
-
-    JWLR_OFFSET_DEF(struct wlr_cursor, events.touch_up),
-    JWLR_OFFSET_DEF(struct wlr_cursor, events.touch_down),
-    JWLR_OFFSET_DEF(struct wlr_cursor, events.touch_motion),
-    JWLR_OFFSET_DEF(struct wlr_cursor, events.touch_cancel),
-    JWLR_OFFSET_DEF(struct wlr_cursor, events.touch_frame),
-
-    JWLR_OFFSET_DEF(struct wlr_cursor, events.tablet_tool_axis),
-    JWLR_OFFSET_DEF(struct wlr_cursor, events.tablet_tool_proximity),
-    JWLR_OFFSET_DEF(struct wlr_cursor, events.tablet_tool_tip),
-    JWLR_OFFSET_DEF(struct wlr_cursor, events.tablet_tool_button),
-
-    {NULL, 0},
-};
-
 static int method_wlr_cursor_get(void *p, Janet key, Janet *out) {
     struct wlr_cursor **cursor_p = (struct wlr_cursor **)p;
     struct wlr_cursor *cursor = *cursor_p;
@@ -863,32 +784,6 @@ static Janet cfun_wlr_xcursor_manager_load(int32_t argc, Janet *argv)
 }
 
 
-static const jl_offset_def_t wlr_seat_signal_offsets[] = {
-    JWLR_OFFSET_DEF(struct wlr_seat, events.pointer_grab_begin),
-    JWLR_OFFSET_DEF(struct wlr_seat, events.pointer_grab_end),
-
-    JWLR_OFFSET_DEF(struct wlr_seat, events.keyboard_grab_begin),
-    JWLR_OFFSET_DEF(struct wlr_seat, events.keyboard_grab_end),
-
-    JWLR_OFFSET_DEF(struct wlr_seat, events.touch_grab_begin),
-    JWLR_OFFSET_DEF(struct wlr_seat, events.touch_grab_end),
-
-    JWLR_OFFSET_DEF(struct wlr_seat, events.request_set_cursor),
-
-    JWLR_OFFSET_DEF(struct wlr_seat, events.request_set_selection),
-    JWLR_OFFSET_DEF(struct wlr_seat, events.set_selection),
-
-    JWLR_OFFSET_DEF(struct wlr_seat, events.request_set_primary_selection),
-    JWLR_OFFSET_DEF(struct wlr_seat, events.set_primary_selection),
-
-    JWLR_OFFSET_DEF(struct wlr_seat, events.request_start_drag),
-    JWLR_OFFSET_DEF(struct wlr_seat, events.start_drag),
-
-    JWLR_OFFSET_DEF(struct wlr_seat, events.destroy),
-
-    {NULL, 0},
-};
-
 static int method_wlr_seat_get(void *p, Janet key, Janet *out) {
     struct wlr_seat **seat_p = (struct wlr_seat **)p;
     struct wlr_seat *seat = *seat_p;
@@ -987,28 +882,6 @@ static Janet cfun_wlr_seat_pointer_notify_frame(int32_t argc, Janet *argv)
     return janet_wrap_nil();
 }
 
-
-static const jl_offset_def_t wlr_output_signal_offsets[] = {
-    JWLR_OFFSET_DEF(struct wlr_output, events.frame),
-    JWLR_OFFSET_DEF(struct wlr_output, events.damage),
-    JWLR_OFFSET_DEF(struct wlr_output, events.needs_frame),
-    JWLR_OFFSET_DEF(struct wlr_output, events.precommit),
-    JWLR_OFFSET_DEF(struct wlr_output, events.commit),
-    JWLR_OFFSET_DEF(struct wlr_output, events.present),
-    JWLR_OFFSET_DEF(struct wlr_output, events.bind),
-    JWLR_OFFSET_DEF(struct wlr_output, events.enable),
-    JWLR_OFFSET_DEF(struct wlr_output, events.mode),
-    JWLR_OFFSET_DEF(struct wlr_output, events.description),
-    JWLR_OFFSET_DEF(struct wlr_output, events.destroy),
-    {NULL, 0},
-};
-
-static const jl_offset_def_t wlr_output_list_offsets[] = {
-    JWLR_OFFSET_DEF(struct wlr_output, resources),
-    JWLR_OFFSET_DEF(struct wlr_output, modes),
-    JWLR_OFFSET_DEF(struct wlr_output, cursors),
-    {NULL, 0},
-};
 
 static int method_wlr_output_get(void *p, Janet key, Janet *out) {
     struct wlr_output **output_p = (struct wlr_output **)p;
@@ -1180,11 +1053,6 @@ static Janet cfun_wlr_scene_xdg_surface_create(int32_t argc, Janet *argv)
 }
 
 
-static const jl_offset_def_t wlr_scene_tree_list_offsets[] = {
-    JWLR_OFFSET_DEF(struct wlr_scene_tree, children),
-    {NULL, 0},
-};
-
 static int method_wlr_scene_tree_get(void *p, Janet key, Janet *out)
 {
     struct wlr_scene_tree **tree_p = (struct wlr_scene_tree **)p;
@@ -1210,11 +1078,6 @@ static int method_wlr_scene_tree_get(void *p, Janet key, Janet *out)
     return 0;
 }
 
-
-static const jl_offset_def_t wlr_scene_node_signal_offsets[] = {
-    JWLR_OFFSET_DEF(struct wlr_scene_node, events.destroy),
-    {NULL, 0},
-};
 
 static int method_wlr_scene_node_get(void *p, Janet key, Janet *out)
 {
@@ -1256,11 +1119,6 @@ static void method_wlr_scene_node_put(void *p, Janet key, Janet value) {
         return;
     }
 }
-
-static const jl_offset_def_t wlr_input_device_signal_offsets[] = {
-    JWLR_OFFSET_DEF(struct wlr_input_device, events.destroy),
-    {NULL, 0},
-};
 
 static int method_wlr_input_device_get(void *p, Janet key, Janet *out)
 {
@@ -1309,23 +1167,6 @@ static int method_wlr_input_device_get(void *p, Janet key, Janet *out)
     return 0;
 }
 
-
-static const jl_offset_def_t wlr_pointer_signal_offsets[] = {
-    JWLR_OFFSET_DEF(struct wlr_pointer, events.motion),
-    JWLR_OFFSET_DEF(struct wlr_pointer, events.motion_absolute),
-    JWLR_OFFSET_DEF(struct wlr_pointer, events.button),
-    JWLR_OFFSET_DEF(struct wlr_pointer, events.axis),
-    JWLR_OFFSET_DEF(struct wlr_pointer, events.frame),
-    JWLR_OFFSET_DEF(struct wlr_pointer, events.swipe_begin),
-    JWLR_OFFSET_DEF(struct wlr_pointer, events.swipe_update),
-    JWLR_OFFSET_DEF(struct wlr_pointer, events.swipe_end),
-    JWLR_OFFSET_DEF(struct wlr_pointer, events.pinch_begin),
-    JWLR_OFFSET_DEF(struct wlr_pointer, events.pinch_update),
-    JWLR_OFFSET_DEF(struct wlr_pointer, events.pinch_end),
-    JWLR_OFFSET_DEF(struct wlr_pointer, events.hold_begin),
-    JWLR_OFFSET_DEF(struct wlr_pointer, events.hold_end),
-    {NULL, 0},
-};
 
 static int method_wlr_pointer_get(void *p, Janet key, Janet *out)
 {
