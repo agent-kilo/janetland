@@ -56,11 +56,38 @@ static const JanetAbstractType jxkb_at_xkb_keymap = {
 };
 
 
+static Janet cfun_xkb_keymap_new_from_names(int32_t argc, Janet *argv)
+{
+    struct xkb_context *context;
+    const struct xkb_rule_names *names;
+    enum xkb_keymap_compile_flags flags;
+
+    struct xkb_keymap *keymap;
+
+    janet_fixarity(argc, 3);
+
+    context = jl_get_abs_obj_pointer(argv, 0, &jxkb_at_xkb_context);
+    names = NULL; /* TODO */
+    flags = jl_get_key_flags(argv, 2, xkb_keymap_compile_flags_defs);
+
+    keymap = xkb_keymap_new_from_names(context, names, flags);
+    if (!keymap) {
+        janet_panic("failed to create xkb keymap");
+    }
+    return janet_wrap_abstract(jl_pointer_to_abs_obj(keymap, &jxkb_at_xkb_keymap));
+}
+
+
 static JanetReg cfuns[] = {
     {
         "xkb-context-new", cfun_xkb_context_new,
         "(" MOD_NAME "/xkb-context-new flags)\n\n"
         "Creates a new xkb context."
+    },
+    {
+        "xkb-keymap-new-from-names", cfun_xkb_keymap_new_from_names,
+        "(" MOD_NAME "/xkb-keymap-new-from-names xkb-context xkb-rule-names xkb-keymap-compile-flags)\n\n"
+        "Creates a new keymap from names."
     },
     {NULL, NULL, NULL},
 };
