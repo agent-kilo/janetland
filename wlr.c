@@ -883,6 +883,37 @@ static Janet cfun_wlr_seat_pointer_notify_frame(int32_t argc, Janet *argv)
 }
 
 
+static const jl_key_def_t wl_seat_capability_defs[] = {
+    {"pointer", WL_SEAT_CAPABILITY_POINTER},
+    {"keyboard", WL_SEAT_CAPABILITY_KEYBOARD},
+    {"touch", WL_SEAT_CAPABILITY_TOUCH},
+    {NULL, 0},
+};
+
+static Janet cfun_wlr_seat_set_capabilities(int32_t argc, Janet *argv)
+{
+    struct wlr_seat *seat;
+    JanetView caps_view;
+
+    uint32_t caps = 0;
+
+    janet_fixarity(argc, 2);
+
+    seat = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_seat);
+    caps_view = janet_getindexed(argv, 1);
+
+    for (int32_t i = 0; i < caps_view.len; i++) {
+        if (!janet_checktype(caps_view.items[i], JANET_KEYWORD)) {
+            janet_panicf("expected keyword for seat capabilities, got %v", caps_view.items[i]);
+        }
+        caps |= (uint32_t)jl_get_key_def(caps_view.items, i, wl_seat_capability_defs);
+    }
+
+    wlr_seat_set_capabilities(seat, caps);
+    return janet_wrap_nil();
+}
+
+
 static int method_wlr_output_get(void *p, Janet key, Janet *out) {
     struct wlr_output **output_p = (struct wlr_output **)p;
     struct wlr_output *output = *output_p;
@@ -1544,6 +1575,11 @@ static JanetReg cfuns[] = {
         "wlr-seat-pointer-notify-frame", cfun_wlr_seat_pointer_notify_frame,
         "(" MOD_NAME "/wlr-seat-pointer-notify-frame wl-seat)\n\n"
         "Notifies the seat object that there's an frame event."
+    },
+    {
+        "wlr-seat-set-capabilities", cfun_wlr_seat_set_capabilities,
+        "(" MOD_NAME "/wlr-seat-set-capabilities capabilities)\n\n"
+        "Sets the capabilities of a seat."
     },
     {
         "wlr-output-init-render", cfun_wlr_output_init_render,
