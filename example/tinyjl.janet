@@ -237,6 +237,21 @@
 
 
 (defn handle-cursor-axis [server listener data]
+  (def event (get-abstract-listener-data data 'wlr/wlr-pointer-axis-event))
+
+  (wlr-log :debug "#### handle-cursor-axis #### data = %p" event)
+  (wlr-log :debug "#### (event :time-msec) = %p" (event :time-msec))
+  (wlr-log :debug "#### (event :source) = %p" (event :source))
+  (wlr-log :debug "#### (event :orientation) = %p" (event :orientation))
+  (wlr-log :debug "#### (event :delta) = %p" (event :delta))
+  (wlr-log :debug "#### (event :delta-discrete) = %p" (event :delta-discrete))
+
+  (wlr-seat-pointer-notify-axis (server :seat)
+                                (event :time-msec)
+                                (event :orientation)
+                                (event :delta)
+                                (event :delta-discrete)
+                                (event :source))
   )
 
 
