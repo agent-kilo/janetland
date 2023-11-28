@@ -757,13 +757,27 @@ static int method_wlr_cursor_get(void *p, Janet key, Janet *out) {
         janet_panicf("expected keyword, got %v", key);
     }
 
-    struct wl_signal **signal_p = get_abstract_struct_signal_member(cursor,
-                                                                    janet_unwrap_keyword(key),
-                                                                    wlr_cursor_signal_offsets);
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    struct wl_signal **signal_p = get_abstract_struct_signal_member(cursor, kw, wlr_cursor_signal_offsets);
     if (signal_p) {
         *out = janet_wrap_abstract(signal_p);
         return 1;
     }
+
+    if (!janet_cstrcmp(kw, "x")) {
+        *out = janet_wrap_number(cursor->x);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "y")) {
+        *out = janet_wrap_number(cursor->y);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "data")) {
+        *out = janet_wrap_pointer(cursor->data);
+        return 1;
+    }
+
     return 0;
 }
 
