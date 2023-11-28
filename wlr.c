@@ -98,7 +98,9 @@ void jwlr_log_callback(enum wlr_log_importance importance, const char *fmt, va_l
     };
     Janet ret = janet_wrap_nil();
     JanetFiber *fiber = NULL;
+    int locked = janet_gclock();
     int sig = janet_pcall(jwlr_log_callback_fn, 2, argv, &ret, &fiber);
+    janet_gcunlock(locked);
     if (JANET_SIGNAL_OK != sig) {
         janet_stacktrace(fiber, ret);
     }

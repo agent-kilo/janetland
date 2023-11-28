@@ -122,7 +122,11 @@ void jwl_listener_notify_callback(struct wl_listener *wl_listener, void *data)
     };
     Janet ret = janet_wrap_nil();
     JanetFiber *fiber = NULL;
+    /* XXX: janet_pcall() without janet_gclock() here causes memory violation,
+       don't know why */
+    int locked = janet_gclock();
     int sig = janet_pcall(notify_fn, 2, argv, &ret, &fiber);
+    janet_gcunlock(locked);
     if (JANET_SIGNAL_OK != sig) {
         janet_stacktrace(fiber, ret);
     }
