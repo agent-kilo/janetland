@@ -745,6 +745,21 @@ static Janet cfun_wlr_cursor_attach_output_layout(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_cursor_attach_input_device(int32_t argc, Janet *argv)
+{
+    struct wlr_cursor *cursor;
+    struct wlr_input_device *device;
+
+    janet_fixarity(argc, 2);
+
+    cursor = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_cursor);
+    device = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_input_device);
+    wlr_cursor_attach_input_device(cursor, device);
+
+    return janet_wrap_nil();
+}
+
+
 static Janet cfun_wlr_xcursor_manager_create(int32_t argc, Janet *argv)
 {
     const char *name;
@@ -1545,6 +1560,11 @@ static JanetReg cfuns[] = {
         "wlr-cursor-attach-output-layout", cfun_wlr_cursor_attach_output_layout,
         "(" MOD_NAME "/wlr-cursor-attach-output-layout wlr-cursor wlr-output-layout)\n\n"
         "Attaches a wlroots output layout object to a cursor object."
+    },
+    {
+        "wlr-cursor-attach-input-device", cfun_wlr_cursor_attach_input_device,
+        "(" MOD_NAME "/wlr-cursor-attach-input-device wlr-cursor wlr-input-device)\n\n"
+        "Attaches a wlroots input device object to a cursor object."
     },
     {
         "wlr-xcursor-manager-create", cfun_wlr_xcursor_manager_create,
