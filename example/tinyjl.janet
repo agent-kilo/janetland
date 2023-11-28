@@ -256,7 +256,7 @@
 
 
 (defn handle-cursor-frame [server listener data]
-  )
+  (wlr-seat-pointer-notify-frame (server :seat)))
 
 
 (defn main [&]
