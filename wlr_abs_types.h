@@ -511,4 +511,32 @@ static const JanetAbstractType jwlr_at_wlr_pointer_axis_event = {
 };
 
 
+static int method_wlr_keyboard_modifiers_get(void *p, Janet key, Janet *out);
+static const JanetAbstractType jwlr_at_wlr_keyboard_modifiers = {
+    .name = MOD_NAME "/wlr-keyboard-modifiers",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_keyboard_modifiers_get,
+    JANET_ATEND_GET
+};
+
+
+static const jl_offset_def_t wlr_keyboard_signal_offsets[] = {
+    JWLR_OFFSET_DEF(struct wlr_keyboard, events.key),
+    JWLR_OFFSET_DEF(struct wlr_keyboard, events.modifiers),
+    JWLR_OFFSET_DEF(struct wlr_keyboard, events.keymap),
+    JWLR_OFFSET_DEF(struct wlr_keyboard, events.repeat_info),
+    {NULL, 0},
+};
+
+static int method_wlr_keyboard_get(void *p, Janet key, Janet *out);
+static const JanetAbstractType jwlr_at_wlr_keyboard = {
+    .name = MOD_NAME "/wlr-keyboard",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_keyboard_get,
+    JANET_ATEND_GET
+};
+
+
 #endif

@@ -19,6 +19,8 @@
 #include <wlr/types/wlr_seat.h>
 #include <wlr/types/wlr_output.h>
 
+#include <xkbcommon/xkbcommon.h>
+
 #include "jl.h"
 #include "types.h"
 #include "wlr_abs_types.h"
@@ -801,6 +803,53 @@ static Janet cfun_wlr_xcursor_manager_load(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_keyboard_from_input_device(int32_t argc, Janet *argv)
+{
+    struct wlr_input_device *device;
+
+    struct wlr_keyboard *keyboard;
+
+    janet_fixarity(argc, 1);
+
+    device = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_input_device);
+    keyboard = wlr_keyboard_from_input_device(device);
+    if (!keyboard) {
+        janet_panic("failed to get keyboard object from input device");
+    }
+    return janet_wrap_abstract(jl_pointer_to_abs_obj(keyboard, &jwlr_at_wlr_keyboard));
+}
+
+
+static Janet cfun_wlr_keyboard_set_keymap(int32_t argc, Janet *argv)
+{
+    struct wlr_keyboard *keyboard;
+    struct xkb_keymap *keymap;
+
+    janet_fixarity(argc, 2);
+
+    keyboard = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_keyboard);
+    keymap = jl_get_abs_obj_pointer_by_name(argv, 1, XKB_MOD_NAME "/xkb-keymap");
+
+    return janet_wrap_boolean(wlr_keyboard_set_keymap(keyboard, keymap));
+}
+
+
+static Janet cfun_wlr_keyboard_set_repeat_info(int32_t argc, Janet *argv)
+{
+    struct wlr_keyboard *keyboard;
+    int32_t rate, delay;
+
+    janet_fixarity(argc, 3);
+
+    keyboard = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_keyboard);
+    rate = janet_getinteger(argv, 1);
+    delay = janet_getinteger(argv, 2);
+
+    wlr_keyboard_set_repeat_info(keyboard, rate, delay);
+    return janet_wrap_nil();
+}
+
+
 static int method_wlr_seat_get(void *p, Janet key, Janet *out) {
     struct wlr_seat **seat_p = (struct wlr_seat **)p;
     struct wlr_seat *seat = *seat_p;
@@ -836,6 +885,36 @@ static Janet cfun_wlr_seat_create(int32_t argc, Janet *argv)
         janet_panic("failed to create wlroots seat object");
     }
     return janet_wrap_abstract(jl_pointer_to_abs_obj(seat, &jwlr_at_wlr_seat));
+}
+
+
+static Janet cfun_wlr_seat_set_keyboard(int32_t argc, Janet *argv)
+{
+    struct wlr_seat *seat;
+    struct wlr_keyboard *keyboard;
+
+    janet_fixarity(argc, 2);
+
+    seat = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_seat);
+    keyboard = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_keyboard);
+
+    wlr_seat_set_keyboard(seat, keyboard);
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wlr_seat_keyboard_notify_modifiers(int32_t argc, Janet *argv)
+{
+    struct wlr_seat *seat;
+    struct wlr_keyboard_modifiers *modifiers;
+
+    janet_fixarity(argc, 2);
+
+    seat = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_seat);
+    modifiers = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_keyboard_modifiers);
+
+    wlr_seat_keyboard_notify_modifiers(seat, modifiers);
+    return janet_wrap_nil();
 }
 
 
@@ -1241,6 +1320,81 @@ static int method_wlr_pointer_get(void *p, Janet key, Janet *out)
 }
 
 
+static int method_wlr_keyboard_modifiers_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_keyboard_modifiers **modifiers_p = (struct wlr_keyboard_modifiers **)p;
+    struct wlr_keyboard_modifiers *modifiers = *modifiers_p;
+    
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+    xkb_mod_mask_t *member_p;
+
+    if (!janet_cstrcmp(kw, "depressed")) {
+        member_p = &modifiers->depressed;
+    } else if (!janet_cstrcmp(kw, "latched")) {
+        member_p = &modifiers->latched;
+    } else if (!janet_cstrcmp(kw, "locked")) {
+        member_p = &modifiers->locked;
+    } else if (!janet_cstrcmp(kw, "group")) {
+        member_p = &modifiers->group;
+    } else {
+        return 0;
+    }
+
+    /* uint32_t -> uint64_t */
+    *out = janet_wrap_u64(*member_p);
+    return 1;
+}
+
+
+static int method_wlr_keyboard_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_keyboard **keyboard_p = (struct wlr_keyboard **)p;
+    struct wlr_keyboard *keyboard = *keyboard_p;
+    
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    struct wl_signal **signal_p = get_abstract_struct_signal_member(keyboard, kw, wlr_keyboard_signal_offsets);
+    if (signal_p) {
+        *out = janet_wrap_abstract(signal_p);
+        return 1;
+    }
+
+    if (!janet_cstrcmp(kw, "base")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(&keyboard->base, &jwlr_at_wlr_input_device));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "keymap_string")) {
+        if (!(keyboard->keymap_string)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
+        JanetBuffer *buf = janet_buffer(keyboard->keymap_size);
+        janet_buffer_push_bytes(buf, (uint8_t *)keyboard->keymap_string, keyboard->keymap_size);
+        *out = janet_wrap_buffer(buf);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "modifiers")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(&keyboard->modifiers,
+                                                         &jwlr_at_wlr_keyboard_modifiers));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "data")) {
+        *out = janet_wrap_pointer(keyboard->data);
+        return 1;
+    }
+
+    return 0;
+}
+
+
 static int method_wlr_pointer_motion_event_get(void *p, Janet key, Janet *out)
 {
     struct wlr_pointer_motion_event **event_p = (struct wlr_pointer_motion_event **)p;
@@ -1570,9 +1724,34 @@ static JanetReg cfuns[] = {
         "Loads an xcursor theme at the given scale factor."
     },
     {
+        "wlr-keyboard-from-input-device", cfun_wlr_keyboard_from_input_device,
+        "(" MOD_NAME "/wlr-keyboard-from-input-device wlr-input-device)\n\n"
+        "Converts a wlroots input device to a keyboard object."
+    },
+    {
+        "wlr-keyboard-set-keymap", cfun_wlr_keyboard_set_keymap,
+        "(" MOD_NAME "/wlr-keyboard-set-keymap wlr-keyboard xkb-keymap)\n\n"
+        "Sets an xkb keymap to a keyboard object."
+    },
+    {
+        "wlr-keyboard-set-repeat-info", cfun_wlr_keyboard_set_repeat_info,
+        "(" MOD_NAME "/wlr-keyboard-set-repeat-info wlr-keyboard rate delay)\n\n"
+        "Sets key repeat parameters for a keyboard object."
+    },
+    {
         "wlr-seat-create", cfun_wlr_seat_create,
         "(" MOD_NAME "/wlr-seat-create wl-display name)\n\n"
         "Creates a wlroots seat object."
+    },
+    {
+        "wlr-seat-set-keyboard", cfun_wlr_seat_set_keyboard,
+        "(" MOD_NAME "/wlr-seat-set-keyboard wlr-seat wlr-keyboard)\n\n"
+        "Connects a keyboard to a seat object."
+    },
+    {
+        "wlr-seat-keyboard-notify-modifiers", cfun_wlr_seat_keyboard_notify_modifiers,
+        "(" MOD_NAME "/wlr-seat-keyboard-notify-modifiers wlr-seat wlr-keyboard-modifiers)\n\n"
+        "Notifies the seat object that the states of keyboard modifiers changed."
     },
     {
         "wlr-seat-pointer-notify-button", cfun_wlr_seat_pointer_notify_button,
