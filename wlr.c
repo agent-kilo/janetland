@@ -1416,7 +1416,7 @@ static int method_wlr_keyboard_get(void *p, Janet key, Janet *out)
         *out = janet_wrap_abstract(jl_pointer_to_abs_obj(&keyboard->base, &jwlr_at_wlr_input_device));
         return 1;
     }
-    if (!janet_cstrcmp(kw, "keymap_string")) {
+    if (!janet_cstrcmp(kw, "keymap-string")) {
         if (!(keyboard->keymap_string)) {
             *out = janet_wrap_nil();
             return 1;
@@ -1424,6 +1424,11 @@ static int method_wlr_keyboard_get(void *p, Janet key, Janet *out)
         JanetBuffer *buf = janet_buffer(keyboard->keymap_size);
         janet_buffer_push_bytes(buf, (uint8_t *)keyboard->keymap_string, keyboard->keymap_size);
         *out = janet_wrap_buffer(buf);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "xkb-state")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj_by_name(keyboard->xkb_state,
+                                                                 XKB_MOD_NAME "/xkb-state"));
         return 1;
     }
     if (!janet_cstrcmp(kw, "modifiers")) {

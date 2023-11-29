@@ -185,6 +185,14 @@ static Janet cfun_xkb_keymap_unref(int32_t argc, Janet *argv)
 }
 
 
+static const JanetAbstractType jxkb_at_xkb_state = {
+    .name = MOD_NAME "/xkb-state",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+
 static JanetReg cfuns[] = {
     {
         "xkb-context-new", cfun_xkb_context_new,
@@ -220,6 +228,7 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jxkb_at_xkb_context);
     janet_register_abstract_type(&jxkb_at_xkb_keymap);
     janet_register_abstract_type(&jxkb_at_xkb_rule_names);
+    janet_register_abstract_type(&jxkb_at_xkb_state);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 }
