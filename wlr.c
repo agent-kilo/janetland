@@ -837,6 +837,23 @@ static Janet cfun_wlr_xcursor_manager_load(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_xcursor_manager_set_cursor_image(int32_t argc, Janet *argv)
+{
+    struct wlr_xcursor_manager *manager;
+    const char *name;
+    struct wlr_cursor *cursor;
+
+    janet_fixarity(argc, 3);
+
+    manager = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_xcursor_manager);
+    name = janet_getcstring(argv, 1);
+    cursor = jl_get_abs_obj_pointer(argv, 2, &jwlr_at_wlr_cursor);
+
+    wlr_xcursor_manager_set_cursor_image(manager, name, cursor);
+    return janet_wrap_nil();
+}
+
+
 static Janet cfun_wlr_keyboard_from_input_device(int32_t argc, Janet *argv)
 {
     struct wlr_input_device *device;
@@ -1906,6 +1923,11 @@ static JanetReg cfuns[] = {
         "wlr-xcursor-manager-load", cfun_wlr_xcursor_manager_load,
         "(" MOD_NAME "/wlr-xcursor-manager-load wlr-xcursor-manager scale)\n\n"
         "Loads an xcursor theme at the given scale factor."
+    },
+    {
+        "wlr-xcursor-manager-set-cursor-image", cfun_wlr_xcursor_manager_set_cursor_image,
+        "(" MOD_NAME "/wlr-xcursor-manager-set-cursor-image wlr-xcursor-manager name wlr-cursor)\n\n"
+        "Sets the cursor image from the loaded xcursor theme."
     },
     {
         "wlr-keyboard-from-input-device", cfun_wlr_keyboard_from_input_device,
