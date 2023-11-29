@@ -9,6 +9,9 @@
     {#member, (uint64_t)&(((struct_type *)NULL)->member)}
 
 
+static int method_wlr_abs_obj_compare(void *lhs, void *rhs);
+
+
 static const jl_offset_def_t wlr_backend_signal_offsets[] = {
     JWLR_OFFSET_DEF(struct wlr_backend, events.destroy),
     JWLR_OFFSET_DEF(struct wlr_backend, events.new_input),
@@ -322,7 +325,13 @@ static const JanetAbstractType jwlr_at_wlr_seat_client = {
     .name = MOD_NAME "/wlr-seat-client",
     .gc = NULL,
     .gcmark = NULL,
-    JANET_ATEND_GCMARK
+    .get = NULL,
+    .put = NULL,
+    .marshal = NULL,
+    .unmarshal = NULL,
+    .tostring = NULL,
+    .compare = method_wlr_abs_obj_compare,
+    JANET_ATEND_COMPARE
 };
 
 
@@ -514,6 +523,26 @@ static const JanetAbstractType jwlr_at_wlr_pointer_axis_event = {
     .gc = NULL,
     .gcmark = NULL,
     .get = method_wlr_pointer_axis_event_get,
+    JANET_ATEND_GET
+};
+
+
+static int method_wlr_seat_pointer_state_get(void *p, Janet key, Janet *out);
+static const JanetAbstractType jwlr_at_wlr_seat_pointer_state = {
+    .name = MOD_NAME "/wlr-seat-pointer-state",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_seat_pointer_state_get,
+    JANET_ATEND_GET
+};
+
+
+static int method_wlr_seat_pointer_request_set_cursor_event_get(void *p, Janet key, Janet *out);
+static const JanetAbstractType jwlr_at_wlr_seat_pointer_request_set_cursor_event = {
+    .name = MOD_NAME "/wlr-seat-pointer-request-set-cursor-event",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_seat_pointer_request_set_cursor_event_get,
     JANET_ATEND_GET
 };
 

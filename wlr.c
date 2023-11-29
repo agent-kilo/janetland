@@ -60,6 +60,22 @@ static struct wl_list **get_abstract_struct_list_member(void *p,
 }
 
 
+static int method_wlr_abs_obj_compare(void *lhs, void *rhs)
+{
+    void **left_p = (void **)lhs;
+    void *left = *left_p;
+
+    void **right_p = (void **)rhs;
+    void *right = *right_p;
+
+    if (left == right) {
+        return 0;
+    } else {
+        return left > right ? 1 : -1;
+    }
+}
+
+
 static const jl_key_def_t log_defs[] = {
     {"silent", WLR_SILENT},
     {"error", WLR_ERROR},
@@ -764,6 +780,24 @@ static Janet cfun_wlr_cursor_attach_input_device(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_cursor_set_surface(int32_t argc, Janet *argv)
+{
+    struct wlr_cursor *cursor;
+    struct wlr_surface *surface;
+    int32_t hotspot_x, hotspot_y;
+
+    janet_fixarity(argc, 4);
+
+    cursor = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_cursor);
+    surface = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_surface);
+    hotspot_x = janet_getinteger(argv, 2);
+    hotspot_y = janet_getinteger(argv, 3);
+
+    wlr_cursor_set_surface(cursor, surface, hotspot_x, hotspot_y);
+    return janet_wrap_nil();
+}
+
+
 static Janet cfun_wlr_xcursor_manager_create(int32_t argc, Janet *argv)
 {
     const char *name;
@@ -873,13 +907,19 @@ static int method_wlr_seat_get(void *p, Janet key, Janet *out) {
         janet_panicf("expected keyword, got %v", key);
     }
 
-    struct wl_signal **signal_p = get_abstract_struct_signal_member(seat,
-                                                                    janet_unwrap_keyword(key),
-                                                                    wlr_seat_signal_offsets);
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    struct wl_signal **signal_p = get_abstract_struct_signal_member(seat, kw, wlr_seat_signal_offsets);
     if (signal_p) {
         *out = janet_wrap_abstract(signal_p);
         return 1;
     }
+
+    if (!janet_cstrcmp(kw, "pointer-state")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(&seat->pointer_state, &jwlr_at_wlr_seat_pointer_state));
+        return 1;
+    }
+
     return 0;
 }
 
@@ -1627,6 +1667,79 @@ static int method_wlr_pointer_axis_event_get(void *p, Janet key, Janet *out)
 }
 
 
+static int method_wlr_seat_pointer_state_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_seat_pointer_state **state_p = (struct wlr_seat_pointer_state **)p;
+    struct wlr_seat_pointer_state *state = *state_p;
+    
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    if (!janet_cstrcmp(kw, "seat")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(state->seat, &jwlr_at_wlr_seat));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "focused-client")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(state->focused_client, &jwlr_at_wlr_seat_client));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "focused-surface")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(state->focused_surface, &jwlr_at_wlr_surface));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "sx")) {
+        *out = janet_wrap_number(state->sx);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "sy")) {
+        *out = janet_wrap_number(state->sy);
+        return 1;
+    }
+
+    return 0;
+}
+
+
+static int method_wlr_seat_pointer_request_set_cursor_event_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_seat_pointer_request_set_cursor_event **event_p = (struct wlr_seat_pointer_request_set_cursor_event **)p;
+    struct wlr_seat_pointer_request_set_cursor_event *event = *event_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    if (!janet_cstrcmp(kw, "seat-client")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(event->seat_client, &jwlr_at_wlr_seat_client));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "surface")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(event->surface, &jwlr_at_wlr_surface));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "serial")) {
+        /* XXX: uint32_t -> int32_t conversion */
+        *out = janet_wrap_integer(event->serial);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "hotspot-x")) {
+        *out = janet_wrap_integer(event->hotspot_x);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "hotspot-y")) {
+        *out = janet_wrap_integer(event->hotspot_y);
+        return 1;
+    }
+
+    return 0;
+}
+
+
 static Janet cfun_wlr_scene_get_scene_output(int32_t argc, Janet *argv)
 {
     struct wlr_scene *scene;
@@ -1778,6 +1891,11 @@ static JanetReg cfuns[] = {
         "wlr-cursor-attach-input-device", cfun_wlr_cursor_attach_input_device,
         "(" MOD_NAME "/wlr-cursor-attach-input-device wlr-cursor wlr-input-device)\n\n"
         "Attaches a wlroots input device object to a cursor object."
+    },
+    {
+        "wlr-cursor-set-surface", cfun_wlr_cursor_set_surface,
+        "(" MOD_NAME "/wlr-cursor-set-surface)\n\n"
+        "Sets a surface as the cursor image."
     },
     {
         "wlr-xcursor-manager-create", cfun_wlr_xcursor_manager_create,
@@ -1949,6 +2067,8 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_pointer_motion_absolute_event);
     janet_register_abstract_type(&jwlr_at_wlr_pointer_button_event);
     janet_register_abstract_type(&jwlr_at_wlr_pointer_axis_event);
+    janet_register_abstract_type(&jwlr_at_wlr_seat_pointer_state);
+    janet_register_abstract_type(&jwlr_at_wlr_seat_pointer_request_set_cursor_event);
     janet_register_abstract_type(&jwlr_at_wlr_keyboard);
     janet_register_abstract_type(&jwlr_at_wlr_keyboard_modifiers);
     janet_register_abstract_type(&jwlr_at_wlr_keyboard_key_event);
