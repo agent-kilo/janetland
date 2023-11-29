@@ -933,6 +933,26 @@ static Janet cfun_wlr_seat_keyboard_notify_modifiers(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_seat_keyboard_notify_key(int32_t argc, Janet *argv)
+{
+    struct wlr_seat *seat;
+    uint32_t time;
+    uint32_t keycode;
+    uint32_t state;
+
+    janet_fixarity(argc, 4);
+
+    seat = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_seat);
+    time = (uint32_t)janet_getuinteger64(argv, 1);
+    keycode = (uint32_t)janet_getuinteger64(argv, 2);
+    /* int32_t -> uint32_t conversion */
+    state = (uint32_t)jl_get_key_def(argv, 3, wl_keyboard_key_state_defs);
+
+    wlr_seat_keyboard_notify_key(seat, time, keycode, state);
+    return janet_wrap_nil();
+}
+
+
 static Janet cfun_wlr_seat_pointer_notify_button(int32_t argc, Janet *argv)
 {
     struct wlr_seat *seat;
@@ -1803,6 +1823,11 @@ static JanetReg cfuns[] = {
         "wlr-seat-keyboard-notify-modifiers", cfun_wlr_seat_keyboard_notify_modifiers,
         "(" MOD_NAME "/wlr-seat-keyboard-notify-modifiers wlr-seat wlr-keyboard-modifiers)\n\n"
         "Notifies the seat object that the states of keyboard modifiers changed."
+    },
+    {
+        "wlr-seat-keyboard-notify-key", cfun_wlr_seat_keyboard_notify_key,
+        "(" MOD_NAME "/wlr-seat-keyboard-notify-key wlr-seat time key state)\n\n"
+        "Notifies the seat object that there's a key event."
     },
     {
         "wlr-seat-pointer-notify-button", cfun_wlr_seat_pointer_notify_button,
