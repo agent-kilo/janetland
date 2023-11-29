@@ -219,6 +219,7 @@ JANET_MODULE_ENTRY(JanetTable *env)
 {
     janet_register_abstract_type(&jxkb_at_xkb_context);
     janet_register_abstract_type(&jxkb_at_xkb_keymap);
+    janet_register_abstract_type(&jxkb_at_xkb_rule_names);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 }

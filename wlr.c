@@ -1873,6 +1873,8 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_pointer_motion_absolute_event);
     janet_register_abstract_type(&jwlr_at_wlr_pointer_button_event);
     janet_register_abstract_type(&jwlr_at_wlr_pointer_axis_event);
+    janet_register_abstract_type(&jwlr_at_wlr_keyboard);
+    janet_register_abstract_type(&jwlr_at_wlr_keyboard_modifiers);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 }
