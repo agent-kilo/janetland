@@ -48,7 +48,17 @@
 
 
 (defn handle-wlr-keyboard-key [keyboard listener data]
-  #TODO
+  (def server (keyboard :server))
+  (def seat (server :seat))
+  (def event (get-abstract-listener-data data 'wlr/wlr-keyboard-key-event))
+
+  (wlr-log :debug "#### handle-wlr-keyboard-key ####")
+  (wlr-log :debug "#### (event :time-msec) = %p" (event :time-msec))
+  (wlr-log :debug "#### (event :keycode) = %p" (event :keycode))
+  (wlr-log :debug "#### (event :update-state) = %p" (event :update-state))
+  (wlr-log :debug "#### (event :state) = %p" (event :state))
+
+  (def keycode (+ (event :keycode) 8))
   )
 
 
@@ -62,6 +72,8 @@
 (defn server-new-keyboard [server device]
   (def wlr-keyboard (wlr-keyboard-from-input-device device))
 
+  (wlr-log :debug "#### server-new-keyboard ####")
+
   (def keyboard @{})
   (put keyboard :server server)
   (put keyboard :wlr-keyboard wlr-keyboard)
@@ -73,6 +85,9 @@
   (xkb-keymap-unref keymap)
   (xkb-context-unref context)
   (wlr-keyboard-set-repeat-info wlr-keyboard 25 600)
+
+  (wlr-log :debug "#### (wlr-keyboard :keymap-string) = %p" (wlr-keyboard :keymap-string))
+  (wlr-log :debug "#### (wlr-keyboard :xkb-state) = %p" (wlr-keyboard :xkb-state))
 
   (put keyboard :wlr-keyboard-modifiers-listener
      (wl-signal-add (wlr-keyboard :events.modifiers)
