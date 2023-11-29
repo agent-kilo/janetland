@@ -35,6 +35,25 @@
   [nil nil nil nil])
 
 
+(defn handle-wlr-keyboard-modifiers [keyboard listener data]
+  (wlr-log :debug "#### handle-wlr-keyboard-modifiers ####")
+  (wlr-log :debug "#### ((wlr-keyboard :modifiers) :depressed) = %p ####" ((wlr-keyboard :modifiers) :depressed))
+  (def seat ((keyboard :server) :seat))
+  (def wlr-keyboard (keyboard :wlr-keyboard))
+  (wlr-seat-set-keyboard seat wlr-keyboard)
+  (wlr-seat-keyboard-notify-modifiers seat (wlr-keyboard :modifiers)))
+
+
+(defn handle-wlr-keyboard-key [keyboard listener data]
+  #TODO
+  )
+
+
+(defn handle-wlr-keyboard-destroy [keyboard listener data]
+  #TODO
+  )
+
+
 (defn server-new-keyboard [server device]
   (def wlr-keyboard (wlr-keyboard-from-input-device device))
   (def keyboard @{})
@@ -57,7 +76,7 @@
      (wl-signal-add (wlr-keyboard :events.key)
                     (fn [listener data]
                       (handle-wlr-keyboard-key keyboard listener data))))
-  (put keyboard :wlr-keyboard-key-destroy
+  (put keyboard :wlr-keyboard-destroy-listener
      (wl-signal-add (wlr-keyboard :events.destroy)
                     (fn [listener data]
                       (handle-wlr-keyboard-destroy keyboard listener data))))
