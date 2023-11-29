@@ -27,6 +27,7 @@
 
 (defn process-cursor-motion [server time]
   # TODO
+  (wlr-xcursor-manager-set-cursor-image (server :xcursor-manager) "left_ptr" (server :cursor))
   )
 
 
