@@ -521,6 +521,22 @@ static const JanetAbstractType jwlr_at_wlr_keyboard_modifiers = {
 };
 
 
+static const jl_key_def_t wl_keyboard_key_state_defs[] = {
+    {"released", WL_KEYBOARD_KEY_STATE_RELEASED},
+    {"pressed", WL_KEYBOARD_KEY_STATE_PRESSED},
+    {NULL, 0},
+};
+
+static int method_wlr_keyboard_key_event_get(void *p, Janet key, Janet *out);
+static const JanetAbstractType jwlr_at_wlr_keyboard_key_event = {
+    .name = MOD_NAME "/wlr-keyboard-key-event",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_keyboard_key_event_get,
+    JANET_ATEND_GET
+};
+
+
 static const jl_offset_def_t wlr_keyboard_signal_offsets[] = {
     JWLR_OFFSET_DEF(struct wlr_keyboard, events.key),
     JWLR_OFFSET_DEF(struct wlr_keyboard, events.modifiers),

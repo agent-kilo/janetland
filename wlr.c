@@ -1350,6 +1350,40 @@ static int method_wlr_keyboard_modifiers_get(void *p, Janet key, Janet *out)
 }
 
 
+static int method_wlr_keyboard_key_event_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_keyboard_key_event **event_p = (struct wlr_keyboard_key_event **)p;
+    struct wlr_keyboard_key_event *event = *event_p;
+    
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    if (!janet_cstrcmp(kw, "time-msec")) {
+        /* uint32_t -> uint64_t */
+        *out = janet_wrap_u64(event->time_msec);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "keycode")) {
+        /* uint32_t -> uint64_t */
+        *out = janet_wrap_u64(event->keycode);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "update-state")) {
+        *out = janet_wrap_boolean(event->update_state);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "state")) {
+        *out = janet_ckeywordv(wl_keyboard_key_state_defs[event->state].name);
+        return 1;
+    }
+
+    return 0;
+}
+
+
 static int method_wlr_keyboard_get(void *p, Janet key, Janet *out)
 {
     struct wlr_keyboard **keyboard_p = (struct wlr_keyboard **)p;
@@ -1875,6 +1909,7 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_pointer_axis_event);
     janet_register_abstract_type(&jwlr_at_wlr_keyboard);
     janet_register_abstract_type(&jwlr_at_wlr_keyboard_modifiers);
+    janet_register_abstract_type(&jwlr_at_wlr_keyboard_key_event);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 }
