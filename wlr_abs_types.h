@@ -275,6 +275,13 @@ static const JanetAbstractType jwlr_at_wlr_xcursor_manager = {
 };
 
 
+static const jl_key_def_t wl_seat_capability_defs[] = {
+    {"pointer", WL_SEAT_CAPABILITY_POINTER},
+    {"keyboard", WL_SEAT_CAPABILITY_KEYBOARD},
+    {"touch", WL_SEAT_CAPABILITY_TOUCH},
+    {NULL, 0},
+};
+
 static const jl_offset_def_t wlr_seat_signal_offsets[] = {
     JWLR_OFFSET_DEF(struct wlr_seat, events.pointer_grab_begin),
     JWLR_OFFSET_DEF(struct wlr_seat, events.pointer_grab_end),
@@ -510,6 +517,18 @@ static const JanetAbstractType jwlr_at_wlr_pointer_axis_event = {
     JANET_ATEND_GET
 };
 
+
+static const jl_key_def_t wlr_keyboard_modifier_defs[] = {
+    {"shift", WLR_MODIFIER_SHIFT},
+    {"caps", WLR_MODIFIER_CAPS},
+    {"ctrl", WLR_MODIFIER_CTRL},
+    {"alt", WLR_MODIFIER_ALT},
+    {"mod2", WLR_MODIFIER_MOD2},
+    {"mod3", WLR_MODIFIER_MOD3},
+    {"logo", WLR_MODIFIER_LOGO},
+    {"mod5", WLR_MODIFIER_MOD5},
+    {NULL, 0},
+};
 
 static int method_wlr_keyboard_modifiers_get(void *p, Janet key, Janet *out);
 static const JanetAbstractType jwlr_at_wlr_keyboard_modifiers = {

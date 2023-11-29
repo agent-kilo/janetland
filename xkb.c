@@ -193,6 +193,31 @@ static const JanetAbstractType jxkb_at_xkb_state = {
 };
 
 
+static Janet cfun_xkb_state_key_get_syms(int32_t argc, Janet *argv)
+{
+    struct xkb_state *state;
+    uint32_t keycode;
+
+    const xkb_keysym_t *syms;
+    int nsyms;
+    JanetArray *sym_arr;
+
+    janet_fixarity(argc, 2);
+
+    state = jl_get_abs_obj_pointer(argv, 0, &jxkb_at_xkb_state);
+    /* uint64_t -> uint32_t conversion */
+    keycode = (uint32_t)janet_getuinteger64(argv, 1);
+
+    nsyms = xkb_state_key_get_syms(state, keycode, &syms);
+    sym_arr = janet_array(nsyms);
+    for (int i = 0; i < nsyms; i++) {
+        janet_array_push(sym_arr, janet_wrap_u64(syms[i]));
+    }
+
+    return janet_wrap_array(sym_arr);
+}
+
+
 static JanetReg cfuns[] = {
     {
         "xkb-context-new", cfun_xkb_context_new,
@@ -218,6 +243,11 @@ static JanetReg cfuns[] = {
         "xkb-rule-names", cfun_xkb_rule_names,
         "(" MOD_NAME "/xkb-rule-names ...)\n\n"
         "Creates a xkb_rule_names struct."
+    },
+    {
+        "xkb-state-key-get-syms", cfun_xkb_state_key_get_syms,
+        "(" MOD_NAME "/xkb-state-key-get-syms xkb-state keycode)\n\n"
+        "Get symbol codes from a key code."
     },
     {NULL, NULL, NULL},
 };

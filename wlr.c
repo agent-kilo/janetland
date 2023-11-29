@@ -850,6 +850,21 @@ static Janet cfun_wlr_keyboard_set_repeat_info(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_keyboard_get_modifiers(int32_t argc, Janet *argv)
+{
+    struct wlr_keyboard *keyboard;
+
+    uint32_t modifiers;
+
+    janet_fixarity(argc, 1);
+
+    keyboard = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_keyboard);
+    modifiers = wlr_keyboard_get_modifiers(keyboard);
+
+    return janet_wrap_array(jl_get_flag_keys(modifiers, wlr_keyboard_modifier_defs));
+}
+
+
 static int method_wlr_seat_get(void *p, Janet key, Janet *out) {
     struct wlr_seat **seat_p = (struct wlr_seat **)p;
     struct wlr_seat *seat = *seat_p;
@@ -978,13 +993,6 @@ static Janet cfun_wlr_seat_pointer_notify_frame(int32_t argc, Janet *argv)
     return janet_wrap_nil();
 }
 
-
-static const jl_key_def_t wl_seat_capability_defs[] = {
-    {"pointer", WL_SEAT_CAPABILITY_POINTER},
-    {"keyboard", WL_SEAT_CAPABILITY_KEYBOARD},
-    {"touch", WL_SEAT_CAPABILITY_TOUCH},
-    {NULL, 0},
-};
 
 static Janet cfun_wlr_seat_set_capabilities(int32_t argc, Janet *argv)
 {
@@ -1319,18 +1327,6 @@ static int method_wlr_pointer_get(void *p, Janet key, Janet *out)
     return 0;
 }
 
-
-static const jl_key_def_t wlr_keyboard_modifier_defs[] = {
-    {"shift", WLR_MODIFIER_SHIFT},
-    {"caps", WLR_MODIFIER_CAPS},
-    {"ctrl", WLR_MODIFIER_CTRL},
-    {"alt", WLR_MODIFIER_ALT},
-    {"mod2", WLR_MODIFIER_MOD2},
-    {"mod3", WLR_MODIFIER_MOD3},
-    {"logo", WLR_MODIFIER_LOGO},
-    {"mod5", WLR_MODIFIER_MOD5},
-    {NULL, 0},
-};
 
 static int method_wlr_keyboard_modifiers_get(void *p, Janet key, Janet *out)
 {
@@ -1787,6 +1783,11 @@ static JanetReg cfuns[] = {
         "wlr-keyboard-set-repeat-info", cfun_wlr_keyboard_set_repeat_info,
         "(" MOD_NAME "/wlr-keyboard-set-repeat-info wlr-keyboard rate delay)\n\n"
         "Sets key repeat parameters for a keyboard object."
+    },
+    {
+        "wlr-keyboard-get-modifiers", cfun_wlr_keyboard_get_modifiers,
+        "(" MOD_NAME "/wlr-keyboard-get-modifiers wlr-keyboard)\n\n"
+        "Gets the keyboard modifiers that's currently in effect."
     },
     {
         "wlr-seat-create", cfun_wlr_seat_create,
