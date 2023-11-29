@@ -204,8 +204,14 @@
 
 
 (defn handle-seat-request-set-cursor [server listener data]
-  # TODO
-  )
+  (def event (get-abstract-listener-data data 'wlr/wlr-seat-pointer-request-set-cursor-event))
+
+  (wlr-log :debug "#### handle-xdg-surface-map #### data = %p" event)
+
+  (def focused-client (((server :seat) :pointer-state) :focused-client))
+  (when (= focused-client (event :seat-client))
+    (wlr-log :debug "#### setting cursor surface")
+    (wlr-cursor-set-surface (server :cursor) (event :surface) (event :hotspot-x) (event :hotspot-y))))
 
 
 (defn handle-seat-request-set-selection [server listener data]
