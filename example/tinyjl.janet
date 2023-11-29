@@ -53,8 +53,10 @@
 
 
 (defn handle-wlr-input-device-destroy [keyboard listener data]
-  #TODO
-  )
+  (wl-signal-remove (keyboard :wlr-keyboard-modifiers-listener))
+  (wl-signal-remove (keyboard :wlr-keyboard-key-listener))
+  (wl-signal-remove (keyboard :wlr-input-device-destroy-listener))
+  (remove-element ((keyboard :server) :keyboards) keyboard))
 
 
 (defn server-new-keyboard [server device]
