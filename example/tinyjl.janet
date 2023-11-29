@@ -1,5 +1,6 @@
 (use janetland/wl)
 (use janetland/wlr)
+(use janetland/xkb)
 (use janetland/util)
 
 
@@ -36,10 +37,12 @@
 
 
 (defn handle-wlr-keyboard-modifiers [keyboard listener data]
-  (wlr-log :debug "#### handle-wlr-keyboard-modifiers ####")
-  (wlr-log :debug "#### ((wlr-keyboard :modifiers) :depressed) = %p ####" ((wlr-keyboard :modifiers) :depressed))
   (def seat ((keyboard :server) :seat))
   (def wlr-keyboard (keyboard :wlr-keyboard))
+
+  (wlr-log :debug "#### handle-wlr-keyboard-modifiers ####")
+  (wlr-log :debug "#### ((wlr-keyboard :modifiers) :depressed) = %p ####" ((wlr-keyboard :modifiers) :depressed))
+
   (wlr-seat-set-keyboard seat wlr-keyboard)
   (wlr-seat-keyboard-notify-modifiers seat (wlr-keyboard :modifiers)))
 
@@ -49,13 +52,14 @@
   )
 
 
-(defn handle-wlr-keyboard-destroy [keyboard listener data]
+(defn handle-wlr-input-device-destroy [keyboard listener data]
   #TODO
   )
 
 
 (defn server-new-keyboard [server device]
   (def wlr-keyboard (wlr-keyboard-from-input-device device))
+
   (def keyboard @{})
   (put keyboard :server server)
   (put keyboard :wlr-keyboard wlr-keyboard)
@@ -66,7 +70,7 @@
   (wlr-keyboard-set-keymap wlr-keyboard keymap)
   (xkb-keymap-unref keymap)
   (xkb-context-unref context)
-  (wlr-keyboard-set-repeat-info wlr-keyboard 25 600);
+  (wlr-keyboard-set-repeat-info wlr-keyboard 25 600)
 
   (put keyboard :wlr-keyboard-modifiers-listener
      (wl-signal-add (wlr-keyboard :events.modifiers)
@@ -76,10 +80,10 @@
      (wl-signal-add (wlr-keyboard :events.key)
                     (fn [listener data]
                       (handle-wlr-keyboard-key keyboard listener data))))
-  (put keyboard :wlr-keyboard-destroy-listener
-     (wl-signal-add (wlr-keyboard :events.destroy)
+  (put keyboard :wlr-input-device-destroy-listener
+     (wl-signal-add (device :events.destroy)
                     (fn [listener data]
-                      (handle-wlr-keyboard-destroy keyboard listener data))))
+                      (handle-wlr-input-device-destroy keyboard listener data))))
 
   (wlr-seat-set-keyboard (server :seat) wlr-keyboard)
   (array/push (server :keyboards) keyboard))
