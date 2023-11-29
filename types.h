@@ -44,6 +44,17 @@ static inline uint32_t jl_get_key_flags(const Janet *argv, int32_t n, const jl_k
     return flags;
 }
 
+static inline JanetArray *jl_get_flag_keys(uint32_t flags, const jl_key_def_t *def_table)
+{
+    JanetArray *keys_arr = janet_array(0);
+    for (int i = 0; NULL != def_table[i].name; i++) {
+        if (flags & (uint32_t)(def_table[i].key)) {
+            janet_array_push(keys_arr, janet_ckeywordv(def_table[i].name));
+        }
+    }
+    return keys_arr;
+}
+
 typedef struct {
     const char *name;
     uint64_t offset;

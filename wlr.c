@@ -1320,6 +1320,18 @@ static int method_wlr_pointer_get(void *p, Janet key, Janet *out)
 }
 
 
+static const jl_key_def_t wlr_keyboard_modifier_defs[] = {
+    {"shift", WLR_MODIFIER_SHIFT},
+    {"caps", WLR_MODIFIER_CAPS},
+    {"ctrl", WLR_MODIFIER_CTRL},
+    {"alt", WLR_MODIFIER_ALT},
+    {"mod2", WLR_MODIFIER_MOD2},
+    {"mod3", WLR_MODIFIER_MOD3},
+    {"logo", WLR_MODIFIER_LOGO},
+    {"mod5", WLR_MODIFIER_MOD5},
+    {NULL, 0},
+};
+
 static int method_wlr_keyboard_modifiers_get(void *p, Janet key, Janet *out)
 {
     struct wlr_keyboard_modifiers **modifiers_p = (struct wlr_keyboard_modifiers **)p;
@@ -1344,8 +1356,7 @@ static int method_wlr_keyboard_modifiers_get(void *p, Janet key, Janet *out)
         return 0;
     }
 
-    /* uint32_t -> uint64_t */
-    *out = janet_wrap_u64(*member_p);
+    *out = janet_wrap_array(jl_get_flag_keys(*member_p, wlr_keyboard_modifier_defs));
     return 1;
 }
 
