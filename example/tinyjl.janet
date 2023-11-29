@@ -11,6 +11,10 @@
       (break))))
 
 
+(defn contains? [arr e]
+  (any? (map (fn [ee] (= e ee)) arr)))
+
+
 (defn focus-view [view surface]
   # TODO
   )
@@ -47,6 +51,12 @@
   (wlr-seat-keyboard-notify-modifiers seat (wlr-keyboard :modifiers)))
 
 
+(defn handle-keybinding [server sym]
+  #TODO
+  true
+  )
+
+
 (defn handle-wlr-keyboard-key [keyboard listener data]
   (def server (keyboard :server))
   (def seat (server :seat))
@@ -59,7 +69,23 @@
   (wlr-log :debug "#### (event :state) = %p" (event :state))
 
   (def keycode (+ (event :keycode) 8))
-  )
+  (def syms (xkb-state-key-get-syms ((keyboard :wlr-keyboard) :xkb-state) keycode))
+  (def modifiers (wlr-keyboard-get-modifiers (keyboard :wlr-keyboard)))
+
+  (wlr-log :debug "#### syms = %p" syms)
+  (wlr-log :debug "#### modifiers = %p" modifiers)
+
+  (def handled-syms
+    (if (contains? modifiers :alt)
+      (map (fn [sym] (handle-keybinding server sym)) syms)
+      (map (fn [_] false) syms)))
+
+  (wlr-log :debug "#### handled-syms = %p" handled-syms)
+  (wlr-log :debug "#### (not (any? handled-syms)) = %p" (not (any? handled-syms)))
+
+  (when (not (any? handled-syms))
+    (wlr-seat-set-keyboard seat (keyboard :wlr-keyboard))
+    (wlr-seat-keyboard-notify-key seat (event :time-msec) (event :keycode) (event :state))))
 
 
 (defn handle-wlr-input-device-destroy [keyboard listener data]
@@ -178,10 +204,12 @@
 
 
 (defn handle-seat-request-set-cursor [server listener data]
+  # TODO
   )
 
 
 (defn handle-seat-request-set-selection [server listener data]
+  # TODO
   )
 
 
