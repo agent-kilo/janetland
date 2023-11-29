@@ -896,7 +896,7 @@ static Janet cfun_wlr_seat_set_keyboard(int32_t argc, Janet *argv)
     janet_fixarity(argc, 2);
 
     seat = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_seat);
-    keyboard = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_keyboard);
+    keyboard = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_keyboard);
 
     wlr_seat_set_keyboard(seat, keyboard);
     return janet_wrap_nil();
