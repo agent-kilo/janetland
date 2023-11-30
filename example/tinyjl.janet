@@ -16,8 +16,32 @@
 
 
 (defn focus-view [view surface]
-  # TODO
-  )
+  (when (nil? view) (break))
+
+  (def server (view :server))
+  (def seat (server :seat))
+  (def prev-surface ((seat :keyboard-state) :focused-surface))
+
+  (when (= prev-surface surface) (break))
+
+  (when (not (nil? prev-surface))
+    (def previous (wlr-xdg-surface-from-wlr-surface prev-surface))
+    (wlr-log :debug "(previous :role) = %p" (previous :role))
+    (wlr-xdg-toplevel-set-activated (previous :toplevel) false))
+
+  (def keyboard (wlr-seat-get-keyboard seat))
+  (wlr-scene-node-raise-to-top ((view :scene-tree) :node))
+
+  # Move the view to the front of the list
+  (remove-element (server :views) view)
+  (array/push (server :views) view)
+  (wlr-log :debug "(length (server :views)) = %p" (length (server :views)))
+
+  (wlr-xdg-toplevel-set-activated (view :xdg-toplevel) true)
+
+  (when (not (nil? keyboard))
+    (wlr-seat-keyboard-notify-enter seat (((view :xdg-toplevel) :base) :surface)
+                                    (keyboard :keycodes) (keyboard :modifiers))))
 
 
 (defn begin-interactive [view mode edges]
