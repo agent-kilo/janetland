@@ -1302,7 +1302,7 @@ static Janet cfun_wlr_output_commit(int32_t argc, Janet *argv)
 {
     struct wlr_output *output;
 
-    janet_fixarity(argc, 2);
+    janet_fixarity(argc, 1);
 
     output = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_output);
     return janet_wrap_boolean(wlr_output_commit(output));
