@@ -552,12 +552,32 @@ static const JanetAbstractType jwlr_at_wlr_pointer_axis_event = {
 };
 
 
+static const jl_offset_def_t wlr_seat_pointer_state_signal_offsets[] = {
+    JWLR_OFFSET_DEF(struct wlr_seat_pointer_state, events.focus_change),
+    {NULL, 0},
+};
+
 static int method_wlr_seat_pointer_state_get(void *p, Janet key, Janet *out);
 static const JanetAbstractType jwlr_at_wlr_seat_pointer_state = {
     .name = MOD_NAME "/wlr-seat-pointer-state",
     .gc = NULL,
     .gcmark = NULL,
     .get = method_wlr_seat_pointer_state_get,
+    JANET_ATEND_GET
+};
+
+
+static const jl_offset_def_t wlr_seat_keyboard_state_signal_offsets[] = {
+    JWLR_OFFSET_DEF(struct wlr_seat_keyboard_state, events.focus_change),
+    {NULL, 0},
+};
+
+static int method_wlr_seat_keyboard_state_get(void *p, Janet key, Janet *out);
+static const JanetAbstractType jwlr_at_wlr_seat_keyboard_state = {
+    .name = MOD_NAME "/wlr-seat-keyboard-state",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_seat_keyboard_state_get,
     JANET_ATEND_GET
 };
 

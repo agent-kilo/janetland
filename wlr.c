@@ -972,6 +972,10 @@ static int method_wlr_seat_get(void *p, Janet key, Janet *out) {
         *out = janet_wrap_abstract(jl_pointer_to_abs_obj(&seat->pointer_state, &jwlr_at_wlr_seat_pointer_state));
         return 1;
     }
+    if (!janet_cstrcmp(kw, "keyboard-state")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(&seat->keyboard_state, &jwlr_at_wlr_seat_keyboard_state));
+        return 1;
+    }
 
     return 0;
 }
@@ -1793,6 +1797,12 @@ static int method_wlr_seat_pointer_state_get(void *p, Janet key, Janet *out)
 
     const uint8_t *kw = janet_unwrap_keyword(key);
 
+    struct wl_signal **signal_p = get_abstract_struct_signal_member(state, kw, wlr_seat_pointer_state_signal_offsets);
+    if (signal_p) {
+        *out = janet_wrap_abstract(signal_p);
+        return 1;
+    }
+
     if (!janet_cstrcmp(kw, "seat")) {
         *out = janet_wrap_abstract(jl_pointer_to_abs_obj(state->seat, &jwlr_at_wlr_seat));
         return 1;
@@ -1811,6 +1821,45 @@ static int method_wlr_seat_pointer_state_get(void *p, Janet key, Janet *out)
     }
     if (!janet_cstrcmp(kw, "sy")) {
         *out = janet_wrap_number(state->sy);
+        return 1;
+    }
+
+    return 0;
+}
+
+
+static int method_wlr_seat_keyboard_state_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_seat_keyboard_state **state_p = (struct wlr_seat_keyboard_state **)p;
+    struct wlr_seat_keyboard_state *state = *state_p;
+    
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    struct wl_signal **signal_p = get_abstract_struct_signal_member(state, kw,
+                                                                    wlr_seat_keyboard_state_signal_offsets);
+    if (signal_p) {
+        *out = janet_wrap_abstract(signal_p);
+        return 1;
+    }
+
+    if (!janet_cstrcmp(kw, "seat")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(state->seat, &jwlr_at_wlr_seat));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "keyboard")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(state->keyboard, &jwlr_at_wlr_keyboard));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "focused-client")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(state->focused_client, &jwlr_at_wlr_seat_client));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "focused-surface")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(state->focused_surface, &jwlr_at_wlr_surface));
         return 1;
     }
 
@@ -2304,6 +2353,7 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_seat);
     janet_register_abstract_type(&jwlr_at_wlr_seat_pointer_state);
     janet_register_abstract_type(&jwlr_at_wlr_seat_pointer_request_set_cursor_event);
+    janet_register_abstract_type(&jwlr_at_wlr_seat_keyboard_state);
     janet_register_abstract_type(&jwlr_at_wlr_seat_request_set_selection_event);
     janet_register_abstract_type(&jwlr_at_wlr_data_source);
     janet_register_abstract_type(&jwlr_at_wlr_keyboard);
