@@ -454,6 +454,34 @@ static Janet cfun_wlr_scene_attach_output_layout(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_scene_node_at(int32_t argc, Janet *argv)
+{
+    struct wlr_scene_node *node;
+    double x, y;
+
+    struct wlr_scene_node *n_node;
+    double nx = 0, ny = 0;
+    Janet ret_tuple[3];
+
+    janet_fixarity(argc, 3);
+
+    node = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_node);
+    x = janet_getnumber(argv, 1);
+    y = janet_getnumber(argv, 2);
+
+    n_node = wlr_scene_node_at(node, x, y, &nx, &ny);
+    if (n_node) {
+        ret_tuple[0] = janet_wrap_abstract(jl_pointer_to_abs_obj(n_node, &jwlr_at_wlr_scene_node));
+    } else {
+        ret_tuple[0] = janet_wrap_nil();
+    }
+    ret_tuple[1] = janet_wrap_number(nx);
+    ret_tuple[2] = janet_wrap_number(ny);
+
+    return janet_wrap_tuple(janet_tuple_n(ret_tuple, 3));
+}
+
+
 static int method_wlr_xdg_shell_get(void *p, Janet key, Janet *out) {
     struct wlr_xdg_shell **xdg_shell_p = (struct wlr_xdg_shell **)p;
     struct wlr_xdg_shell *xdg_shell = *xdg_shell_p;
@@ -641,6 +669,10 @@ static int method_wlr_xdg_surface_get(void *p, Janet key, Janet *out) {
         return 1;
     }
     if (!janet_cstrcmp(kw, "data")) {
+        if (!(surface->data)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
         *out = janet_wrap_pointer(surface->data);
         return 1;
     }
@@ -690,6 +722,10 @@ static int method_wlr_cursor_get(void *p, Janet key, Janet *out) {
         return 1;
     }
     if (!janet_cstrcmp(kw, "data")) {
+        if (!(cursor->data)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
         *out = janet_wrap_pointer(cursor->data);
         return 1;
     }
@@ -1321,7 +1357,35 @@ static int method_wlr_scene_node_get(void *p, Janet key, Janet *out)
         return 1;
     }
 
+    if (!janet_cstrcmp(kw, "type")) {
+        *out = janet_ckeywordv(wlr_scene_node_type_defs[node->type].name);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "parent")) {
+        if (!(node->parent)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(node->parent, &jwlr_at_wlr_scene_tree));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "enabled")) {
+        *out = janet_wrap_boolean(node->enabled);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "x")) {
+        *out = janet_wrap_integer(node->x);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "y")) {
+        *out = janet_wrap_integer(node->y);
+        return 1;
+    }
     if (!janet_cstrcmp(kw, "data")) {
+        if (!(node->data)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
         *out = janet_wrap_pointer(node->data);
         return 1;
     }
@@ -1385,6 +1449,10 @@ static int method_wlr_input_device_get(void *p, Janet key, Janet *out)
         return 1;
     }
     if (!janet_cstrcmp(kw, "data")) {
+        if (!(device->data)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
         *out = janet_wrap_pointer(device->data);
         return 1;
     }
@@ -1419,6 +1487,10 @@ static int method_wlr_pointer_get(void *p, Janet key, Janet *out)
         return 1;
     }
     if (!janet_cstrcmp(kw, "data")) {
+        if (!(pointer->data)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
         *out = janet_wrap_pointer(pointer->data);
         return 1;
     }
@@ -1532,6 +1604,10 @@ static int method_wlr_keyboard_get(void *p, Janet key, Janet *out)
         return 1;
     }
     if (!janet_cstrcmp(kw, "data")) {
+        if (!(keyboard->data)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
         *out = janet_wrap_pointer(keyboard->data);
         return 1;
     }
@@ -1850,6 +1926,74 @@ static Janet cfun_wlr_scene_output_send_frame_done(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_scene_buffer_from_node(int32_t argc, Janet *argv)
+{
+    struct wlr_scene_node *node;
+
+    struct wlr_scene_buffer *buffer;
+
+    janet_fixarity(argc, 1);
+
+    node = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_node);
+    buffer = wlr_scene_buffer_from_node(node);
+    if (!buffer) {
+        janet_panic("failed to get wlroots buffer object");
+    }
+
+    return janet_wrap_abstract(jl_pointer_to_abs_obj(buffer, &jwlr_at_wlr_scene_buffer));
+}
+
+
+static int method_wlr_scene_surface_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_scene_surface **surface_p = (struct wlr_scene_surface **)p;
+    struct wlr_scene_surface *surface = *surface_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    if (!janet_cstrcmp(kw, "buffer")) {
+        if (!(surface->buffer)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(surface->buffer, &jwlr_at_wlr_scene_buffer));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "surface")) {
+        if (!(surface->surface)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(surface->surface, &jwlr_at_wlr_surface));
+        return 1;
+    }
+
+    return 0;
+}
+
+
+static Janet cfun_wlr_scene_surface_from_buffer(int32_t argc, Janet *argv)
+{
+    struct wlr_scene_buffer *buffer;
+
+    struct wlr_scene_surface *surface;
+
+    janet_fixarity(argc, 1);
+
+    buffer = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_buffer);
+    surface = wlr_scene_surface_from_buffer(buffer);
+    if (!surface) {
+        return janet_wrap_nil();
+    } else {
+        return janet_wrap_abstract(jl_pointer_to_abs_obj(surface, &jwlr_at_wlr_scene_surface));
+    }
+}
+
+
 static JanetReg cfuns[] = {
     {
         "wlr-log-init", cfun_wlr_log_init,
@@ -1925,6 +2069,11 @@ static JanetReg cfuns[] = {
         "wlr-scene-attach-output-layout", cfun_wlr_scene_attach_output_layout,
         "(" MOD_NAME "/wlr-scene-attach-output-layout wlr-scene wlr-output-layout)\n\n"
         "Attaches a wlroots output layout object to a scene object."
+    },
+    {
+        "wlr-scene-node-at", cfun_wlr_scene_node_at,
+        "(" MOD_NAME "/wlr-scene-node-at wlr-scene-node x y)\n\n"
+        "Finds the topmost node that contains the specified point."
     },
     {
         "wlr-xdg-shell-create", cfun_wlr_xdg_shell_create,
@@ -2101,6 +2250,16 @@ static JanetReg cfuns[] = {
         "(" MOD_NAME "/wlr-scene-output-send-frame-done wlr-scene-output timespec)\n\n"
         "Marks that we are done with the output frame."
     },
+    {
+        "wlr-scene-buffer-from-node", cfun_wlr_scene_buffer_from_node,
+        "(" MOD_NAME "/wlr-scene-buffer-from-node wlr-scene-node)\n\n"
+        "Gets the associated wlr-scene-buffer object from a scene node."
+    },
+    {
+        "wlr-scene-surface-from-buffer", cfun_wlr_scene_surface_from_buffer,
+        "(" MOD_NAME "/wlr-scene-surface-from-buffer wlr-scene-buffer)\n\n"
+        "Gets the wlr-scene-surface backing the specified buffer."
+    },
     {NULL, NULL, NULL},
 };
 
@@ -2123,6 +2282,8 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_scene_output);
     janet_register_abstract_type(&jwlr_at_wlr_scene_tree);
     janet_register_abstract_type(&jwlr_at_wlr_scene_node);
+    janet_register_abstract_type(&jwlr_at_wlr_scene_buffer);
+    janet_register_abstract_type(&jwlr_at_wlr_scene_surface);
     janet_register_abstract_type(&jwlr_at_wlr_xdg_shell);
     janet_register_abstract_type(&jwlr_at_wlr_surface);
     janet_register_abstract_type(&jwlr_at_wlr_xdg_surface);

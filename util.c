@@ -101,6 +101,20 @@ static Janet cfun_pointer_to_abstract_object(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_pointer_to_table(int32_t argc, Janet *argv)
+{
+    void *data;
+
+    janet_fixarity(argc, 1);
+
+    data = janet_getpointer(argv, 0);
+    if (!data) {
+        return janet_wrap_nil();
+    }
+    return janet_wrap_table((JanetTable *)data);
+}
+
+
 static const jl_key_def_t clock_id_defs[] = {
     {"realtime", CLOCK_REALTIME},
     {"monotonic", CLOCK_MONOTONIC},
@@ -163,6 +177,11 @@ static JanetReg cfuns[] = {
         "pointer-to-abstract-object", cfun_pointer_to_abstract_object,
         "(" MOD_NAME "/pointer-to-abstract-object pointer abs-type)\n\n"
         "Converts a raw pointer to an object of type abs-type."
+    },
+    {
+        "pointer-to-table", cfun_pointer_to_table,
+        "(" MOD_NAME "/pointer-to-table pointer)\n\n"
+        "Converts a raw pointer to a Janet table."
     },
     {
         "clock-gettime", cfun_clock_gettime,

@@ -92,7 +92,23 @@ static inline void *jl_value_to_data_pointer(Janet value)
         return janet_unwrap_pointer(value);
     case JANET_ABSTRACT: {
         void **data_p = janet_unwrap_abstract(value);
-        return *data_p;
+        const JanetAbstractType *at = janet_abstract_head(data_p)->type;
+        const char *at_name = at->name;
+        /* Is this abstract type built by us? */
+        if (!strncmp(WL_MOD_NAME "/", at_name, strlen(WL_MOD_NAME "/")) ||
+            !strncmp(WLR_MOD_NAME "/", at_name, strlen(WLR_MOD_NAME "/")) ||
+            !strncmp(XKB_MOD_NAME "/", at_name, strlen(XKB_MOD_NAME "/")) ||
+            !strncmp(UTIL_MOD_NAME "/", at_name, strlen(UTIL_MOD_NAME "/"))) {
+            return *data_p;
+        } else {
+            janet_panicf("unknown abstract type: %s", at_name);
+        }
+    }
+    case JANET_TABLE: {
+        /* XXX: Need to keep a reference on the Janet side, or the actual data
+           table may get GCed */
+        JanetTable *table = janet_unwrap_table(value);
+        return (void *)table;
     }
     default:
         janet_panicf("expected abstract type or a pointer, got %v", value);

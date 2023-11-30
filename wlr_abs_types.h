@@ -398,6 +398,13 @@ static const JanetAbstractType jwlr_at_wlr_scene_tree = {
 };
 
 
+static const jl_key_def_t wlr_scene_node_type_defs[] = {
+    {"tree", WLR_SCENE_NODE_TREE},
+    {"rect", WLR_SCENE_NODE_RECT},
+    {"buffer", WLR_SCENE_NODE_BUFFER},
+    {NULL, 0},
+};
+
 static const jl_offset_def_t wlr_scene_node_signal_offsets[] = {
     JWLR_OFFSET_DEF(struct wlr_scene_node, events.destroy),
     {NULL, 0},
@@ -412,6 +419,24 @@ static const JanetAbstractType jwlr_at_wlr_scene_node = {
     .get = method_wlr_scene_node_get,
     .put = method_wlr_scene_node_put,
     JANET_ATEND_PUT
+};
+
+
+static const JanetAbstractType jwlr_at_wlr_scene_buffer = {
+    .name = MOD_NAME "/wlr-scene-buffer",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+
+static int method_wlr_scene_surface_get(void *p, Janet key, Janet *out);
+static const JanetAbstractType jwlr_at_wlr_scene_surface = {
+    .name = MOD_NAME "/wlr-scene-surface",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_scene_surface_get,
+    JANET_ATEND_GET
 };
 
 
