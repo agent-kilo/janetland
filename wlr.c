@@ -482,6 +482,18 @@ static Janet cfun_wlr_scene_node_at(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_scene_node_raise_to_top(int32_t argc, Janet *argv)
+{
+    struct wlr_scene_node *node;
+
+    janet_fixarity(argc, 1);
+
+    node = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_node);
+    wlr_scene_node_raise_to_top(node);
+    return janet_wrap_nil();
+}
+
+
 static int method_wlr_xdg_shell_get(void *p, Janet key, Janet *out) {
     struct wlr_xdg_shell **xdg_shell_p = (struct wlr_xdg_shell **)p;
     struct wlr_xdg_shell *xdg_shell = *xdg_shell_p;
@@ -1050,6 +1062,36 @@ static Janet cfun_wlr_seat_keyboard_notify_key(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_seat_keyboard_notify_enter(int32_t argc, Janet *argv)
+{
+    struct wlr_seat *seat;
+    struct wlr_surface *surface;
+    JanetView kc_view;
+    struct wlr_keyboard_modifiers *modifiers;
+
+    uint32_t keycodes[WLR_KEYBOARD_KEYS_CAP];
+
+    janet_fixarity(argc, 4);
+
+    seat = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_seat);
+    surface = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_surface);
+    kc_view = janet_getindexed(argv, 2);
+    modifiers = jl_get_abs_obj_pointer(argv, 3, &jwlr_at_wlr_keyboard_modifiers);
+
+    if (kc_view.len > WLR_KEYBOARD_KEYS_CAP) {
+        janet_panicf("expected at most %d key codes, got %d", WLR_KEYBOARD_KEYS_CAP, kc_view.len);
+    }
+
+    for (int i = 0; i < kc_view.len; i++) {
+        /* uint64_t -> uint32_t conversion */
+        keycodes[i] = (uint32_t)janet_unwrap_u64(kc_view.items[i]);
+    }
+
+    wlr_seat_keyboard_notify_enter(seat, surface, keycodes, kc_view.len, modifiers);
+    return janet_wrap_nil();
+}
+
+
 static Janet cfun_wlr_seat_pointer_notify_button(int32_t argc, Janet *argv)
 {
     struct wlr_seat *seat;
@@ -1145,6 +1187,25 @@ static Janet cfun_wlr_seat_set_selection(int32_t argc, Janet *argv)
 
     wlr_seat_set_selection(seat, source, serial);
     return janet_wrap_nil();
+}
+
+
+static Janet cfun_wlr_seat_get_keyboard(int32_t argc, Janet *argv)
+{
+    struct wlr_seat *seat;
+
+    struct wlr_keyboard *keyboard;
+
+    janet_fixarity(argc, 1);
+
+    seat = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_seat);
+    keyboard = wlr_seat_get_keyboard(seat);
+
+    if (!keyboard) {
+        return janet_wrap_nil();
+    } else {
+        return janet_wrap_abstract(jl_pointer_to_abs_obj(keyboard, &jwlr_at_wlr_keyboard));
+    }
 }
 
 
@@ -1290,6 +1351,26 @@ static Janet cfun_wlr_xdg_surface_schedule_configure(int32_t argc, Janet *argv)
 
     surface = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_xdg_surface);
     serial = wlr_xdg_surface_schedule_configure(surface);
+
+    /* XXX: Janet doesn't have a 32-bit unsigned type, so this converts
+       serial to int32_t. It should be fine as long as we don't do
+       arithmetic on the returned serial numbers */
+    return janet_wrap_integer(serial);
+}
+
+
+static Janet cfun_wlr_xdg_toplevel_set_activated(int32_t argc, Janet *argv)
+{
+    struct wlr_xdg_toplevel *toplevel;
+    bool activated;
+
+    uint32_t serial;
+
+    janet_fixarity(argc, 2);
+
+    toplevel = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_xdg_toplevel);
+    activated = janet_getboolean(argv, 1);
+    serial = wlr_xdg_toplevel_set_activated(toplevel, activated);
 
     /* XXX: Janet doesn't have a 32-bit unsigned type, so this converts
        serial to int32_t. It should be fine as long as we don't do
@@ -1602,6 +1683,14 @@ static int method_wlr_keyboard_get(void *p, Janet key, Janet *out)
                                                                  XKB_MOD_NAME "/xkb-state"));
         return 1;
     }
+    if (!janet_cstrcmp(kw, "keycodes")) {
+        JanetArray *kc_arr = janet_array(keyboard->num_keycodes);
+        for (size_t i = 0; i < keyboard->num_keycodes; i++) {
+            janet_array_push(kc_arr, janet_wrap_u64(keyboard->keycodes[i]));
+        }
+        *out = janet_wrap_array(kc_arr);
+        return 1;
+    }
     if (!janet_cstrcmp(kw, "modifiers")) {
         *out = janet_wrap_abstract(jl_pointer_to_abs_obj(&keyboard->modifiers,
                                                          &jwlr_at_wlr_keyboard_modifiers));
@@ -1804,14 +1893,26 @@ static int method_wlr_seat_pointer_state_get(void *p, Janet key, Janet *out)
     }
 
     if (!janet_cstrcmp(kw, "seat")) {
+        if (!(state->seat)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
         *out = janet_wrap_abstract(jl_pointer_to_abs_obj(state->seat, &jwlr_at_wlr_seat));
         return 1;
     }
     if (!janet_cstrcmp(kw, "focused-client")) {
+        if (!(state->focused_client)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
         *out = janet_wrap_abstract(jl_pointer_to_abs_obj(state->focused_client, &jwlr_at_wlr_seat_client));
         return 1;
     }
     if (!janet_cstrcmp(kw, "focused-surface")) {
+        if (!(state->focused_surface)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
         *out = janet_wrap_abstract(jl_pointer_to_abs_obj(state->focused_surface, &jwlr_at_wlr_surface));
         return 1;
     }
@@ -1847,18 +1948,34 @@ static int method_wlr_seat_keyboard_state_get(void *p, Janet key, Janet *out)
     }
 
     if (!janet_cstrcmp(kw, "seat")) {
+        if (!(state->seat)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
         *out = janet_wrap_abstract(jl_pointer_to_abs_obj(state->seat, &jwlr_at_wlr_seat));
         return 1;
     }
     if (!janet_cstrcmp(kw, "keyboard")) {
+        if (!(state->keyboard)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
         *out = janet_wrap_abstract(jl_pointer_to_abs_obj(state->keyboard, &jwlr_at_wlr_keyboard));
         return 1;
     }
     if (!janet_cstrcmp(kw, "focused-client")) {
+        if (!(state->focused_client)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
         *out = janet_wrap_abstract(jl_pointer_to_abs_obj(state->focused_client, &jwlr_at_wlr_seat_client));
         return 1;
     }
     if (!janet_cstrcmp(kw, "focused-surface")) {
+        if (!(state->focused_surface)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
         *out = janet_wrap_abstract(jl_pointer_to_abs_obj(state->focused_surface, &jwlr_at_wlr_surface));
         return 1;
     }
@@ -2125,6 +2242,11 @@ static JanetReg cfuns[] = {
         "Finds the topmost node that contains the specified point."
     },
     {
+        "wlr-scene-node-raise-to-top", cfun_wlr_scene_node_raise_to_top,
+        "(" MOD_NAME "/wlr-scene-node-raise-to-top wlr-scene-node)\n\n"
+        "Move the node above all of its sibling nodes."
+    },
+    {
         "wlr-xdg-shell-create", cfun_wlr_xdg_shell_create,
         "(" MOD_NAME "/wlr-xdg-shell-create wl-display version)\n\n"
         "Creates a wlroots xdg shell object."
@@ -2215,6 +2337,11 @@ static JanetReg cfuns[] = {
         "Notifies the seat object that there's a key event."
     },
     {
+        "wlr-seat-keyboard-notify-enter", cfun_wlr_seat_keyboard_notify_enter,
+        "(" MOD_NAME "/wlr-seat-keyboard-notify-enter wlr-seat wlr-surface keycodes wlr-keyboard-modifiers)\n\n"
+        "Notifies the seat object that the keyboard focus has changed."
+    },
+    {
         "wlr-seat-pointer-notify-button", cfun_wlr_seat_pointer_notify_button,
         "(" MOD_NAME "/wlr-seat-pointer-notify-button wl-seat time button state)\n\n"
         "Notifies the seat object that there's a button event."
@@ -2238,6 +2365,11 @@ static JanetReg cfuns[] = {
         "wlr-seat-set-selection", cfun_wlr_seat_set_selection,
         "(" MOD_NAME "/wlr-seat-set-selection wlr-seat wlr-data-source serial)\n\n"
         "Sets the current selection for the seat."
+    },
+    {
+        "wlr-seat-get-keyboard", cfun_wlr_seat_get_keyboard,
+        "(" MOD_NAME "/wlr-seat-get-keyboard wlr-seat)\n\n"
+        "Gets the current active keyboard for the seat."
     },
     {
         "wlr-output-init-render", cfun_wlr_output_init_render,
@@ -2278,6 +2410,11 @@ static JanetReg cfuns[] = {
         "wlr-xdg-surface-schedule-configure", cfun_wlr_xdg_surface_schedule_configure,
         "(" MOD_NAME "/wlr-xdg-surface-schedule-configure wlr-xdg-surface)\n\n"
         "Sends a configure for the xdg surface."
+    },
+    {
+        "wlr-xdg-toplevel-set-activated", cfun_wlr_xdg_toplevel_set_activated,
+        "(" MOD_NAME "/wlr-xdg-toplevel-set-activated wlr-xdg-toplevel activated)\n\n"
+        "Sets the toplevel in an activated or deactivated state."
     },
     {
         "wlr-scene-xdg-surface-create", cfun_wlr_scene_xdg_surface_create,

@@ -141,7 +141,13 @@ static const JanetAbstractType jwlr_at_wlr_surface = {
     .name = MOD_NAME "/wlr-surface",
     .gc = NULL,
     .gcmark = NULL,
-    JANET_ATEND_GCMARK
+    .get = NULL,
+    .put = NULL,
+    .marshal = NULL,
+    .unmarshal = NULL,
+    .tostring = NULL,
+    .compare = method_wlr_abs_obj_compare,
+    JANET_ATEND_COMPARE
 };
 
 
