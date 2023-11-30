@@ -1086,6 +1086,28 @@ static Janet cfun_wlr_seat_set_capabilities(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_seat_set_selection(int32_t argc, Janet *argv)
+{
+    struct wlr_seat *seat;
+    struct wlr_data_source *source;
+    uint32_t serial;
+
+    janet_fixarity(argc, 3);
+
+    seat = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_seat);
+    if (janet_checktype(argv[1], JANET_NIL)) {
+        source = NULL;
+    } else {
+        source = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_data_source);
+    }
+    /* XXX: int32_t -> uint32_t conversion */
+    serial = (uint32_t)janet_getinteger(argv, 2);
+
+    wlr_seat_set_selection(seat, source, serial);
+    return janet_wrap_nil();
+}
+
+
 static int method_wlr_output_get(void *p, Janet key, Janet *out) {
     struct wlr_output **output_p = (struct wlr_output **)p;
     struct wlr_output *output = *output_p;
@@ -1757,6 +1779,31 @@ static int method_wlr_seat_pointer_request_set_cursor_event_get(void *p, Janet k
 }
 
 
+static int method_wlr_seat_request_set_selection_event_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_seat_request_set_selection_event **event_p = (struct wlr_seat_request_set_selection_event **)p;
+    struct wlr_seat_request_set_selection_event *event = *event_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    if (!janet_cstrcmp(kw, "source")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(event->source, &jwlr_at_wlr_data_source));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "serial")) {
+        /* XXX: uint32_t -> int32_t conversion */
+        *out = janet_wrap_integer(event->serial);
+        return 1;
+    }
+
+    return 0;
+}
+
+
 static Janet cfun_wlr_scene_get_scene_output(int32_t argc, Janet *argv)
 {
     struct wlr_scene *scene;
@@ -1990,6 +2037,11 @@ static JanetReg cfuns[] = {
         "Sets the capabilities of a seat."
     },
     {
+        "wlr-seat-set-selection", cfun_wlr_seat_set_selection,
+        "(" MOD_NAME "/wlr-seat-set-selection wlr-seat wlr-data-source serial)\n\n"
+        "Sets the current selection for the seat."
+    },
+    {
         "wlr-output-init-render", cfun_wlr_output_init_render,
         "(" MOD_NAME "/wlr-output-init-render wlr-output wlr-allocator wlr-renderer)\n\n"
         "Configures the output object to use specified allocator & renderer."
@@ -2079,7 +2131,6 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_xdg_popup);
     janet_register_abstract_type(&jwlr_at_wlr_cursor);
     janet_register_abstract_type(&jwlr_at_wlr_xcursor_manager);
-    janet_register_abstract_type(&jwlr_at_wlr_seat);
     janet_register_abstract_type(&jwlr_at_wlr_output);
     janet_register_abstract_type(&jwlr_at_wlr_output_mode);
     janet_register_abstract_type(&jwlr_at_wlr_output_cursor);
@@ -2089,8 +2140,11 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_pointer_motion_absolute_event);
     janet_register_abstract_type(&jwlr_at_wlr_pointer_button_event);
     janet_register_abstract_type(&jwlr_at_wlr_pointer_axis_event);
+    janet_register_abstract_type(&jwlr_at_wlr_seat);
     janet_register_abstract_type(&jwlr_at_wlr_seat_pointer_state);
     janet_register_abstract_type(&jwlr_at_wlr_seat_pointer_request_set_cursor_event);
+    janet_register_abstract_type(&jwlr_at_wlr_seat_request_set_selection_event);
+    janet_register_abstract_type(&jwlr_at_wlr_data_source);
     janet_register_abstract_type(&jwlr_at_wlr_keyboard);
     janet_register_abstract_type(&jwlr_at_wlr_keyboard_modifiers);
     janet_register_abstract_type(&jwlr_at_wlr_keyboard_key_event);

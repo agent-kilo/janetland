@@ -547,6 +547,24 @@ static const JanetAbstractType jwlr_at_wlr_seat_pointer_request_set_cursor_event
 };
 
 
+static int method_wlr_seat_request_set_selection_event_get(void *p, Janet key, Janet *out);
+static const JanetAbstractType jwlr_at_wlr_seat_request_set_selection_event = {
+    .name = MOD_NAME "/wlr-seat-request-set-selection-event",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_seat_request_set_selection_event_get,
+    JANET_ATEND_GET
+};
+
+
+static const JanetAbstractType jwlr_at_wlr_data_source = {
+    .name = MOD_NAME "/wlr-data-source",
+    .gc = NULL,
+    .gcmark = NULL,
+    JANET_ATEND_GCMARK
+};
+
+
 static const jl_key_def_t wlr_keyboard_modifier_defs[] = {
     {"shift", WLR_MODIFIER_SHIFT},
     {"caps", WLR_MODIFIER_CAPS},
