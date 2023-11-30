@@ -216,8 +216,8 @@
 
 
 (defn handle-seat-request-set-selection [server listener data]
-  # TODO
-  )
+  (def event (get-abstract-listener-data data 'wlr/wlr-seat-request-set-selection-event))
+  (wlr-seat-set-selection (server :seat) (event :source) (event :serial)))
 
 
 (defn handle-xdg-surface-map [view listener data]
@@ -229,8 +229,9 @@
 
 (defn handle-xdg-surface-unmap [view listener data]
   (wlr-log :debug "#### handle-xdg-surface-unmap ####")
+  (when (= view ((view :server) :grabbed-view))
+    (reset-cursor-mode (view :server)))
   (remove-element ((view :server) :views) view)
-  # TODO: grabbed cursor
   (wlr-log :debug "#### (length ((view :server) :views)) = %v" (length ((view :server) :views))))
 
 
@@ -247,13 +248,13 @@
 
 (defn handle-xdg-toplevel-request-move [view listener data]
   (wlr-log :debug "#### handle-xdg-toplevel-request-move ####")
-  (begin-interactive view :cursor-move 0))
+  (begin-interactive view :move 0))
 
 
 (defn handle-xdg-toplevel-request-resize [view listener data]
   (wlr-log :debug "#### handle-xdg-toplevel-request-resize ####")
   (def event (get-abstract-listener-data data 'wlr/wlr-xdg-toplevel-resize-event))
-  (begin-interactive view :cursor-resize (event :edges)))
+  (begin-interactive view :resize (event :edges)))
 
 
 (defn handle-xdg-toplevel-request-maximize [view listener data]
@@ -433,6 +434,8 @@
 
   (wlr-log :debug "#### (wlr-xcursor-manager-load xcursor-manager 1) = %p"
            (wlr-xcursor-manager-load (server :xcursor-manager) 1))
+
+  (put server :cursor-mode :passthrough)
 
   (put server :cursor-motion-listener
      (wl-signal-add ((server :cursor) :events.motion)
