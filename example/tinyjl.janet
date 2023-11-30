@@ -37,8 +37,23 @@
 
 
 (defn desktop-view-at [server x y]
-  # TODO
-  [nil nil nil nil])
+  (def [node sx sy] (wlr-scene-node-at (((server :scene) :tree) :node) x y))
+  (when (or (nil? node) (not (= (node :type) :buffer)))
+    (break [nil nil 0 0]))
+
+  (def scene-buffer (wlr-scene-buffer-from-node node))
+  (def scene-surface (wlr-scene-surface-from-buffer scene-buffer))
+  (when (nil? scene-surface)
+    (break [nil nil 0 0]))
+
+  (def surface (scene-surface :surface))
+  (var tree (node :parent))
+  (while (and (not (nil? tree)) (nil? ((tree :node) :data)))
+    (set tree ((tree :node) :parent)))
+  (def view (pointer-to-table ((tree :node) :data)))
+
+  (wlr-log :debug "#### desktop-view-at #### view = %p" view)
+  [view surface sx sy])
 
 
 (defn handle-wlr-keyboard-modifiers [keyboard listener data]
@@ -207,7 +222,7 @@
 (defn handle-seat-request-set-cursor [server listener data]
   (def event (get-abstract-listener-data data 'wlr/wlr-seat-pointer-request-set-cursor-event))
 
-  (wlr-log :debug "#### handle-xdg-surface-map #### data = %p" event)
+  (wlr-log :debug "#### handle-seat-request-set-cursor #### data = %p" event)
 
   (def focused-client (((server :seat) :pointer-state) :focused-client))
   (when (= focused-client (event :seat-client))
@@ -287,8 +302,7 @@
                                                         ((xdg-surface :toplevel) :base))})
 
   (wlr-log :debug "#### (view :scene-tree) = %p" (view :scene-tree))
-  # XXX: not working yet
-  #(set (((view :scene-tree) :node) :data) view)
+  (set (((view :scene-tree) :node) :data) view)
   (set (xdg-surface :data) (view :scene-tree))
 
   (put view :xdg-surface-map-listener
@@ -389,7 +403,7 @@
   (wlr-seat-pointer-notify-frame (server :seat)))
 
 
-(defn main [&]
+(defn main [& argv]
   (wlr-log-init :debug)
 
   (def server @{})
@@ -484,6 +498,9 @@
     (break))
 
   (os/setenv "WAYLAND_DISPLAY" (server :socket))
+  (when (> (length argv) 1)
+    (wlr-log :debug "#### running command: %p" (slice argv 1))
+    (os/spawn ["/bin/sh" "-c" ;(slice argv 1)]))
 
   (wlr-log :info "#### running on WAYLAND_DISPLAY=%s" (server :socket))
   (wl-display-run (server :display))
