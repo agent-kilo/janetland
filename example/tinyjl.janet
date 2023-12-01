@@ -90,19 +90,28 @@
       (put server :grab-y (- ((server :cursor) :y) (view :y))))
 
     :resize
-    (do # TODO
-      )
-    ))
+    (do
+      (def geo-box (wlr-xdg-surface-get-geometry ((view :xdg-toplevel) :base)))
+      (def border-x (+ (view :x) (geo-box :x)
+                       (if (contains? edges :right) (geo-box :width) 0)))
+      (def border-y (+ (view :y) (geo-box :y)
+                       (if (contains? edges :bottom) (geo-box :height) 0)))
+      (put server :grab-x (- ((server :cursor) :x) border-x))
+      (put server :grab-y (- ((server :cursor) :y) border-y))
+      (+= (geo-box :x) (view :x))
+      (+= (geo-box :y) (view :y))
+      (put server :grab-geobox geo-box)
+      (put server :resize-edges edges))))
 
 
 (defn process-cursor-move [server time]
   (def view (server :grabbed-view))
-  (put view :x (- ((server :cursor) :x) (server :grab-x)))
-  (put view :y (- ((server :cursor) :y) (server :grab-y)))
+  (put view :x (math/round (- ((server :cursor) :x) (server :grab-x))))
+  (put view :y (math/round (- ((server :cursor) :y) (server :grab-y))))
   (wlr-log :debug "#### process-cursor-move #### (view :x) = %p, (view :y) = %p" (view :x) (view :y))
   (wlr-scene-node-set-position ((view :scene-tree) :node)
-                               (math/round (view :x))
-                               (math/round (view :y))))
+                               (view :x)
+                               (view :y)))
 
 
 (defn process-cursor-resize [server time]
@@ -351,7 +360,7 @@
 
 (defn handle-xdg-toplevel-request-move [view listener data]
   (wlr-log :debug "#### handle-xdg-toplevel-request-move ####")
-  (begin-interactive view :move 0))
+  (begin-interactive view :move []))
 
 
 (defn handle-xdg-toplevel-request-resize [view listener data]
