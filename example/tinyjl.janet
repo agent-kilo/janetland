@@ -16,6 +16,7 @@
 
 
 (defn reset-cursor-mode [server]
+  (wlr-log :debug "#### reset-cursor-mode ####")
   (put server :cursor-mode :passthrough)
   (put server :grabbed-view nil))
 
@@ -70,13 +71,38 @@
 
 
 (defn begin-interactive [view mode edges]
-  # TODO
-  )
+  (wlr-log :debug "#### begin-interactive #### mode = %p, edges = %p" mode edges)
+
+  (def server (view :server))
+  (def focused-surface (((server :seat) :pointer-state) :focused-surface))
+
+  (when (not (= (((view :xdg-toplevel) :base) :surface)
+                (wlr-surface-get-root-surface focused-surface)))
+    (break))
+
+  (put server :grabbed-view view)
+  (put server :cursor-mode mode)
+
+  (case mode
+    :move
+    (do
+      (put server :grab-x (- ((server :cursor) :x) (view :x)))
+      (put server :grab-y (- ((server :cursor) :y) (view :y))))
+
+    :resize
+    (do # TODO
+      )
+    ))
 
 
 (defn process-cursor-move [server time]
-  #TODO
-  )
+  (def view (server :grabbed-view))
+  (put view :x (- ((server :cursor) :x) (server :grab-x)))
+  (put view :y (- ((server :cursor) :y) (server :grab-y)))
+  (wlr-log :debug "#### process-cursor-move #### (view :x) = %p, (view :y) = %p" (view :x) (view :y))
+  (wlr-scene-node-set-position ((view :scene-tree) :node)
+                               (math/round (view :x))
+                               (math/round (view :y))))
 
 
 (defn process-cursor-resize [server time]
@@ -361,7 +387,9 @@
   (def view @{:server server
               :xdg-toplevel (xdg-surface :toplevel)
               :scene-tree (wlr-scene-xdg-surface-create ((server :scene) :tree)
-                                                        ((xdg-surface :toplevel) :base))})
+                                                        ((xdg-surface :toplevel) :base))
+              :x 0
+              :y 0})
 
   (wlr-log :debug "#### (view :scene-tree) = %p" (view :scene-tree))
   (set (((view :scene-tree) :node) :data) view)
