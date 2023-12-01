@@ -720,9 +720,7 @@ static int method_wlr_xdg_toplevel_resize_event_get(void *p, Janet key, Janet *o
         return 1;
     }
     if (!janet_cstrcmp(kw, "edges")) {
-        /* Janet doesn't have a 32-bit unsigned type, but we need to do
-           arithmetics on the edge flags, so store them in a u64 to be safe */
-        *out = janet_wrap_u64(event->edges);
+        *out = janet_wrap_array(jl_get_flag_keys(event->edges, wlr_edges_defs));
         return 1;
     }
 
@@ -1559,6 +1557,25 @@ static Janet cfun_wlr_xdg_toplevel_set_activated(int32_t argc, Janet *argv)
     /* XXX: Janet doesn't have a 32-bit unsigned type, so this converts
        serial to int32_t. It should be fine as long as we don't do
        arithmetic on the returned serial numbers */
+    return janet_wrap_integer(serial);
+}
+
+
+static Janet cfun_wlr_xdg_toplevel_set_size(int32_t argc, Janet *argv)
+{
+    struct wlr_xdg_toplevel *toplevel;
+    int32_t width, height;
+
+    uint32_t serial;
+
+    janet_fixarity(argc, 3);
+
+    toplevel = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_xdg_toplevel);
+    width = janet_getinteger(argv, 1);
+    height = janet_getinteger(argv, 2);
+    serial = wlr_xdg_toplevel_set_size(toplevel, width, height);
+
+    /* XXX: uint32_t -> int32_t conversion */
     return janet_wrap_integer(serial);
 }
 
@@ -2636,6 +2653,11 @@ static JanetReg cfuns[] = {
         "wlr-xdg-toplevel-set-activated", cfun_wlr_xdg_toplevel_set_activated,
         "(" MOD_NAME "/wlr-xdg-toplevel-set-activated wlr-xdg-toplevel activated)\n\n"
         "Sets the toplevel in an activated or deactivated state."
+    },
+    {
+        "wlr-xdg-toplevel-set-size", cfun_wlr_xdg_toplevel_set_size,
+        "(" MOD_NAME "/wlr-xdg-toplevel-set-size wlr-xdg-toplevel width height)\n\n"
+        "Requests that this toplevel surface be the given size."
     },
     {
         "wlr-scene-xdg-surface-create", cfun_wlr_scene_xdg_surface_create,

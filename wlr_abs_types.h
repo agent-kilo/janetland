@@ -201,9 +201,18 @@ static const JanetAbstractType jwlr_at_wlr_xdg_toplevel = {
 };
 
 
+static const jl_key_def_t wlr_edges_defs[] = {
+    {"none", WLR_EDGE_NONE},
+    {"top", WLR_EDGE_TOP},
+    {"bottom", WLR_EDGE_BOTTOM},
+    {"left", WLR_EDGE_LEFT},
+    {"right", WLR_EDGE_RIGHT},
+    {NULL, 0},
+};
+
 static int method_wlr_xdg_toplevel_resize_event_get(void *p, Janet key, Janet *out);
 static const JanetAbstractType jwlr_at_wlr_xdg_toplevel_resize_event = {
-    .name = MOD_NAME "/wlr-xdg-toplevel-resize-even",
+    .name = MOD_NAME "/wlr-xdg-toplevel-resize-event",
     .gc = NULL,
     .gcmark = NULL,
     .get = method_wlr_xdg_toplevel_resize_event_get,
