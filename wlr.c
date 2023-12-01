@@ -1153,6 +1153,54 @@ static Janet cfun_wlr_seat_pointer_notify_frame(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_seat_pointer_notify_enter(int32_t argc, Janet *argv)
+{
+    struct wlr_seat *seat;
+    struct wlr_surface *surface;
+    double sx, sy;
+
+    janet_fixarity(argc, 4);
+
+    seat = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_seat);
+    surface = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_surface);
+    sx = janet_getnumber(argv, 2);
+    sy = janet_getnumber(argv, 3);
+
+    wlr_seat_pointer_notify_enter(seat, surface, sx, sy);
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wlr_seat_pointer_notify_motion(int32_t argc, Janet *argv)
+{
+    struct wlr_seat *seat;
+    uint32_t time;
+    double sx, sy;
+
+    janet_fixarity(argc, 4);
+
+    seat = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_seat);
+    time = (uint32_t)janet_getuinteger64(argv, 1);
+    sx = janet_getnumber(argv, 2);
+    sy = janet_getnumber(argv, 3);
+
+    wlr_seat_pointer_notify_motion(seat, time, sx, sy);
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wlr_seat_pointer_clear_focus(int32_t argc, Janet *argv)
+{
+    struct wlr_seat *seat;
+
+    janet_fixarity(argc, 1);
+
+    seat = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_seat);
+    wlr_seat_pointer_clear_focus(seat);
+    return janet_wrap_nil();
+}
+
+
 static Janet cfun_wlr_seat_set_capabilities(int32_t argc, Janet *argv)
 {
     struct wlr_seat *seat;
@@ -2343,22 +2391,37 @@ static JanetReg cfuns[] = {
     },
     {
         "wlr-seat-pointer-notify-button", cfun_wlr_seat_pointer_notify_button,
-        "(" MOD_NAME "/wlr-seat-pointer-notify-button wl-seat time button state)\n\n"
-        "Notifies the seat object that there's a button event."
+        "(" MOD_NAME "/wlr-seat-pointer-notify-button wlr-seat time button state)\n\n"
+        "Notifies the seat object that there's a pointer button event."
     },
     {
         "wlr-seat-pointer-notify-axis", cfun_wlr_seat_pointer_notify_axis,
-        "(" MOD_NAME "/wlr-seat-pointer-notify-axis wl-seat time orientation value value-discrete source)\n\n"
-        "Notifies the seat object that there's an axis event."
+        "(" MOD_NAME "/wlr-seat-pointer-notify-axis wlr-seat time orientation value value-discrete source)\n\n"
+        "Notifies the seat object that there's an pointer axis event."
     },
     {
         "wlr-seat-pointer-notify-frame", cfun_wlr_seat_pointer_notify_frame,
-        "(" MOD_NAME "/wlr-seat-pointer-notify-frame wl-seat)\n\n"
-        "Notifies the seat object that there's an frame event."
+        "(" MOD_NAME "/wlr-seat-pointer-notify-frame wlr-seat)\n\n"
+        "Notifies the seat object that there's an pointer frame event."
+    },
+    {
+        "wlr-seat-pointer-notify-enter", cfun_wlr_seat_pointer_notify_enter,
+        "(" MOD_NAME "/wlr-seat-pointer-notify-enter wlr-seat wlr-surface sx sy)\n\n"
+        "Notifies the seat object that there's an pointer enter event."
+    },
+    {
+        "wlr-seat-pointer-notify-motion", cfun_wlr_seat_pointer_notify_motion,
+        "(" MOD_NAME "/wlr-seat-pointer-notify-motion wlr-seat time sx sy)\n\n"
+        "Notifies the seat object that there's an pointer motion event."
+    },
+    {
+        "wlr-seat-pointer-clear-focus", cfun_wlr_seat_pointer_clear_focus,
+        "(" MOD_NAME "/wlr-seat-pointer-clear-focus wlr-seat)\n\n"
+        "Clears the focused surface for the pointer."
     },
     {
         "wlr-seat-set-capabilities", cfun_wlr_seat_set_capabilities,
-        "(" MOD_NAME "/wlr-seat-set-capabilities capabilities)\n\n"
+        "(" MOD_NAME "/wlr-seat-set-capabilities wlr-seat capabilities)\n\n"
         "Sets the capabilities of a seat."
     },
     {
