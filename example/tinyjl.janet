@@ -15,6 +15,31 @@
   (any? (map (fn [ee] (= e ee)) arr)))
 
 
+(defn reset-cursor-mode [server]
+  (put server :cursor-mode :passthrough)
+  (put server :grabbed-view nil))
+
+
+(defn desktop-view-at [server x y]
+  (def [node sx sy] (wlr-scene-node-at (((server :scene) :tree) :node) x y))
+  (when (or (nil? node) (not (= (node :type) :buffer)))
+    (break [nil nil 0 0]))
+
+  (def scene-buffer (wlr-scene-buffer-from-node node))
+  (def scene-surface (wlr-scene-surface-from-buffer scene-buffer))
+  (when (nil? scene-surface)
+    (break [nil nil 0 0]))
+
+  (def surface (scene-surface :surface))
+  (var tree (node :parent))
+  (while (and (not (nil? tree)) (nil? ((tree :node) :data)))
+    (set tree ((tree :node) :parent)))
+  (def view (pointer-to-table ((tree :node) :data)))
+
+  (wlr-log :debug "#### desktop-view-at #### view = %p" view)
+  [view surface sx sy])
+
+
 (defn focus-view [view surface]
   (when (nil? view) (break))
 
@@ -49,35 +74,35 @@
   )
 
 
-(defn process-cursor-motion [server time]
-  # TODO
-  (wlr-xcursor-manager-set-cursor-image (server :xcursor-manager) "left_ptr" (server :cursor))
+(defn process-cursor-move [server time]
+  #TODO
   )
 
 
-(defn reset-cursor-mode [server]
-  (put server :cursor-mode :passthrough)
-  (put server :grabbed-view nil))
+(defn process-cursor-resize [server time]
+  #TODO
+  )
 
 
-(defn desktop-view-at [server x y]
-  (def [node sx sy] (wlr-scene-node-at (((server :scene) :tree) :node) x y))
-  (when (or (nil? node) (not (= (node :type) :buffer)))
-    (break [nil nil 0 0]))
+(defn process-cursor-motion [server time]
+  (when (= (server :cursor-mode) :move)
+    (process-cursor-move server time)
+    (break))
+  (when (= (server :cursor-mode) :resize)
+    (process-cursor-resize server time)
+    (break))
 
-  (def scene-buffer (wlr-scene-buffer-from-node node))
-  (def scene-surface (wlr-scene-surface-from-buffer scene-buffer))
-  (when (nil? scene-surface)
-    (break [nil nil 0 0]))
+  (def [view surface sx sy]
+    (desktop-view-at server ((server :cursor) :x) ((server :cursor) :y)))
 
-  (def surface (scene-surface :surface))
-  (var tree (node :parent))
-  (while (and (not (nil? tree)) (nil? ((tree :node) :data)))
-    (set tree ((tree :node) :parent)))
-  (def view (pointer-to-table ((tree :node) :data)))
+  (when (nil? view)
+    (wlr-xcursor-manager-set-cursor-image (server :xcursor-manager) "left_ptr" (server :cursor)))
 
-  (wlr-log :debug "#### desktop-view-at #### view = %p" view)
-  [view surface sx sy])
+  (if (nil? surface)
+    (wlr-seat-pointer-clear-focus (server :seat))
+    (do
+      (wlr-seat-pointer-notify-enter (server :seat) surface sx sy)
+      (wlr-seat-pointer-notify-motion (server :seat) time sx sy))))
 
 
 (defn handle-wlr-keyboard-modifiers [keyboard listener data]
