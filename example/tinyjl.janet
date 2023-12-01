@@ -37,7 +37,7 @@
     (set tree ((tree :node) :parent)))
   (def view (pointer-to-table ((tree :node) :data)))
 
-  (wlr-log :debug "#### desktop-view-at #### view = %p" view)
+  (wlr-log :debug "#### desktop-view-at #### sx = %p, sy = %p" sx sy)
   [view surface sx sy])
 
 
@@ -385,8 +385,13 @@
   (wlr-log :debug "#### handle-xdg-surface-unmap ####")
   (when (= view ((view :server) :grabbed-view))
     (reset-cursor-mode (view :server)))
-  (remove-element ((view :server) :views) view)
-  (wlr-log :debug "#### (length ((view :server) :views)) = %v" (length ((view :server) :views))))
+  (def view-list ((view :server) :views))
+  (remove-element view-list view)
+  (wlr-log :debug "#### (length view-list) = %v" (length view-list))
+
+  (when (> (length view-list) 0)
+    (def next-view (view-list (- (length view-list) 1)))
+    (focus-view next-view (((next-view :xdg-toplevel) :base) :surface))))
 
 
 (defn handle-xdg-surface-destroy [view listener data]
