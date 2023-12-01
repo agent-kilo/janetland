@@ -189,6 +189,90 @@ static Janet cfun_wlr_log(int32_t argc, Janet *argv)
 }
 
 
+static int method_box_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_box *box = (struct wlr_box *)p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    if (!janet_cstrcmp(kw, "x")) {
+        *out = janet_wrap_integer(box->x);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "y")) {
+        *out = janet_wrap_integer(box->y);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "width")) {
+        *out = janet_wrap_integer(box->width);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "height")) {
+        *out = janet_wrap_integer(box->height);
+        return 1;
+    }
+
+    return 0;
+}
+
+
+static void method_box_put(void *p, Janet key, Janet value) {
+    struct wlr_box *box = (struct wlr_box *)p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+    if (!janet_checkint(value)) {
+        janet_panicf("expected a 32-bit signed integer, got %v", value);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+    int *member_p = NULL;
+    if (!janet_cstrcmp(kw, "x")) {
+        member_p = &box->x;
+    } else if (!janet_cstrcmp(kw, "y")) {
+        member_p = &box->y;
+    } else if (!janet_cstrcmp(kw, "width")) {
+        member_p = &box->width;
+    } else if (!janet_cstrcmp(kw, "height")) {
+        member_p = &box->height;
+    } else {
+        janet_panicf("unknown key: %v", key);
+    }
+    *member_p = janet_unwrap_integer(value);
+}
+
+
+static Janet cfun_box(int32_t argc, Janet *argv)
+{
+    if (argc & 0x01) {
+        janet_panicf("expected even number of arguments, got %d", argc);
+    }
+
+    struct wlr_box *box = janet_abstract(&jwlr_at_box, sizeof(*box));
+    memset(box, 0, sizeof(*box));
+
+    for (int32_t k = 0, v = 1; k < argc; k += 2, v += 2) {
+        const uint8_t *kw = janet_getkeyword(argv, k);
+        if (!janet_cstrcmp(kw, "x")) {
+            box->x = janet_getinteger(argv, v);
+        } else if (!janet_cstrcmp(kw, "y")) {
+            box->y = janet_getinteger(argv, v);
+        } else if (!janet_cstrcmp(kw, "width")) {
+            box->width = janet_getinteger(argv, v);
+        } else if (!janet_cstrcmp(kw, "height")) {
+            box->height = janet_getinteger(argv, v);
+        }
+    }
+
+    return janet_wrap_abstract(box);
+}
+
+
 static int method_wlr_backend_get(void *p, Janet key, Janet *out) {
     struct wlr_backend **backend_p = (struct wlr_backend **)p;
     struct wlr_backend *backend = *backend_p;
@@ -722,6 +806,8 @@ static void method_wlr_xdg_surface_put(void *p, Janet key, Janet value) {
         surface->data = jl_value_to_data_pointer(value);
         return;
     }
+
+    janet_panicf("unknown key: %v", key);
 }
 
 
@@ -1441,6 +1527,22 @@ static Janet cfun_wlr_xdg_surface_schedule_configure(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_xdg_surface_get_geometry(int32_t argc, Janet *argv)
+{
+    struct wlr_xdg_surface *surface;
+
+    struct wlr_box *box;
+
+    janet_fixarity(argc, 1);
+
+    surface = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_xdg_surface);
+    box = janet_abstract(&jwlr_at_box, sizeof(*box));
+
+    wlr_xdg_surface_get_geometry(surface, box);
+    return janet_wrap_abstract(box);
+}
+
+
 static Janet cfun_wlr_xdg_toplevel_set_activated(int32_t argc, Janet *argv)
 {
     struct wlr_xdg_toplevel *toplevel;
@@ -1574,6 +1676,8 @@ static void method_wlr_scene_node_put(void *p, Janet key, Janet value) {
         node->data = jl_value_to_data_pointer(value);
         return;
     }
+
+    janet_panicf("unknown key: %v", key);
 }
 
 static int method_wlr_input_device_get(void *p, Janet key, Janet *out)
@@ -2259,6 +2363,11 @@ static JanetReg cfuns[] = {
         "Logs a formatted string message."
     },
     {
+        "box", cfun_box,
+        "(" MOD_NAME "/box ...)\n\n"
+        "Creates a box object."
+    },
+    {
         "wlr-backend-autocreate", cfun_wlr_backend_autocreate,
         "(" MOD_NAME "/wlr-backend-autocreate wl-display)\n\n"
         "Creates a wlroots backend object."
@@ -2519,6 +2628,11 @@ static JanetReg cfuns[] = {
         "Sends a configure for the xdg surface."
     },
     {
+        "wlr-xdg-surface-get-geometry", cfun_wlr_xdg_surface_get_geometry,
+        "(" MOD_NAME "/wlr-xdg-surface-get-geometry wlr-xdg-surface)\n\n"
+        "Gets the geometry of a wlroots xdg surface object."
+    },
+    {
         "wlr-xdg-toplevel-set-activated", cfun_wlr_xdg_toplevel_set_activated,
         "(" MOD_NAME "/wlr-xdg-toplevel-set-activated wlr-xdg-toplevel activated)\n\n"
         "Sets the toplevel in an activated or deactivated state."
@@ -2563,6 +2677,7 @@ JANET_MODULE_ENTRY(JanetTable *env)
     /* XXX: this will pollute the environment with wl/ stuff, even :export is set to nil */
     jl_import(WL_MOD_FULL_NAME);
 
+    janet_register_abstract_type(&jwlr_at_box);
     janet_register_abstract_type(&jwlr_at_wlr_backend);
     janet_register_abstract_type(&jwlr_at_wlr_renderer);
     janet_register_abstract_type(&jwlr_at_wlr_allocator);

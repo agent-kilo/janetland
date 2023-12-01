@@ -12,6 +12,18 @@
 static int method_wlr_abs_obj_compare(void *lhs, void *rhs);
 
 
+static int method_box_get(void *p, Janet key, Janet *out);
+static void method_box_put(void *p, Janet key, Janet value);
+static const JanetAbstractType jwlr_at_box = {
+    .name = MOD_NAME "/box",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_box_get,
+    .put = method_box_put,
+    JANET_ATEND_PUT
+};
+
+
 static const jl_offset_def_t wlr_backend_signal_offsets[] = {
     JWLR_OFFSET_DEF(struct wlr_backend, events.destroy),
     JWLR_OFFSET_DEF(struct wlr_backend, events.new_input),
