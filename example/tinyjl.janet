@@ -115,8 +115,50 @@
 
 
 (defn process-cursor-resize [server time]
-  #TODO
-  )
+  (def view (server :grabbed-view))
+  (def border-x (- ((server :cursor) :x) (server :grab-x)))
+  (def border-y (- ((server :cursor) :y) (server :grab-y)))
+  (var new-left ((server :grab-geobox) :x))
+  (var new-right (+ ((server :grab-geobox) :x) ((server :grab-geobox) :width)))
+  (var new-top ((server :grab-geobox) :y))
+  (var new-bottom (+ ((server :grab-geobox) :y) ((server :grab-geobox) :height)))
+
+  (def edges (server :resize-edges))
+
+  (cond
+    (contains? edges :top)
+    (do
+      (set new-top border-y)
+      (when (>= new-top new-bottom)
+        (set new-top (- new-bottom 1))))
+
+    (contains? edges :bottom)
+    (do
+      (set new-bottom border-y)
+      (when (<= new-bottom new-top)
+        (set new-bottom (+ new-top 1)))))
+
+  (cond
+    (contains? edges :left)
+    (do
+      (set new-left border-x)
+      (when (>= new-left new-right)
+        (set new-left (- new-right 1))))
+
+    (contains? edges :right)
+    (do
+      (set new-right border-x)
+      (when (<= new-right new-left)
+        (set new-right (+ new-left 1)))))
+
+  (def geo-box (wlr-xdg-surface-get-geometry ((view :xdg-toplevel) :base)))
+  (set (view :x) (math/round (- new-left (geo-box :x))))
+  (set (view :y) (math/round (- new-top (geo-box :y))))
+  (wlr-scene-node-set-position ((view :scene-tree) :node) (view :x) (view :y))
+
+  (def new-width (math/round (- new-right new-left)))
+  (def new-height (math/round (- new-bottom new-top)))
+  (wlr-xdg-toplevel-set-size (view :xdg-toplevel) new-width new-height))
 
 
 (defn process-cursor-motion [server time]
