@@ -1561,6 +1561,78 @@ static Janet cfun_wlr_xdg_toplevel_set_activated(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_xdg_toplevel_set_maximized(int32_t argc, Janet *argv)
+{
+    struct wlr_xdg_toplevel *toplevel;
+    bool maximized;
+
+    uint32_t serial;
+
+    janet_fixarity(argc, 2);
+
+    toplevel = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_xdg_toplevel);
+    maximized = janet_getboolean(argv, 1);
+    serial = wlr_xdg_toplevel_set_maximized(toplevel, maximized);
+
+    /* XXX: uint32_t -> int32_t conversion */
+    return janet_wrap_integer(serial);
+}
+
+
+static Janet cfun_wlr_xdg_toplevel_set_fullscreen(int32_t argc, Janet *argv)
+{
+    struct wlr_xdg_toplevel *toplevel;
+    bool fullscreen;
+
+    uint32_t serial;
+
+    janet_fixarity(argc, 2);
+
+    toplevel = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_xdg_toplevel);
+    fullscreen = janet_getboolean(argv, 1);
+    serial = wlr_xdg_toplevel_set_fullscreen(toplevel, fullscreen);
+
+    /* XXX: uint32_t -> int32_t conversion */
+    return janet_wrap_integer(serial);
+}
+
+
+static Janet cfun_wlr_xdg_toplevel_set_resizing(int32_t argc, Janet *argv)
+{
+    struct wlr_xdg_toplevel *toplevel;
+    bool resizing;
+
+    uint32_t serial;
+
+    janet_fixarity(argc, 2);
+
+    toplevel = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_xdg_toplevel);
+    resizing = janet_getboolean(argv, 1);
+    serial = wlr_xdg_toplevel_set_resizing(toplevel, resizing);
+
+    /* XXX: uint32_t -> int32_t conversion */
+    return janet_wrap_integer(serial);
+}
+
+
+static Janet cfun_wlr_xdg_toplevel_set_tiled(int32_t argc, Janet *argv)
+{
+    struct wlr_xdg_toplevel *toplevel;
+    uint32_t tiled_edges;
+
+    uint32_t serial;
+
+    janet_fixarity(argc, 2);
+
+    toplevel = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_xdg_toplevel);
+    tiled_edges = jl_get_key_flags(argv, 1, wlr_edges_defs);
+    serial = wlr_xdg_toplevel_set_tiled(toplevel, tiled_edges);
+
+    /* XXX: uint32_t -> int32_t conversion */
+    return janet_wrap_integer(serial);
+}
+
+
 static Janet cfun_wlr_xdg_toplevel_set_size(int32_t argc, Janet *argv)
 {
     struct wlr_xdg_toplevel *toplevel;
@@ -2653,6 +2725,26 @@ static JanetReg cfuns[] = {
         "wlr-xdg-toplevel-set-activated", cfun_wlr_xdg_toplevel_set_activated,
         "(" MOD_NAME "/wlr-xdg-toplevel-set-activated wlr-xdg-toplevel activated)\n\n"
         "Sets the toplevel in an activated or deactivated state."
+    },
+    {
+        "wlr-xdg-toplevel-set-maximized", cfun_wlr_xdg_toplevel_set_maximized,
+        "(" MOD_NAME "/wlr-xdg-toplevel-set-maximized wlr-xdg-toplevel maximized)\n\n"
+        "Sets the toplevel in a maximized state."
+    },
+    {
+        "wlr-xdg-toplevel-set-fullscreen", cfun_wlr_xdg_toplevel_set_fullscreen,
+        "(" MOD_NAME "/wlr-xdg-toplevel-set-fullscreen wlr-xdg-toplevel fullscreen)\n\n"
+        "Sets the toplevel in a fullscreen state."
+    },
+    {
+        "wlr-xdg-toplevel-set-resizing", cfun_wlr_xdg_toplevel_set_resizing,
+        "(" MOD_NAME "/wlr-xdg-toplevel-set-resizing wlr-xdg-toplevel resizing)\n\n"
+        "Sets the toplevel in a resizing state."
+    },
+    {
+        "wlr-xdg-toplevel-set-tiled", cfun_wlr_xdg_toplevel_set_tiled,
+        "(" MOD_NAME "/wlr-xdg-toplevel-set-tiled wlr-xdg-toplevel tiled-edges)\n\n"
+        "Sets the toplevel in a tiled state. Edges can be :top, :bottom, :left or :right."
     },
     {
         "wlr-xdg-toplevel-set-size", cfun_wlr_xdg_toplevel_set_size,
