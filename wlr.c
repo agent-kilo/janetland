@@ -494,6 +494,22 @@ static Janet cfun_wlr_scene_node_raise_to_top(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_scene_node_set_position(int32_t argc, Janet *argv)
+{
+    struct wlr_scene_node *node;
+    int x, y;
+
+    janet_fixarity(argc, 3);
+
+    node = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_node);
+    x = janet_getinteger(argv, 1);
+    y = janet_getinteger(argv, 2);
+
+    wlr_scene_node_set_position(node, x, y);
+    return janet_wrap_nil();
+}
+
+
 static int method_wlr_xdg_shell_get(void *p, Janet key, Janet *out) {
     struct wlr_xdg_shell **xdg_shell_p = (struct wlr_xdg_shell **)p;
     struct wlr_xdg_shell *xdg_shell = *xdg_shell_p;
@@ -1369,6 +1385,24 @@ static Janet cfun_wlr_output_layout_add_auto(int32_t argc, Janet *argv)
 
     wlr_output_layout_add_auto(layout, output);
     return janet_wrap_nil();
+}
+
+
+static Janet cfun_wlr_surface_get_root_surface(int32_t argc, Janet *argv)
+{
+    struct wlr_surface *surface;
+
+    struct wlr_surface *root;
+
+    janet_fixarity(argc, 1);
+
+    surface = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_surface);
+    root = wlr_surface_get_root_surface(surface);
+    if (!root) {
+        return janet_wrap_nil();
+    } else {
+        return janet_wrap_abstract(jl_pointer_to_abs_obj(root, &jwlr_at_wlr_surface));
+    }
 }
 
 
@@ -2295,6 +2329,11 @@ static JanetReg cfuns[] = {
         "Move the node above all of its sibling nodes."
     },
     {
+        "wlr-scene-node-set-position", cfun_wlr_scene_node_set_position,
+        "(" MOD_NAME "/wlr-scene-node-set-position wlr-scene-node x y)\n\n"
+        "Sets the position of a scene node."
+    },
+    {
         "wlr-xdg-shell-create", cfun_wlr_xdg_shell_create,
         "(" MOD_NAME "/wlr-xdg-shell-create wl-display version)\n\n"
         "Creates a wlroots xdg shell object."
@@ -2463,6 +2502,11 @@ static JanetReg cfuns[] = {
         "wlr-output-layout-add-auto", cfun_wlr_output_layout_add_auto,
         "(" MOD_NAME "/wlr-output-layout-add-auto wlr-output-layout wlr-output)\n\n"
         "Adds an output object to an output layout."
+    },
+    {
+        "wlr-surface-get-root-surface", cfun_wlr_surface_get_root_surface,
+        "(" MOD_NAME "/wlr-surface-get-root-surface wlr-surface)\n\n"
+        "Gets the root of the subsurface tree for the specified surface."
     },
     {
         "wlr-xdg-surface-from-wlr-surface", cfun_wlr_xdg_surface_from_wlr_surface,
