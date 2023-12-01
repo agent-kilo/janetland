@@ -50,6 +50,19 @@ static Janet cfun_wl_display_create(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wl_display_terminate(int32_t argc, Janet *argv)
+{
+    struct wl_display *display;
+
+    janet_fixarity(argc, 1);
+
+    display = jl_get_abs_obj_pointer(argv, 0, &jwl_at_wl_display);
+    wl_display_terminate(display);
+
+    return janet_wrap_nil();
+}
+
+
 static Janet cfun_wl_display_destroy(int32_t argc, Janet *argv)
 {
     struct wl_display *display;
@@ -205,6 +218,11 @@ static JanetReg cfuns[] = {
         "wl-display-create", cfun_wl_display_create,
         "(" MOD_NAME "/wl-display-create)\n\n"
         "Creates a Wayland display object."
+    },
+    {
+        "wl-display-terminate", cfun_wl_display_terminate,
+        "(" MOD_NAME "/wl-display-terminate)\n\n"
+        "Stops a Wayland display event loop."
     },
     {
         "wl-display-destroy", cfun_wl_display_destroy,
