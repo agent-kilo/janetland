@@ -92,9 +92,22 @@
 
 
 (defn handle-keybinding [server sym]
-  #TODO
-  true
-  )
+  (wlr-log :debug "#### handle-keybinding #### sym = %p" sym)
+  (case sym
+    (int/u64 0xff1b) # XKB_KEY_Escape
+    (do
+      (wl-display-terminate (server :display))
+      true)
+
+    (int/u64 0xffbe) # XKB_KEY_F1
+    (do
+      (when (> (length (server :views)) 1)
+        (def next-view ((server :views) 0))
+        (focus-view next-view (((next-view :xdg-toplevel) :base) :surface)))
+      true)
+
+    # default
+    false))
 
 
 (defn handle-wlr-keyboard-key [keyboard listener data]
@@ -116,7 +129,7 @@
   (wlr-log :debug "#### modifiers = %p" modifiers)
 
   (def handled-syms
-    (if (contains? modifiers :alt)
+    (if (and (contains? modifiers :alt) (= (event :state) :pressed))
       (map (fn [sym] (handle-keybinding server sym)) syms)
       (map (fn [_] false) syms)))
 
