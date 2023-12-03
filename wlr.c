@@ -6,6 +6,7 @@
 
 #include <wlr/util/log.h>
 #include <wlr/backend.h>
+#include <wlr/xwayland.h>
 #include <wlr/render/wlr_renderer.h>
 #include <wlr/render/allocator.h>
 #include <wlr/types/wlr_compositor.h>
@@ -2435,6 +2436,90 @@ static Janet cfun_wlr_scene_surface_from_buffer(int32_t argc, Janet *argv)
 }
 
 
+static int method_wlr_xwayland_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_xwayland **xwayland_p = (struct wlr_xwayland **)p;
+    struct wlr_xwayland *xwayland = *xwayland_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    struct wl_signal **signal_p = get_abstract_struct_signal_member(xwayland, kw, wlr_xwayland_signal_offsets);
+    if (signal_p) {
+        *out = janet_wrap_abstract(signal_p);
+        return 1;
+    }
+
+   if (!janet_cstrcmp(kw, "display-name")) {
+       if (!(xwayland->display_name)) {
+           *out = janet_wrap_nil();
+           return 1;
+       }
+       *out = janet_cstringv(xwayland->display_name);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "wl-display")) {
+       if (!(xwayland->wl_display)) {
+           *out = janet_wrap_nil();
+           return 1;
+       }
+       *out = janet_wrap_abstract(jl_pointer_to_abs_obj_by_name(xwayland->wl_display, WL_MOD_NAME "/wl-display"));
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "compositor")) {
+       if (!(xwayland->compositor)) {
+           *out = janet_wrap_nil();
+           return 1;
+       }
+       *out = janet_wrap_abstract(jl_pointer_to_abs_obj(xwayland->compositor, &jwlr_at_wlr_compositor));
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "seat")) {
+       if (!(xwayland->seat)) {
+           *out = janet_wrap_nil();
+           return 1;
+       }
+       *out = janet_wrap_abstract(jl_pointer_to_abs_obj(xwayland->seat, &jwlr_at_wlr_seat));
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "data")) {
+        if (!(xwayland->data)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
+        *out = janet_wrap_pointer(xwayland->data);
+        return 1;
+    }
+
+    return 0;
+}
+
+
+static Janet cfun_wlr_xwayland_create(int32_t argc, Janet *argv)
+{
+    struct wl_display *display;
+    struct wlr_compositor *compositor;
+    bool lazy;
+
+    struct wlr_xwayland *xwayland;
+
+    janet_fixarity(argc, 3);
+
+    display = jl_get_abs_obj_pointer_by_name(argv, 0, WL_MOD_NAME "/wl-display");
+    compositor = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_compositor);
+    lazy = janet_getboolean(argv, 2);
+
+    xwayland = wlr_xwayland_create(display, compositor, lazy);
+    if (!xwayland) {
+        janet_panic("failed to create wlroots XWayland object");
+    }
+    return janet_wrap_abstract(jl_pointer_to_abs_obj(xwayland, &jwlr_at_wlr_xwayland));
+}
+
+
 static JanetReg cfuns[] = {
     {
         "wlr-log-init", cfun_wlr_log_init,
@@ -2781,6 +2866,11 @@ static JanetReg cfuns[] = {
         "(" MOD_NAME "/wlr-scene-surface-from-buffer wlr-scene-buffer)\n\n"
         "Gets the wlr-scene-surface backing the specified buffer."
     },
+    {
+        "wlr-xwayland-create", cfun_wlr_xwayland_create,
+        "(" MOD_NAME "/wlr-xwayland-create wl-display wlr-compositor lazy)\n\n"
+        "Creates an XWayland server and XWM."
+    },
     {NULL, NULL, NULL},
 };
 
@@ -2832,6 +2922,7 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_keyboard);
     janet_register_abstract_type(&jwlr_at_wlr_keyboard_modifiers);
     janet_register_abstract_type(&jwlr_at_wlr_keyboard_key_event);
+    janet_register_abstract_type(&jwlr_at_wlr_xwayland);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 }

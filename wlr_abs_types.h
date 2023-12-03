@@ -693,4 +693,20 @@ static const JanetAbstractType jwlr_at_wlr_keyboard = {
 };
 
 
+static const jl_offset_def_t wlr_xwayland_signal_offsets[] = {
+    JWLR_OFFSET_DEF(struct wlr_xwayland, events.ready),
+    JWLR_OFFSET_DEF(struct wlr_xwayland, events.new_surface),
+    JWLR_OFFSET_DEF(struct wlr_xwayland, events.remove_startup_info),
+    {NULL, 0},
+};
+
+static int method_wlr_xwayland_get(void *p, Janet key, Janet *out);
+static const JanetAbstractType jwlr_at_wlr_xwayland = {
+    .name = MOD_NAME "/wlr-xwayland",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_xwayland_get,
+    JANET_ATEND_GET
+};
+
 #endif
