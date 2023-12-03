@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <assert.h>
 
 #include <janet.h>
 
@@ -983,6 +984,131 @@ static Janet cfun_wlr_xcursor_manager_load(int32_t argc, Janet *argv)
     scale = (float)janet_getnumber(argv, 1);
 
     return janet_wrap_boolean(wlr_xcursor_manager_load(manager, scale));
+}
+
+
+static int method_wlr_xcursor_image_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_xcursor_image **image_p = (struct wlr_xcursor_image **)p;
+    struct wlr_xcursor_image *image = *image_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    if (!janet_cstrcmp(kw, "width")) {
+        /* uint32_t -> uint64_t conversion */
+        *out = janet_wrap_u64(image->width);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "height")) {
+        /* uint32_t -> uint64_t conversion */
+        *out = janet_wrap_u64(image->height);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "hotspot-x")) {
+        /* uint32_t -> uint64_t conversion */
+        *out = janet_wrap_u64(image->hotspot_x);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "hotspot-y")) {
+        /* uint32_t -> uint64_t conversion */
+        *out = janet_wrap_u64(image->hotspot_y);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "delay")) {
+        /* uint32_t -> uint64_t conversion */
+        *out = janet_wrap_u64(image->delay);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "buffer")) {
+        /* See xcursor_create_from_data() in wlroots for size calculation. */
+        uint32_t buf_len = image->width * image->height * sizeof(uint32_t);
+        /* XXX: uint32_t -> int32_t conversion */
+        int32_t signed_len = (int32_t)buf_len;
+        assert(signed_len >= 0);
+        JanetBuffer *buf = janet_buffer(signed_len);
+        janet_buffer_push_bytes(buf, image->buffer, signed_len);
+        *out = janet_wrap_buffer(buf);
+        return 1;
+    }
+
+    return 0;
+}
+
+
+static int method_wlr_xcursor_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_xcursor **xcursor_p = (struct wlr_xcursor **)p;
+    struct wlr_xcursor *xcursor = *xcursor_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    if (!janet_cstrcmp(kw, "image-count")) {
+        /* unsigned int -> uint64_t conversion */
+        *out = janet_wrap_u64(xcursor->image_count);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "images")) {
+        if (!(xcursor->images)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
+        unsigned int count = xcursor->image_count;
+        JanetArray *img_arr = janet_array(xcursor->image_count);
+        for (unsigned int i = 0; i < count; i++) {
+            struct wlr_xcursor_image **image_p =
+                (struct wlr_xcursor_image **)jl_pointer_to_abs_obj(xcursor->images[i],
+                                                                   &jwlr_at_wlr_xcursor_image);
+            janet_array_push(img_arr, janet_wrap_abstract(image_p));
+        }
+        *out = janet_wrap_array(img_arr);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "name")) {
+        if (!(xcursor->name)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
+        *out = janet_cstringv(xcursor->name);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "total-delay")) {
+        /* uint32_t -> uint64_t conversion */
+        *out = janet_wrap_u64(xcursor->total_delay);
+        return 1;
+    }
+
+    return 0;
+}
+
+
+static Janet cfun_wlr_xcursor_manager_get_xcursor(int32_t argc, Janet *argv)
+{
+    struct wlr_xcursor_manager *manager;
+    const char *name;
+    float scale;
+
+    struct wlr_xcursor *xcursor;
+
+    janet_fixarity(argc, 3);
+
+    manager = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_xcursor_manager);
+    name = janet_getcstring(argv, 1);
+    /* XXX: double -> float conversion */
+    scale = (float)janet_getnumber(argv, 2);
+
+    xcursor = wlr_xcursor_manager_get_xcursor(manager, name, scale);
+    if (!xcursor) {
+        janet_panicf("failed to find cursor: %s", name);
+    }
+    return janet_wrap_abstract(jl_pointer_to_abs_obj(xcursor, &jwlr_at_wlr_xcursor));
 }
 
 
@@ -2520,6 +2646,45 @@ static Janet cfun_wlr_xwayland_create(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_xwayland_set_seat(int32_t argc, Janet *argv)
+{
+    struct wlr_xwayland *xwayland;
+    struct wlr_seat *seat;
+
+    janet_fixarity(argc, 2);
+
+    xwayland = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_xwayland);
+    seat = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_seat);
+
+    wlr_xwayland_set_seat(xwayland, seat);
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wlr_xwayland_set_cursor(int32_t argc, Janet *argv)
+{
+    struct wlr_xwayland *xwayland;
+    JanetBuffer *pixels;
+    uint32_t stride;
+    uint32_t width, height;
+    int32_t hotspot_x, hotspot_y;
+
+    janet_fixarity(argc, 7);
+
+    xwayland = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_xwayland);
+    pixels = janet_getbuffer(argv, 1);
+    /* uint64_t -> uint32_t conversion */
+    stride = (uint32_t)janet_getuinteger64(argv, 2);
+    width = (uint32_t)janet_getuinteger64(argv, 3);
+    height = (uint32_t)janet_getuinteger64(argv, 4);
+    hotspot_x = janet_getinteger(argv, 5);
+    hotspot_y = janet_getinteger(argv, 6);
+
+    wlr_xwayland_set_cursor(xwayland, pixels->data, stride, width, height, hotspot_x, hotspot_y);
+    return janet_wrap_nil();
+}
+
+
 static JanetReg cfuns[] = {
     {
         "wlr-log-init", cfun_wlr_log_init,
@@ -2660,6 +2825,11 @@ static JanetReg cfuns[] = {
         "wlr-xcursor-manager-load", cfun_wlr_xcursor_manager_load,
         "(" MOD_NAME "/wlr-xcursor-manager-load wlr-xcursor-manager scale)\n\n"
         "Loads an xcursor theme at the given scale factor."
+    },
+    {
+        "wlr-xcursor-manager-get-xcursor", cfun_wlr_xcursor_manager_get_xcursor,
+        "(" MOD_NAME "/wlr-xcursor-manager-get-xcursor wlr-xcursor-manager name scale)\n\n"
+        "Retrieves xcursor image data."
     },
     {
         "wlr-xcursor-manager-set-cursor-image", cfun_wlr_xcursor_manager_set_cursor_image,
@@ -2870,6 +3040,16 @@ static JanetReg cfuns[] = {
         "wlr-xwayland-create", cfun_wlr_xwayland_create,
         "(" MOD_NAME "/wlr-xwayland-create wl-display wlr-compositor lazy)\n\n"
         "Creates an XWayland server and XWM."
+    },
+    {
+        "wlr-xwayland-set-seat", cfun_wlr_xwayland_set_seat,
+        "(" MOD_NAME "/wlr-xwayland-set-seat wlr-xwayland wlr-seat)\n\n"
+        "Lets the XWayland object know about the seat."
+    },
+    {
+        "wlr-xwayland-set-cursor", cfun_wlr_xwayland_set_cursor,
+        "(" MOD_NAME "/wlr-xwayland-set-cursor wlr-xwayland pixels stride width height hotspot-x hotspot-y)\n\n"
+        "Sets the cursor image for XWayland."
     },
     {NULL, NULL, NULL},
 };

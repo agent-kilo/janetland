@@ -305,6 +305,26 @@ static const JanetAbstractType jwlr_at_wlr_xcursor_manager = {
 };
 
 
+static int method_wlr_xcursor_image_get(void *p, Janet key, Janet *out);
+static const JanetAbstractType jwlr_at_wlr_xcursor_image = {
+    .name = MOD_NAME "/wlr-xcursor-image",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_xcursor_image_get,
+    JANET_ATEND_GET
+};
+
+
+static int method_wlr_xcursor_get(void *p, Janet key, Janet *out);
+static const JanetAbstractType jwlr_at_wlr_xcursor = {
+    .name = MOD_NAME "/wlr-xcursor",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_xcursor_get,
+    JANET_ATEND_GET
+};
+
+
 static const jl_key_def_t wl_seat_capability_defs[] = {
     {"pointer", WL_SEAT_CAPABILITY_POINTER},
     {"keyboard", WL_SEAT_CAPABILITY_KEYBOARD},
