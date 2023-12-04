@@ -1,6 +1,7 @@
 (use janetland/wl)
 (use janetland/wlr)
 (use janetland/xkb)
+(use janetland/xcb)
 (use janetland/util)
 
 
@@ -549,6 +550,49 @@
   (wlr-seat-pointer-notify-frame (server :seat)))
 
 
+(defn handle-xwayland-ready [server listener data]
+  (wlr-log :debug "#### handle-xwayland-ready ####")
+  (wlr-log :debug "#### ((server :xwayland) :display-name) = %p" ((server :xwayland) :display-name))
+
+  (def [xcb-conn _screen-num] (xcb-connect ((server :xwayland) :display-name)))
+  (def err (xcb-connection-has-error xcb-conn))
+  (when (not (= err :none))
+    (wlr-log :debug "#### failed to connect to X server: %p" err)
+    (break))
+
+  (put server :xwayland-atoms @{})
+
+  (each atom-name ["_NET_WM_WINDOW_TYPE"
+                   "_NET_WM_WINDOW_TYPE_NORMAL"
+                   "_NET_WM_WINDOW_TYPE_DOCK"
+                   "_NET_WM_WINDOW_TYPE_DIALOG"]
+    (def cookie (xcb-intern-atom xcb-conn false atom-name))
+    (def [reply rep-err] (xcb-intern-atom-reply xcb-conn cookie))
+    (if (nil? reply)
+      (wlr-log :debug "#### failed to intern atom: %p" atom-name)
+      (put (server :xwayland-atoms) atom-name (reply :atom))))
+
+  (xcb-disconnect xcb-conn)
+
+  (wlr-log :debug "#### interned atoms: %p" (server :xwayland-atoms))
+
+  (wlr-xwayland-set-seat (server :xwayland) (server :seat))
+  (def xcursor (wlr-xcursor-manager-get-xcursor (server :xcursor-manager) "left_ptr" 1))
+  (wlr-xwayland-set-cursor (server :xwayland)
+                           (((xcursor :images) 0) :buffer)
+                           (* (((xcursor :images) 0) :width) 4)
+                           (((xcursor :images) 0) :width)
+                           (((xcursor :images) 0) :height)
+                           (((xcursor :images) 0) :hotspot-x)
+                           (((xcursor :images) 0) :hotspot-y)))
+
+
+(defn handle-xwayland-new-surface [server listener data]
+  #TODO
+  (wlr-log :debug "#### handle-xwayland-new-surface ####")
+  )
+
+
 (defn main [& argv]
   (wlr-log-init :debug)
 
@@ -634,6 +678,18 @@
      (wl-signal-add ((server :seat) :events.request_set_selection)
                     (fn [listener data]
                       (handle-seat-request-set-selection server listener data))))
+
+  (put server :xwayland (wlr-xwayland-create (server :display) (server :compositor) false))
+
+  (put server :xwayland-ready-listener
+     (wl-signal-add ((server :xwayland) :events.ready)
+                    (fn [listener data]
+                      (handle-xwayland-ready server listener data))))
+
+  (put server :xwayland-new-surface-listener
+     (wl-signal-add ((server :xwayland) :events.new_surface)
+                    (fn [listener data]
+                      (handle-xwayland-new-surface server listener data))))
 
   (put server :socket (wl-display-add-socket-auto (server :display)))
 
