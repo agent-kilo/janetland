@@ -75,7 +75,7 @@ static Janet cfun_wl_list_to_array(int32_t argc, Janet *argv)
     uint64_t link_offset = (uint64_t)-1;
     JanetArray *arr;
 
-    janet_fixarity(argc, 2);
+    janet_fixarity(argc, 3);
 
     list = jl_get_abs_obj_pointer_by_name(argv, 0, WL_MOD_NAME "/wl-list");
     element_at_name = janet_getsymbol(argv, 1);
