@@ -414,11 +414,23 @@ static const JanetAbstractType jwlr_at_wlr_output = {
 };
 
 
+#define __WLR_OUTPUT_MODE_ASPECT_RATIO_MAX 4
+static const jl_key_def_t wlr_output_mode_aspect_ratio_defs[] = {
+    {"none", WLR_OUTPUT_MODE_ASPECT_RATIO_NONE},
+    {"4:3", WLR_OUTPUT_MODE_ASPECT_RATIO_4_3},
+    {"16:9", WLR_OUTPUT_MODE_ASPECT_RATIO_16_9},
+    {"64:27", WLR_OUTPUT_MODE_ASPECT_RATIO_64_27},
+    {"256:135", WLR_OUTPUT_MODE_ASPECT_RATIO_256_135},
+    {NULL, 0},
+};
+
+static int method_wlr_output_mode_get(void *p, Janet key, Janet *out);
 static const JanetAbstractType jwlr_at_wlr_output_mode = {
     .name = MOD_NAME "/wlr-output-mode",
     .gc = NULL,
     .gcmark = NULL,
-    JANET_ATEND_GCMARK
+    .get = method_wlr_output_mode_get,
+    JANET_ATEND_GET
 };
 
 

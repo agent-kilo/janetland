@@ -1513,6 +1513,44 @@ static int method_wlr_output_get(void *p, Janet key, Janet *out) {
 }
 
 
+static int method_wlr_output_mode_get(void *p, Janet key, Janet *out) {
+    struct wlr_output_mode **mode_p = (struct wlr_output_mode **)p;
+    struct wlr_output_mode *mode = *mode_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    if (!janet_cstrcmp(kw, "width")) {
+        *out = janet_wrap_integer(mode->width);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "height")) {
+        *out = janet_wrap_integer(mode->height);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "refresh")) {
+        *out = janet_wrap_integer(mode->refresh);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "preferred")) {
+        *out = janet_wrap_boolean(mode->preferred);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "picture-aspect-ratio")) {
+        if (mode->picture_aspect_ratio > __WLR_OUTPUT_MODE_ASPECT_RATIO_MAX) {
+            janet_panicf("unknown aspect ration from wlroots output mode: %d", mode->picture_aspect_ratio);
+        }
+        *out = janet_ckeywordv(wlr_output_mode_aspect_ratio_defs[mode->picture_aspect_ratio].name);
+        return 1;
+    }
+
+    return 0;
+}
+
+
 static Janet cfun_wlr_output_init_render(int32_t argc, Janet *argv)
 {
     struct wlr_output *output;
