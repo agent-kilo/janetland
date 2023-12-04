@@ -317,6 +317,9 @@ JANET_MODULE_ENTRY(JanetTable *env)
     define_xcb_atom_enum_t_constants(env);
 
     janet_register_abstract_type(&jxcb_at_xcb_connection_t);
+    janet_register_abstract_type(&jxcb_at_xcb_generic_error_t);
+    janet_register_abstract_type(&jxcb_at_intern_atom_cookie_t);
+    janet_register_abstract_type(&jxcb_at_xcb_intern_atom_reply_t);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 }
