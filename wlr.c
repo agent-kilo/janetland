@@ -1009,13 +1009,17 @@ static int method_wlr_xcursor_image_get(void *p, Janet key, Janet *out)
         return 1;
     }
     if (!janet_cstrcmp(kw, "hotspot-x")) {
-        /* uint32_t -> uint64_t conversion */
-        *out = janet_wrap_u64(image->hotspot_x);
+        /* XXX: wlr-xwayland-set-cursor accepts a signed 32-bit value,
+           but the member in wlr_xcursor_image is a uint32_t.
+           We do the conversion here, and assume the coordinates won't
+           overflow a int32_t. */
+        /* uint32_t -> int32_t conversion */
+        *out = janet_wrap_integer(image->hotspot_x);
         return 1;
     }
     if (!janet_cstrcmp(kw, "hotspot-y")) {
-        /* uint32_t -> uint64_t conversion */
-        *out = janet_wrap_u64(image->hotspot_y);
+        /* uint32_t -> int32_t conversion */
+        *out = janet_wrap_integer(image->hotspot_y);
         return 1;
     }
     if (!janet_cstrcmp(kw, "delay")) {
