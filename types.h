@@ -60,4 +60,10 @@ typedef struct {
     uint64_t offset;
 } jl_offset_def_t;
 
+typedef struct {
+    const char *type;
+    const char *member;
+    uint64_t offset;
+} jl_link_offset_def_t;
+
 #endif

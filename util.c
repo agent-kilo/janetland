@@ -3,6 +3,7 @@
 
 #include <janet.h>
 
+#include <wlr/xwayland.h>
 #include <wlr/types/wlr_output.h>
 #include <wlr/types/wlr_output_layout.h>
 #include <wlr/types/wlr_xdg_shell.h>
@@ -49,21 +50,26 @@ static Janet cfun_get_abstract_listener_data(int32_t argc, Janet *argv)
 }
 
 
-static const jl_offset_def_t link_offsets[] =
+#define JUTIL_LINK_OFFSET_DEF(at_name, struct_type, member) \
+    {at_name, #member, offsetof(struct_type, member)}
+
+static const jl_link_offset_def_t link_offsets[] =
 {
-    {WLR_MOD_NAME "/wlr-output-mode", offsetof(struct wlr_output_mode, link)},
-    {WLR_MOD_NAME "/wlr-output-cursor", offsetof(struct wlr_output_cursor, link)},
-    {WLR_MOD_NAME "/wlr-output-layout-output", offsetof(struct wlr_output_layout_output , link)},
-    {WLR_MOD_NAME "/wlr-xdg-surface", offsetof(struct wlr_xdg_surface , link)},
-    {WLR_MOD_NAME "/wlr-xdg-popup", offsetof(struct wlr_xdg_popup , link)},
-    {WLR_MOD_NAME "/wlr-scene-node", offsetof(struct wlr_scene_node , link)},
-    {NULL, 0},
+    JUTIL_LINK_OFFSET_DEF(WLR_MOD_NAME "/wlr-output-mode", struct wlr_output_mode, link),
+    JUTIL_LINK_OFFSET_DEF(WLR_MOD_NAME "/wlr-output-cursor", struct wlr_output_cursor, link),
+    JUTIL_LINK_OFFSET_DEF(WLR_MOD_NAME "/wlr-output-layout-output", struct wlr_output_layout_output, link),
+    JUTIL_LINK_OFFSET_DEF(WLR_MOD_NAME "/wlr-xdg-surface", struct wlr_xdg_surface, link),
+    JUTIL_LINK_OFFSET_DEF(WLR_MOD_NAME "/wlr-xdg-popup", struct wlr_xdg_popup, link),
+    JUTIL_LINK_OFFSET_DEF(WLR_MOD_NAME "/wlr-scene-node", struct wlr_scene_node, link),
+    JUTIL_LINK_OFFSET_DEF(WLR_MOD_NAME "/wlr-xwayland-surface", struct wlr_xwayland_surface, parent_link),
+    {NULL, NULL, 0},
 };
 
 static Janet cfun_wl_list_to_array(int32_t argc, Janet *argv)
 {
     struct wl_list *list;
     const uint8_t *element_at_name;
+    const uint8_t *element_link_member;
 
     const JanetAbstractType *element_at;
     uint64_t link_offset = (uint64_t)-1;
@@ -73,10 +79,12 @@ static Janet cfun_wl_list_to_array(int32_t argc, Janet *argv)
 
     list = jl_get_abs_obj_pointer_by_name(argv, 0, WL_MOD_NAME "/wl-list");
     element_at_name = janet_getsymbol(argv, 1);
+    element_link_member = janet_getkeyword(argv, 2);
 
     element_at = jl_get_abstract_type_by_key(argv[1]);
-    for (int i = 0; NULL != link_offsets[i].name; i++) {
-        if (!janet_cstrcmp(element_at_name, link_offsets[i].name)) {
+    for (int i = 0; NULL != link_offsets[i].type; i++) {
+        if (!janet_cstrcmp(element_at_name, link_offsets[i].type) &&
+            !janet_cstrcmp(element_link_member, link_offsets[i].member)) {
             link_offset = link_offsets[i].offset;
         }
     }
