@@ -8,6 +8,8 @@
 #define WLR_MOD_FULL_NAME "janetland/wlr"
 #define XKB_MOD_NAME "xkb"
 #define XKB_MOD_FULL_NAME "janetland/xkb"
+#define XCB_MOD_NAME "xcb"
+#define XCB_MOD_FULL_NAME "janetland/xcb"
 #define UTIL_MOD_NAME "util"
 #define UTIL_MOD_FULL_NAME "janetland/util"
 

@@ -70,6 +70,11 @@
                 :header ["jl.h" "types.h"]
                 :cflags [;common-cflags ;wlr-cflags])
 
+(declare-native :name (project-module "xcb")
+                :source ["xcb.c"]
+                :header ["jl.h" "types.h"]
+                :cflags [;common-cflags ;wlr-cflags])
+
 (declare-native :name (project-module "util")
                 :source ["util.c"]
                 :header ["jl.h"]
