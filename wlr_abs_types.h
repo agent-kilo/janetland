@@ -729,4 +729,47 @@ static const JanetAbstractType jwlr_at_wlr_xwayland = {
     JANET_ATEND_GET
 };
 
+
+static const jl_offset_def_t wlr_xwayland_surface_signal_offsets[] = {
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, events.destroy),
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, events.request_configure),
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, events.request_move),
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, events.request_resize),
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, events.request_minimize),
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, events.request_maximize),
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, events.request_fullscreen),
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, events.request_activate),
+
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, events.map),
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, events.unmap),
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, events.set_title),
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, events.set_class),
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, events.set_role),
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, events.set_parent),
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, events.set_pid),
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, events.set_startup_id),
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, events.set_window_type),
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, events.set_hints),
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, events.set_decorations),
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, events.set_override_redirect),
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, events.set_geometry),
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, events.ping_timeout),
+
+    {NULL, 0},
+};
+
+static const jl_offset_def_t wlr_xwayland_surface_list_offsets[] = {
+    JWLR_OFFSET_DEF(struct wlr_xwayland_surface, children),
+    {NULL, 0},
+};
+
+static int method_wlr_xwayland_surface_get(void *p, Janet key, Janet *out);
+static const JanetAbstractType jwlr_at_wlr_xwayland_surface = {
+    .name = MOD_NAME "/wlr-xwayland-surface",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_xwayland_surface_get,
+    JANET_ATEND_GET
+};
+
 #endif

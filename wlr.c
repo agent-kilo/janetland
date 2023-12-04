@@ -2689,6 +2689,113 @@ static Janet cfun_wlr_xwayland_set_cursor(int32_t argc, Janet *argv)
 }
 
 
+static int method_wlr_xwayland_surface_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_xwayland_surface **surface_p = (struct wlr_xwayland_surface **)p;
+    struct wlr_xwayland_surface *surface = *surface_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    struct wl_signal **signal_p = get_abstract_struct_signal_member(surface, kw,
+                                                                    wlr_xwayland_surface_signal_offsets);
+    if (signal_p) {
+        *out = janet_wrap_abstract(signal_p);
+        return 1;
+    }
+
+   if (!janet_cstrcmp(kw, "surface")) {
+       if (!(surface->surface)) {
+           *out = janet_wrap_nil();
+           return 1;
+       }
+       *out = janet_wrap_abstract(jl_pointer_to_abs_obj(surface->surface, &jwlr_at_wlr_surface));
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "x")) {
+       /* int16_t -> int32_t conversion */
+       *out = janet_wrap_integer(surface->x);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "y")) {
+       /* int16_t -> int32_t conversion */
+       *out = janet_wrap_integer(surface->y);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "width")) {
+       /* uint16_t -> int32_t conversion */
+       *out = janet_wrap_integer(surface->width);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "height")) {
+       /* uint16_t -> int32_t conversion */
+       *out = janet_wrap_integer(surface->height);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "override-redirect")) {
+       *out = janet_wrap_boolean(surface->override_redirect);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "mapped")) {
+       *out = janet_wrap_boolean(surface->mapped);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "title")) {
+       if (!(surface->title)) {
+           *out = janet_wrap_nil();
+           return 1;
+       }
+       *out = janet_cstringv(surface->title);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "class")) {
+       if (!(surface->class)) {
+           *out = janet_wrap_nil();
+           return 1;
+       }
+       *out = janet_cstringv(surface->class);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "instance")) {
+       if (!(surface->instance)) {
+           *out = janet_wrap_nil();
+           return 1;
+       }
+       *out = janet_cstringv(surface->instance);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "role")) {
+       if (!(surface->role)) {
+           *out = janet_wrap_nil();
+           return 1;
+       }
+       *out = janet_cstringv(surface->role);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "startup-id")) {
+       if (!(surface->startup_id)) {
+           *out = janet_wrap_nil();
+           return 1;
+       }
+       *out = janet_cstringv(surface->startup_id);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "parent")) {
+       if (!(surface->parent)) {
+           *out = janet_wrap_nil();
+           return 1;
+       }
+       *out = janet_wrap_abstract(jl_pointer_to_abs_obj(surface->parent, &jwlr_at_wlr_xwayland_surface));
+       return 1;
+   }
+
+    return 0;
+}
+
+
 static JanetReg cfuns[] = {
     {
         "wlr-log-init", cfun_wlr_log_init,
@@ -3107,6 +3214,7 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_keyboard_modifiers);
     janet_register_abstract_type(&jwlr_at_wlr_keyboard_key_event);
     janet_register_abstract_type(&jwlr_at_wlr_xwayland);
+    janet_register_abstract_type(&jwlr_at_wlr_xwayland_surface);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 }
