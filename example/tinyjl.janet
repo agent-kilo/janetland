@@ -317,6 +317,14 @@
            (wlr-output-init-render wlr-output (server :allocator) (server :renderer)))
 
   (when (not (wl-list-empty (wlr-output :modes)))
+    (each m (wl-list-to-array (wlr-output :modes) 'wlr/wlr-output-mode :link)
+      (wlr-log :debug
+         "#### mode: %dx%d@%d (%v%s)"
+         (m :width)
+         (m :height)
+         (m :refresh)
+         (m :picture-aspect-ratio)
+         (if (m :preferred) ", preferred" "")))
     (def mode (wlr-output-preferred-mode wlr-output))
     (wlr-output-set-mode wlr-output mode)
     (wlr-output-enable wlr-output true)
@@ -690,6 +698,8 @@
      (wl-signal-add ((server :xwayland) :events.new_surface)
                     (fn [listener data]
                       (handle-xwayland-new-surface server listener data))))
+
+  (os/setenv "DISPLAY" ((server :xwayland) :display-name))
 
   (put server :socket (wl-display-add-socket-auto (server :display)))
 
