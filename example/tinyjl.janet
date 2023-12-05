@@ -202,6 +202,11 @@
       (wl-display-terminate (server :display))
       true)
 
+    (int/u64 0xff0d) # XKB_KEY_Return
+    (do
+      (os/spawn ["/bin/sh" "-c" "kitty"])
+      true)
+
     (int/u64 0xffbe) # XKB_KEY_F1
     (do
       (when (> (length (server :views)) 1)
@@ -568,16 +573,29 @@
     (wlr-log :debug "#### failed to connect to X server: %p" err)
     (break))
 
-  (put server :xwayland-atoms @{})
-
-  (each atom-name ["_NET_WM_WINDOW_TYPE"
+  (def atom-names ["_NET_WM_WINDOW_TYPE"
                    "_NET_WM_WINDOW_TYPE_NORMAL"
                    "_NET_WM_WINDOW_TYPE_DOCK"
-                   "_NET_WM_WINDOW_TYPE_DIALOG"]
-    (def cookie (xcb-intern-atom xcb-conn false atom-name))
+                   "_NET_WM_WINDOW_TYPE_DIALOG"
+                   "_NET_WM_WINDOW_TYPE_UTILITY"
+                   "_NET_WM_WINDOW_TYPE_TOOLBAR"
+                   "_NET_WM_WINDOW_TYPE_SPLASH"
+                   "_NET_WM_WINDOW_TYPE_MENU"
+                   "_NET_WM_WINDOW_TYPE_DROPDOWN_MENU"
+                   "_NET_WM_WINDOW_TYPE_POPUP_MENU"
+                   "_NET_WM_WINDOW_TYPE_TOOLTIP"
+                   "_NET_WM_WINDOW_TYPE_NOTIFICATION"
+                   "_NET_WM_STATE_MODAL"])
+  (def atom-cookies
+    (map (fn [atom-name] [atom-name (xcb-intern-atom xcb-conn false atom-name)])
+         atom-names))
+
+  (put server :xwayland-atoms @{})
+  (each [atom-name cookie] atom-cookies
     (def [reply rep-err] (xcb-intern-atom-reply xcb-conn cookie))
     (if (nil? reply)
-      (wlr-log :debug "#### failed to intern atom: %p" atom-name)
+      (wlr-log :debug "#### failed to intern atom %p: %p"
+               atom-name (if (nil? rep-err) nil (rep-err :error-code)))
       (put (server :xwayland-atoms) atom-name (reply :atom))))
 
   (xcb-disconnect xcb-conn)
@@ -595,9 +613,57 @@
                            (((xcursor :images) 0) :hotspot-y)))
 
 
+(defn handle-dummy-event [xw-surface name listener data]
+  (wlr-log :info "######## handle-dummy-event #### xw-surface = %p, name = %p" xw-surface name))
+
+
 (defn handle-xwayland-new-surface [server listener data]
-  #TODO
-  (wlr-log :debug "#### handle-xwayland-new-surface ####")
+  (def xw-surface (get-abstract-listener-data data 'wlr/wlr-xwayland-surface))
+  (wlr-log :debug "#### handle-xwayland-new-surface #### xw-surface = %p" xw-surface)
+  (wlr-log :debug "#### (xw-surface :override-redirect) = %p" (xw-surface :override-redirect))
+  (wlr-log :debug "#### (xw-surface :mapped) = %p" (xw-surface :mapped))
+  (wlr-log :debug "#### (xw-surface :title) = %p" (xw-surface :title))
+  (wlr-log :debug "#### (xw-surface :class) = %p" (xw-surface :class))
+  (wlr-log :debug "#### (xw-surface :instance) = %p" (xw-surface :instance))
+  (wlr-log :debug "#### (xw-surface :role) = %p" (xw-surface :role))
+  (wlr-log :debug "#### (xw-surface :startup-id) = %p" (xw-surface :startup-id))
+  (wlr-log :debug "#### (xw-surface :parent) = %p" (xw-surface :parent))
+  (when (not (nil? (xw-surface :parent)))
+    (wlr-log :debug "#### ((xw-surface :parent) :title) = %p" ((xw-surface :parent) :title)))
+
+  (wl-signal-add (xw-surface :events.map)
+                 (fn [listener data]
+                   (handle-dummy-event xw-surface "map" listener data)))
+  (wl-signal-add (xw-surface :events.unmap)
+                 (fn [listener data]
+                   (handle-dummy-event xw-surface "unmap" listener data)))
+  (wl-signal-add (xw-surface :events.set_title)
+                 (fn [listener data]
+                   (handle-dummy-event xw-surface "set_title" listener data)))
+  (wl-signal-add (xw-surface :events.set_class)
+                 (fn [listener data]
+                   (handle-dummy-event xw-surface "set_class" listener data)))
+  (wl-signal-add (xw-surface :events.set_role)
+                 (fn [listener data]
+                   (handle-dummy-event xw-surface "set_role" listener data)))
+  (wl-signal-add (xw-surface :events.set_parent)
+                 (fn [listener data]
+                   (handle-dummy-event xw-surface "set_parent" listener data)))
+  (wl-signal-add (xw-surface :events.set_geometry)
+                 (fn [listener data]
+                   (handle-dummy-event xw-surface "set_geometry" listener data)))
+  (wl-signal-add (xw-surface :events.ping_timeout)
+                 (fn [listener data]
+                   (handle-dummy-event xw-surface "ping_timeout" listener data)))
+  (wl-signal-add (xw-surface :events.destroy)
+                 (fn [listener data]
+                   (handle-dummy-event xw-surface "destroy" listener data)))
+  (wl-signal-add (xw-surface :events.request_configure)
+                 (fn [listener data]
+                   (handle-dummy-event xw-surface "request_configure" listener data)))
+  (wl-signal-add (xw-surface :events.request_activate)
+                 (fn [listener data]
+                   (handle-dummy-event xw-surface "request_activate" listener data)))
   )
 
 
