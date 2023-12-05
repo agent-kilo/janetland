@@ -69,11 +69,31 @@ static int method_xcb_generic_error_t_gc(void *data, size_t len)
     return 0;
 }
 
+static int method_xcb_generic_error_t_get(void *p, Janet key, Janet *out)
+{
+    xcb_generic_error_t **error_p = p;
+    xcb_generic_error_t *error = *error_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    if (!janet_cstrcmp(kw, "error-code")) {
+        *out = janet_wrap_integer(error->error_code);
+        return 1;
+    }
+
+    return 0;
+}
+
 static const JanetAbstractType jxcb_at_xcb_generic_error_t = {
     .name = MOD_NAME "/xcb-generic-error-t",
     .gc = method_xcb_generic_error_t_gc,
     .gcmark = NULL,
-    JANET_ATEND_GCMARK
+    .get = method_xcb_generic_error_t_get,
+    JANET_ATEND_GET
 };
 
 
