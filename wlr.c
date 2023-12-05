@@ -2833,6 +2833,36 @@ static int method_wlr_xwayland_surface_get(void *p, Janet key, Janet *out)
     return 0;
 }
 
+static void method_wlr_xwayland_surface_put(void *p, Janet key, Janet value) {
+    struct wlr_xwayland_surface **surface_p = (struct wlr_xwayland_surface **)p;
+    struct wlr_xwayland_surface *surface = *surface_p;
+
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    if (!janet_cstrcmp(kw, "data")) {
+        surface->data = jl_value_to_data_pointer(value);
+        return;
+    }
+
+    janet_panicf("unknown key: %v", key);
+}
+
+
+static Janet cfun_wlr_xwayland_or_surface_wants_focus(int32_t argc, Janet *argv)
+{
+    struct wlr_xwayland_surface *surface;
+
+    janet_fixarity(argc, 1);
+
+    surface = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_xwayland_surface);
+    return janet_wrap_boolean(wlr_xwayland_or_surface_wants_focus(surface));
+}
+
 
 static JanetReg cfuns[] = {
     {
@@ -3198,6 +3228,11 @@ static JanetReg cfuns[] = {
     {
         "wlr-xwayland-set-cursor", cfun_wlr_xwayland_set_cursor,
         "(" MOD_NAME "/wlr-xwayland-set-cursor wlr-xwayland pixels stride width height hotspot-x hotspot-y)\n\n"
+        "Sets the cursor image for XWayland."
+    },
+    {
+        "wlr-xwayland-or-surface-wants-focus", cfun_wlr_xwayland_or_surface_wants_focus,
+        "(" MOD_NAME "/wlr-xwayland-or-surface-wants-focus wlr-xwayland-surface)\n\n"
         "Sets the cursor image for XWayland."
     },
     {NULL, NULL, NULL},
