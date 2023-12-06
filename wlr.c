@@ -1432,6 +1432,18 @@ static Janet cfun_wlr_seat_pointer_notify_motion(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_seat_pointer_notify_clear_focus(int32_t argc, Janet *argv)
+{
+    struct wlr_seat *seat;
+
+    janet_fixarity(argc, 1);
+
+    seat = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_seat);
+    wlr_seat_pointer_notify_clear_focus(seat);
+    return janet_wrap_nil();
+}
+
+
 static Janet cfun_wlr_seat_pointer_clear_focus(int32_t argc, Janet *argv)
 {
     struct wlr_seat *seat;
@@ -2921,6 +2933,21 @@ static Janet cfun_wlr_xwayland_surface_configure(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_xwayland_surface_activate(int32_t argc, Janet *argv)
+{
+    struct wlr_xwayland_surface *surface;
+    bool activated;
+
+    janet_fixarity(argc, 2);
+
+    surface = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_xwayland_surface);
+    activated = janet_getboolean(argv, 1);
+
+    wlr_xwayland_surface_activate(surface, activated);
+    return janet_wrap_nil();
+}
+
+
 static int method_wlr_xwayland_surface_configure_event_get(void *p, Janet key, Janet *out)
 {
     struct wlr_xwayland_surface_configure_event **event_p = (struct wlr_xwayland_surface_configure_event **)p;
@@ -3197,6 +3224,11 @@ static JanetReg cfuns[] = {
         "Notifies the seat object that there's an pointer motion event."
     },
     {
+        "wlr-seat-pointer-notify-clear-focus", cfun_wlr_seat_pointer_notify_clear_focus,
+        "(" MOD_NAME "/wlr-seat-pointer-notify-clear-focus wlr-seat)\n\n"
+        "Notifies the seat object that the pointer focus has left."
+    },
+    {
         "wlr-seat-pointer-clear-focus", cfun_wlr_seat_pointer_clear_focus,
         "(" MOD_NAME "/wlr-seat-pointer-clear-focus wlr-seat)\n\n"
         "Clears the focused surface for the pointer."
@@ -3355,6 +3387,11 @@ static JanetReg cfuns[] = {
         "wlr-xwayland-surface-configure", cfun_wlr_xwayland_surface_configure,
         "(" MOD_NAME "/wlr-xwayland-surface-configure wlr-xwayland-surface x y width height)\n\n"
         "Configures an XWayland surface with the given geometry."
+    },
+    {
+        "wlr-xwayland-surface-activate", cfun_wlr_xwayland_surface_activate,
+        "(" MOD_NAME "/wlr-xwayland-surface-activate wlr-xwayland-surface activated)\n\n"
+        "Activates an XWayland surface."
     },
     {NULL, NULL, NULL},
 };
