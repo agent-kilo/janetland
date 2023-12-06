@@ -2973,7 +2973,7 @@ static Janet cfun_wlr_xwayland_surface_restack(int32_t argc, Janet *argv)
     }
     mode = jl_get_key_def(argv, 2, xcb_stack_mode_defs);
 
-    wlr_xwayland_surface_activate(surface, activated);
+    wlr_xwayland_surface_restack(surface, sibling, mode);
     return janet_wrap_nil();
 }
 
