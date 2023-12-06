@@ -1323,6 +1323,18 @@ static Janet cfun_wlr_seat_keyboard_notify_enter(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_seat_keyboard_notify_clear_focus(int32_t argc, Janet *argv)
+{
+    struct wlr_seat *seat;
+
+    janet_fixarity(argc, 1);
+
+    seat = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_seat);
+    wlr_seat_keyboard_notify_clear_focus(seat);
+    return janet_wrap_nil();
+}
+
+
 static Janet cfun_wlr_seat_pointer_notify_button(int32_t argc, Janet *argv)
 {
     struct wlr_seat *seat;
@@ -3153,6 +3165,11 @@ static JanetReg cfuns[] = {
         "wlr-seat-keyboard-notify-enter", cfun_wlr_seat_keyboard_notify_enter,
         "(" MOD_NAME "/wlr-seat-keyboard-notify-enter wlr-seat wlr-surface keycodes wlr-keyboard-modifiers)\n\n"
         "Notifies the seat object that the keyboard focus has changed."
+    },
+    {
+        "wlr-seat-keyboard-notify-clear-focus", cfun_wlr_seat_keyboard_notify_clear_focus,
+        "(" MOD_NAME "/wlr-seat-keyboard-notify-clear-focus wlr-seat)\n\n"
+        "Notifies the seat object that the keyboard focus has left the current surface."
     },
     {
         "wlr-seat-pointer-notify-button", cfun_wlr_seat_pointer_notify_button,
