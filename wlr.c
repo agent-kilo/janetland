@@ -2948,6 +2948,36 @@ static Janet cfun_wlr_xwayland_surface_activate(int32_t argc, Janet *argv)
 }
 
 
+#define __XCB_STACK_MODE_MAX 4
+static const jl_key_def_t xcb_stack_mode_defs[] = {
+    {"above", XCB_STACK_MODE_ABOVE},
+    {"below", XCB_STACK_MODE_BELOW},
+    {"top-if", XCB_STACK_MODE_TOP_IF},
+    {"bottom-if", XCB_STACK_MODE_BOTTOM_IF},
+    {"opposite", XCB_STACK_MODE_OPPOSITE},
+    {NULL, 0},
+};
+
+static Janet cfun_wlr_xwayland_surface_restack(int32_t argc, Janet *argv)
+{
+    struct wlr_xwayland_surface *surface, *sibling;
+    enum xcb_stack_mode_t mode;
+
+    janet_fixarity(argc, 3);
+
+    surface = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_xwayland_surface);
+    if (janet_checktype(argv[1], JANET_NIL)) {
+        sibling = NULL;
+    } else {
+        sibling = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_xwayland_surface);
+    }
+    mode = jl_get_key_def(argv, 2, xcb_stack_mode_defs);
+
+    wlr_xwayland_surface_activate(surface, activated);
+    return janet_wrap_nil();
+}
+
+
 static int method_wlr_xwayland_surface_configure_event_get(void *p, Janet key, Janet *out)
 {
     struct wlr_xwayland_surface_configure_event **event_p = (struct wlr_xwayland_surface_configure_event **)p;
@@ -3392,6 +3422,11 @@ static JanetReg cfuns[] = {
         "wlr-xwayland-surface-activate", cfun_wlr_xwayland_surface_activate,
         "(" MOD_NAME "/wlr-xwayland-surface-activate wlr-xwayland-surface activated)\n\n"
         "Activates an XWayland surface."
+    },
+    {
+        "wlr-xwayland-surface-restack", cfun_wlr_xwayland_surface_restack,
+        "(" MOD_NAME "/wlr-xwayland-surface-restack wlr-xwayland-surface sibling mode)\n\n"
+        "Restacks surface relative to sibling."
     },
     {NULL, NULL, NULL},
 };
