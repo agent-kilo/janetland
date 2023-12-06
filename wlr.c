@@ -2864,6 +2864,78 @@ static Janet cfun_wlr_xwayland_or_surface_wants_focus(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_xwayland_surface_configure(int32_t argc, Janet *argv)
+{
+    struct wlr_xwayland_surface *surface;
+    int16_t x, y;
+    uint16_t width, height;
+
+    janet_fixarity(argc, 5);
+
+    surface = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_xwayland_surface);
+    /* int32_t -> int16_t conversion */
+    /* XXX: Should check the range before conversion */
+    x = (int16_t)janet_getinteger(argv, 1);
+    y = (int16_t)janet_getinteger(argv, 2);
+    /* int32_t -> uint16_t conversion */
+    /* XXX: Should check the range before conversion */
+    width = (uint16_t)janet_getinteger(argv, 3);
+    height = (uint16_t)janet_getinteger(argv, 4);
+
+    wlr_xwayland_surface_configure(surface, x, y, width, height);
+    return janet_wrap_nil();
+}
+
+
+static int method_wlr_xwayland_surface_configure_event_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_xwayland_surface_configure_event **event_p = (struct wlr_xwayland_surface_configure_event **)p;
+    struct wlr_xwayland_surface_configure_event *event = *event_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+   if (!janet_cstrcmp(kw, "surface")) {
+       if (!(event->surface)) {
+           *out = janet_wrap_nil();
+           return 1;
+       }
+       *out = janet_wrap_abstract(jl_pointer_to_abs_obj(event->surface, &jwlr_at_wlr_xwayland_surface));
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "x")) {
+       /* int16_t -> int32_t conversion */
+       *out = janet_wrap_integer(event->x);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "y")) {
+       /* int16_t -> int32_t conversion */
+       *out = janet_wrap_integer(event->y);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "width")) {
+       /* uint16_t -> int32_t conversion */
+       *out = janet_wrap_integer(event->width);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "height")) {
+       /* uint16_t -> int32_t conversion */
+       *out = janet_wrap_integer(event->height);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "mask")) {
+       /* uint16_t -> int32_t conversion */
+       *out = janet_wrap_integer(event->mask);
+       return 1;
+   }
+
+    return 0;
+}
+
+
 static JanetReg cfuns[] = {
     {
         "wlr-log-init", cfun_wlr_log_init,
@@ -3235,6 +3307,11 @@ static JanetReg cfuns[] = {
         "(" MOD_NAME "/wlr-xwayland-or-surface-wants-focus wlr-xwayland-surface)\n\n"
         "Sets the cursor image for XWayland."
     },
+    {
+        "wlr-xwayland-surface-configure", cfun_wlr_xwayland_surface_configure,
+        "(" MOD_NAME "/wlr-xwayland-surface-configure wlr-xwayland-surface x y width height)\n\n"
+        "Configures an XWayland surface with the given geometry."
+    },
     {NULL, NULL, NULL},
 };
 
@@ -3288,6 +3365,7 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_keyboard_key_event);
     janet_register_abstract_type(&jwlr_at_wlr_xwayland);
     janet_register_abstract_type(&jwlr_at_wlr_xwayland_surface);
+    janet_register_abstract_type(&jwlr_at_wlr_xwayland_surface_configure_event);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 }

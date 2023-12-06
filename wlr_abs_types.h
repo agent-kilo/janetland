@@ -786,4 +786,15 @@ static const JanetAbstractType jwlr_at_wlr_xwayland_surface = {
     JANET_ATEND_PUT
 };
 
+
+static int method_wlr_xwayland_surface_configure_event_get(void *p, Janet key, Janet *out);
+static const JanetAbstractType jwlr_at_wlr_xwayland_surface_configure_event = {
+    .name = MOD_NAME "/wlr-xwayland-surface-configure-event",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_xwayland_surface_configure_event_get,
+    JANET_ATEND_GET
+};
+
+
 #endif
