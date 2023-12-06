@@ -2963,6 +2963,21 @@ static Janet cfun_wlr_xwayland_surface_set_maximized(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_xwayland_surface_set_minimized(int32_t argc, Janet *argv)
+{
+    struct wlr_xwayland_surface *surface;
+    bool minimized;
+
+    janet_fixarity(argc, 2);
+
+    surface = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_xwayland_surface);
+    minimized = janet_getboolean(argv, 1);
+
+    wlr_xwayland_surface_set_minimized(surface, minimized);
+    return janet_wrap_nil();
+}
+
+
 static Janet cfun_wlr_xwayland_surface_set_fullscreen(int32_t argc, Janet *argv)
 {
     struct wlr_xwayland_surface *surface;
@@ -3469,6 +3484,11 @@ static JanetReg cfuns[] = {
         "wlr-xwayland-surface-set-maximized", cfun_wlr_xwayland_surface_set_maximized,
         "(" MOD_NAME "/wlr-xwayland-surface-set-maximized wlr-xwayland-surface maximized)\n\n"
         "Sets the XWayland surface in a maximized state."
+    },
+    {
+        "wlr-xwayland-surface-set-minimized", cfun_wlr_xwayland_surface_set_minimized,
+        "(" MOD_NAME "/wlr-xwayland-surface-set-minimized wlr-xwayland-surface minimized)\n\n"
+        "Sets the XWayland surface in a minimized state."
     },
     {
         "wlr-xwayland-surface-set-fullscreen", cfun_wlr_xwayland_surface_set_fullscreen,
