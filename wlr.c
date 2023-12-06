@@ -2978,6 +2978,18 @@ static Janet cfun_wlr_xwayland_surface_set_fullscreen(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_xwayland_surface_close(int32_t argc, Janet *argv)
+{
+    struct wlr_xwayland_surface *surface;
+
+    janet_fixarity(argc, 1);
+
+    surface = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_xwayland_surface);
+    wlr_xwayland_surface_close(surface);
+    return janet_wrap_nil();
+}
+
+
 #define __XCB_STACK_MODE_MAX 4
 static const jl_key_def_t xcb_stack_mode_defs[] = {
     {"above", XCB_STACK_MODE_ABOVE},
@@ -3462,6 +3474,11 @@ static JanetReg cfuns[] = {
         "wlr-xwayland-surface-set-fullscreen", cfun_wlr_xwayland_surface_set_fullscreen,
         "(" MOD_NAME "/wlr-xwayland-surface-set-fullscreen wlr-xwayland-surface fullscreen)\n\n"
         "Sets the XWayland surface in a fullscreen state."
+    },
+    {
+        "wlr-xwayland-surface-close", cfun_wlr_xwayland_surface_close,
+        "(" MOD_NAME "/wlr-xwayland-surface-close wlr-xwayland-surface)\n\n"
+        "Closes an XWayland surface."
     },
     {
         "wlr-xwayland-surface-restack", cfun_wlr_xwayland_surface_restack,
