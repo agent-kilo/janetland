@@ -2867,12 +2867,92 @@ static int method_wlr_xwayland_surface_get(void *p, Janet key, Janet *out)
        *out = janet_cstringv(surface->startup_id);
        return 1;
    }
+   if (!janet_cstrcmp(kw, "pid")) {
+       /* pid_t -> int32_t conversion */
+       *out = janet_wrap_integer(surface->pid);
+       return 1;
+   }
    if (!janet_cstrcmp(kw, "parent")) {
        if (!(surface->parent)) {
            *out = janet_wrap_nil();
            return 1;
        }
        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(surface->parent, &jwlr_at_wlr_xwayland_surface));
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "window-type")) {
+       if (!(surface->window_type)) {
+           *out = janet_wrap_nil();
+           return 1;
+       }
+       JanetArray *type_arr = janet_array(surface->window_type_len);
+       for (size_t i = 0; i < surface->window_type_len; i++) {
+           /* unsigned int -> uint64_t conversion */
+           Janet wt = janet_wrap_u64(surface->window_type[i]);
+           janet_array_push(type_arr, wt);
+       }
+       *out = janet_wrap_array(type_arr);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "window-type-len")) {
+       /* XXX: size_t -> int32_t conversion */
+       *out = janet_wrap_integer(surface->window_type_len);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "protocols")) {
+       if (!(surface->protocols)) {
+           *out = janet_wrap_nil();
+           return 1;
+       }
+       JanetArray *proto_arr = janet_array(surface->protocols_len);
+       for (size_t i = 0; i < surface->protocols_len; i++) {
+           /* unsigned int -> uint64_t conversion */
+           Janet wt = janet_wrap_u64(surface->protocols[i]);
+           janet_array_push(proto_arr, wt);
+       }
+       *out = janet_wrap_array(proto_arr);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "protocols-len")) {
+       /* XXX: size_t -> int32_t conversion */
+       *out = janet_wrap_integer(surface->protocols_len);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "size-hints")) {
+       if (!(surface->size_hints)) {
+           *out = janet_wrap_nil();
+           return 1;
+       }
+       *out = janet_wrap_abstract(jl_pointer_to_abs_obj_by_name(surface->size_hints,
+                                                                XKB_MOD_NAME "/xkb-size-hints-t"));
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "modal")) {
+       *out = janet_wrap_boolean(surface->modal);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "fullscreen")) {
+       *out = janet_wrap_boolean(surface->fullscreen);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "maximized-vert")) {
+       *out = janet_wrap_boolean(surface->maximized_vert);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "maximized-horz")) {
+       *out = janet_wrap_boolean(surface->maximized_horz);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "minimized")) {
+       *out = janet_wrap_boolean(surface->minimized);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "has-alpha")) {
+       *out = janet_wrap_boolean(surface->has_alpha);
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "data")) {
+       *out = janet_wrap_pointer(surface->data);
        return 1;
    }
 
