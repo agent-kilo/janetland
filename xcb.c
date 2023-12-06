@@ -3,6 +3,7 @@
 #include <janet.h>
 
 #include <xcb/xcb.h>
+#include <xcb/xcb_icccm.h>
 
 #include "jl.h"
 #include "types.h"
@@ -219,6 +220,104 @@ static Janet cfun_xcb_intern_atom_reply(int32_t argc, Janet *argv)
 }
 
 
+static int method_xcb_size_hints_t_get(void *p, Janet key, Janet *out)
+{
+    xcb_size_hints_t **hints_p = p;
+    xcb_size_hints_t *hints = *hints_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    if (!janet_cstrcmp(kw, "flags")) {
+        /* uint32_t -> uint64_t conversion */
+        *out = janet_wrap_u64(hints->flags);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "x")) {
+        *out = janet_wrap_integer(hints->x);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "y")) {
+        *out = janet_wrap_integer(hints->y);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "width")) {
+        *out = janet_wrap_integer(hints->width);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "height")) {
+        *out = janet_wrap_integer(hints->height);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "min-width")) {
+        *out = janet_wrap_integer(hints->min_width);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "min-height")) {
+        *out = janet_wrap_integer(hints->min_height);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "max-width")) {
+        *out = janet_wrap_integer(hints->max_width);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "max-height")) {
+        *out = janet_wrap_integer(hints->max_height);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "width-inc")) {
+        *out = janet_wrap_integer(hints->width_inc);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "height-inc")) {
+        *out = janet_wrap_integer(hints->height_inc);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "min-aspect-num")) {
+        *out = janet_wrap_integer(hints->min_aspect_num);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "min-aspect-den")) {
+        *out = janet_wrap_integer(hints->min_aspect_den);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "max-aspect-num")) {
+        *out = janet_wrap_integer(hints->max_aspect_num);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "max-aspect-den")) {
+        *out = janet_wrap_integer(hints->max_aspect_den);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "base-width")) {
+        *out = janet_wrap_integer(hints->base_width);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "base-height")) {
+        *out = janet_wrap_integer(hints->base_height);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "win-gravity")) {
+        /* uint32_t -> uint64_t conversion */
+        *out = janet_wrap_u64(hints->win_gravity);
+        return 1;
+    }
+
+    return 0;
+}
+
+static const JanetAbstractType jxcb_at_xcb_size_hints_t = {
+    .name = MOD_NAME "/xcb-size-hints-t",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_xcb_size_hints_t_get,
+    JANET_ATEND_GET
+};
+
+
 #define __XCB_ATOM_COUNT 70
 
 static void define_xcb_atom_enum_t_constants(JanetTable *env)
@@ -340,6 +439,7 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jxcb_at_xcb_generic_error_t);
     janet_register_abstract_type(&jxcb_at_intern_atom_cookie_t);
     janet_register_abstract_type(&jxcb_at_xcb_intern_atom_reply_t);
+    janet_register_abstract_type(&jxcb_at_xcb_size_hints_t);
 
     janet_cfuns(env, MOD_NAME, cfuns);
 }
