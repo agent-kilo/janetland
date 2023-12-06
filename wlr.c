@@ -1641,6 +1641,28 @@ static Janet cfun_wlr_output_layout_add_auto(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_output_layout_get_box(int32_t argc, Janet *argv)
+{
+    struct wlr_output_layout *layout;
+    struct wlr_output *output;
+
+    struct wlr_box *box;
+
+    janet_fixarity(argc, 2);
+
+    layout = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_output_layout);
+    if (janet_checktype(argv[1], JANET_NIL)) {
+        output = NULL;
+    } else {
+        output = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_output);
+    }
+    box = janet_abstract(&jwlr_at_box, sizeof(*box));
+
+    wlr_output_layout_get_box(layout, output, box);
+    return janet_wrap_abstract(box);
+}
+
+
 static Janet cfun_wlr_surface_get_root_surface(int32_t argc, Janet *argv)
 {
     struct wlr_surface *surface;
@@ -3206,6 +3228,11 @@ static JanetReg cfuns[] = {
         "wlr-output-layout-add-auto", cfun_wlr_output_layout_add_auto,
         "(" MOD_NAME "/wlr-output-layout-add-auto wlr-output-layout wlr-output)\n\n"
         "Adds an output object to an output layout."
+    },
+    {
+        "wlr-output-layout-get-box", cfun_wlr_output_layout_get_box,
+        "(" MOD_NAME "/wlr-output-layout-get-box wlr-output-layout wlr-output)\n\n"
+        "Get the box of the layout for the given reference output."
     },
     {
         "wlr-surface-get-root-surface", cfun_wlr_surface_get_root_surface,
