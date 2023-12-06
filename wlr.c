@@ -2948,6 +2948,21 @@ static Janet cfun_wlr_xwayland_surface_activate(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_xwayland_surface_set_maximized(int32_t argc, Janet *argv)
+{
+    struct wlr_xwayland_surface *surface;
+    bool maximized;
+
+    janet_fixarity(argc, 2);
+
+    surface = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_xwayland_surface);
+    maximized = janet_getboolean(argv, 1);
+
+    wlr_xwayland_surface_set_maximized(surface, maximized);
+    return janet_wrap_nil();
+}
+
+
 #define __XCB_STACK_MODE_MAX 4
 static const jl_key_def_t xcb_stack_mode_defs[] = {
     {"above", XCB_STACK_MODE_ABOVE},
@@ -3422,6 +3437,11 @@ static JanetReg cfuns[] = {
         "wlr-xwayland-surface-activate", cfun_wlr_xwayland_surface_activate,
         "(" MOD_NAME "/wlr-xwayland-surface-activate wlr-xwayland-surface activated)\n\n"
         "Activates an XWayland surface."
+    },
+    {
+        "wlr-xwayland-surface-set-maximized", cfun_wlr_xwayland_surface_set_maximized,
+        "(" MOD_NAME "/wlr-xwayland-surface-set-maximized wlr-xwayland-surface maximized)\n\n"
+        "Sets the XWayland surface in a maximized state."
     },
     {
         "wlr-xwayland-surface-restack", cfun_wlr_xwayland_surface_restack,
