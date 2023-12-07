@@ -62,6 +62,49 @@ static struct wl_list **get_abstract_struct_list_member(void *p,
 }
 
 
+const char __hex_chars[65] = "0123456789ABCDEF";
+
+static void addr_description(JanetBuffer *buffer, void *pointer) {
+
+#define __BUFSIZE 20
+#define __HEX(i) (((uint8_t *) __hex_chars)[(i)])
+
+    janet_buffer_ensure(buffer, buffer->count + __BUFSIZE, 2);
+    uint8_t *c = buffer->data + buffer->count;
+    int32_t i;
+    union {
+        uint8_t bytes[sizeof(void *)];
+        void *p;
+    } pbuf;
+
+    pbuf.p = pointer;
+    *c++ = '0';
+    *c++ = 'x';
+#if defined(JANET_64)
+#define __POINTSIZE 6
+#else
+#define __POINTSIZE (sizeof(void *))
+#endif
+    for (i = __POINTSIZE; i > 0; --i) {
+        uint8_t byte = pbuf.bytes[i - 1];
+        *c++ = __HEX(byte >> 4);
+        *c++ = __HEX(byte & 0xF);
+    }
+    buffer->count = (int32_t)(c - buffer->data);
+
+#undef __POINTSIZE
+#undef __HEX
+#undef __BUFSIZE
+}
+
+
+static void method_wlr_abs_obj_tostring(void *p, JanetBuffer *buf)
+{
+    void **pp = p;
+    void *obj_addr = *pp;
+    addr_description(buf, obj_addr);
+}
+
 static int method_wlr_abs_obj_compare(void *lhs, void *rhs)
 {
     void **left_p = (void **)lhs;

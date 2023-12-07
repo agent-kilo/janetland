@@ -9,6 +9,7 @@
     {#member, (uint64_t)&(((struct_type *)NULL)->member)}
 
 
+static void method_wlr_abs_obj_tostring(void *p, JanetBuffer *buf);
 static int method_wlr_abs_obj_compare(void *lhs, void *rhs);
 
 
@@ -783,7 +784,10 @@ static const JanetAbstractType jwlr_at_wlr_xwayland_surface = {
     .gcmark = NULL,
     .get = method_wlr_xwayland_surface_get,
     .put = method_wlr_xwayland_surface_put,
-    JANET_ATEND_PUT
+    .marshal = NULL,
+    .unmarshal = NULL,
+    .tostring = method_wlr_abs_obj_tostring,
+    JANET_ATEND_TOSTRING
 };
 
 
