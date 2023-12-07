@@ -540,62 +540,6 @@ static Janet cfun_wlr_scene_attach_output_layout(int32_t argc, Janet *argv)
 }
 
 
-static Janet cfun_wlr_scene_node_at(int32_t argc, Janet *argv)
-{
-    struct wlr_scene_node *node;
-    double x, y;
-
-    struct wlr_scene_node *n_node;
-    double nx = 0, ny = 0;
-    Janet ret_tuple[3];
-
-    janet_fixarity(argc, 3);
-
-    node = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_node);
-    x = janet_getnumber(argv, 1);
-    y = janet_getnumber(argv, 2);
-
-    n_node = wlr_scene_node_at(node, x, y, &nx, &ny);
-    if (n_node) {
-        ret_tuple[0] = janet_wrap_abstract(jl_pointer_to_abs_obj(n_node, &jwlr_at_wlr_scene_node));
-    } else {
-        ret_tuple[0] = janet_wrap_nil();
-    }
-    ret_tuple[1] = janet_wrap_number(nx);
-    ret_tuple[2] = janet_wrap_number(ny);
-
-    return janet_wrap_tuple(janet_tuple_n(ret_tuple, 3));
-}
-
-
-static Janet cfun_wlr_scene_node_raise_to_top(int32_t argc, Janet *argv)
-{
-    struct wlr_scene_node *node;
-
-    janet_fixarity(argc, 1);
-
-    node = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_node);
-    wlr_scene_node_raise_to_top(node);
-    return janet_wrap_nil();
-}
-
-
-static Janet cfun_wlr_scene_node_set_position(int32_t argc, Janet *argv)
-{
-    struct wlr_scene_node *node;
-    int x, y;
-
-    janet_fixarity(argc, 3);
-
-    node = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_node);
-    x = janet_getinteger(argv, 1);
-    y = janet_getinteger(argv, 2);
-
-    wlr_scene_node_set_position(node, x, y);
-    return janet_wrap_nil();
-}
-
-
 static int method_wlr_xdg_shell_get(void *p, Janet key, Janet *out) {
     struct wlr_xdg_shell **xdg_shell_p = (struct wlr_xdg_shell **)p;
     struct wlr_xdg_shell *xdg_shell = *xdg_shell_p;
@@ -1884,6 +1828,216 @@ static Janet cfun_wlr_scene_xdg_surface_create(int32_t argc, Janet *argv)
         janet_panic("failed to create wlroots scene-graph node");
     }
     return janet_wrap_abstract(jl_pointer_to_abs_obj(ret, &jwlr_at_wlr_scene_tree));
+}
+
+
+static Janet cfun_wlr_scene_tree_create(int32_t argc, Janet *argv)
+{
+    struct wlr_scene_tree *parent;
+
+    struct wlr_scene_tree *ret;
+
+    janet_fixarity(argc, 1);
+
+    parent = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_tree);
+    ret = wlr_scene_tree_create(parent);
+    if (!ret) {
+        janet_panic("failed to create wlroots scene tree object");
+    }
+    return janet_wrap_abstract(jl_pointer_to_abs_obj(ret, &jwlr_at_wlr_scene_tree));
+}
+
+
+static Janet cfun_wlr_scene_surface_create(int32_t argc, Janet *argv)
+{
+    struct wlr_scene_tree *parent;
+    struct wlr_surface *surface;
+
+    struct wlr_scene_surface *ret;
+
+    janet_fixarity(argc, 2);
+
+    parent = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_tree);
+    surface = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_surface);
+    ret = wlr_scene_surface_create(parent, surface);
+    if (!ret) {
+        janet_panic("failed to create wlroots scene surface object");
+    }
+    return janet_wrap_abstract(jl_pointer_to_abs_obj(ret, &jwlr_at_wlr_scene_surface));
+}
+
+
+static Janet cfun_wlr_scene_subsurface_tree_create(int32_t argc, Janet *argv)
+{
+    struct wlr_scene_tree *parent;
+    struct wlr_surface *surface;
+
+    struct wlr_scene_tree *ret;
+
+    janet_fixarity(argc, 2);
+
+    parent = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_tree);
+    surface = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_surface);
+    ret = wlr_scene_subsurface_tree_create(parent, surface);
+    if (!ret) {
+        janet_panic("failed to create wlroots scene subsurface tree object");
+    }
+    return janet_wrap_abstract(jl_pointer_to_abs_obj(ret, &jwlr_at_wlr_scene_tree));
+}
+
+
+static Janet cfun_wlr_scene_node_destroy(int32_t argc, Janet *argv)
+{
+    struct wlr_scene_node *node;
+
+    janet_fixarity(argc, 1);
+
+    node = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_node);
+    wlr_scene_node_destroy(node);
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wlr_scene_node_set_enabled(int32_t argc, Janet *argv)
+{
+    struct wlr_scene_node *node;
+    bool enabled;
+
+    janet_fixarity(argc, 2);
+
+    node = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_node);
+    enabled = janet_getboolean(argv, 1);
+    wlr_scene_node_set_enabled(node, enabled);
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wlr_scene_node_place_above(int32_t argc, Janet *argv)
+{
+    struct wlr_scene_node *node;
+    struct wlr_scene_node *sibling;
+
+    janet_fixarity(argc, 2);
+
+    node = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_node);
+    sibling = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_scene_node);
+    wlr_scene_node_place_above(node, sibling);
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wlr_scene_node_place_below(int32_t argc, Janet *argv)
+{
+    struct wlr_scene_node *node;
+    struct wlr_scene_node *sibling;
+
+    janet_fixarity(argc, 2);
+
+    node = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_node);
+    sibling = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_scene_node);
+    wlr_scene_node_place_below(node, sibling);
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wlr_scene_node_at(int32_t argc, Janet *argv)
+{
+    struct wlr_scene_node *node;
+    double x, y;
+
+    struct wlr_scene_node *n_node;
+    double nx = 0, ny = 0;
+    Janet ret_tuple[3];
+
+    janet_fixarity(argc, 3);
+
+    node = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_node);
+    x = janet_getnumber(argv, 1);
+    y = janet_getnumber(argv, 2);
+
+    n_node = wlr_scene_node_at(node, x, y, &nx, &ny);
+    if (n_node) {
+        ret_tuple[0] = janet_wrap_abstract(jl_pointer_to_abs_obj(n_node, &jwlr_at_wlr_scene_node));
+    } else {
+        ret_tuple[0] = janet_wrap_nil();
+    }
+    ret_tuple[1] = janet_wrap_number(nx);
+    ret_tuple[2] = janet_wrap_number(ny);
+
+    return janet_wrap_tuple(janet_tuple_n(ret_tuple, 3));
+}
+
+
+static Janet cfun_wlr_scene_node_raise_to_top(int32_t argc, Janet *argv)
+{
+    struct wlr_scene_node *node;
+
+    janet_fixarity(argc, 1);
+
+    node = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_node);
+    wlr_scene_node_raise_to_top(node);
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wlr_scene_node_lower_to_bottom(int32_t argc, Janet *argv)
+{
+    struct wlr_scene_node *node;
+
+    janet_fixarity(argc, 1);
+
+    node = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_node);
+    wlr_scene_node_lower_to_bottom(node);
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wlr_scene_node_reparent(int32_t argc, Janet *argv)
+{
+    struct wlr_scene_node *node;
+    struct wlr_scene_tree *new_parent;
+
+    janet_fixarity(argc, 2);
+
+    node = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_node);
+    new_parent = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_scene_tree);
+    wlr_scene_node_reparent(node, new_parent);
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wlr_scene_node_coords(int32_t argc, Janet *argv)
+{
+    struct wlr_scene_node *node;
+
+    int lx, ly;
+    bool ret;
+    Janet ret_tuple[3];
+
+    janet_fixarity(argc, 1);
+
+    node = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_node);
+    ret = wlr_scene_node_coords(node, &lx, &ly);
+    ret_tuple[0] = janet_wrap_boolean(ret);
+    ret_tuple[1] = janet_wrap_integer(lx);
+    ret_tuple[2] = janet_wrap_integer(ly);
+    return janet_wrap_tuple(janet_tuple_n(ret_tuple, 3));
+}
+
+
+static Janet cfun_wlr_scene_node_set_position(int32_t argc, Janet *argv)
+{
+    struct wlr_scene_node *node;
+    int x, y;
+
+    janet_fixarity(argc, 3);
+
+    node = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_node);
+    x = janet_getinteger(argv, 1);
+    y = janet_getinteger(argv, 2);
+
+    wlr_scene_node_set_position(node, x, y);
+    return janet_wrap_nil();
 }
 
 
@@ -3246,9 +3400,29 @@ static JanetReg cfuns[] = {
         "Attaches a wlroots output layout object to a scene object."
     },
     {
-        "wlr-scene-node-at", cfun_wlr_scene_node_at,
-        "(" MOD_NAME "/wlr-scene-node-at wlr-scene-node x y)\n\n"
-        "Finds the topmost node that contains the specified point."
+        "wlr-scene-node-destroy", cfun_wlr_scene_node_destroy,
+        "(" MOD_NAME "/wlr-scene-node-destroy wlr-scene-node)\n\n"
+        "Destroys the scene-graph node."
+    },
+    {
+        "wlr-scene-node-set-enabled", cfun_wlr_scene_node_set_enabled,
+        "(" MOD_NAME "/wlr-scene-node-set-enabled wlr-scene-node enabled)\n\n"
+        "Enables or disables the scene-graph node."
+    },
+    {
+        "wlr-scene-node-set-position", cfun_wlr_scene_node_set_position,
+        "(" MOD_NAME "/wlr-scene-node-set-position wlr-scene-node x y)\n\n"
+        "Sets the position of a scene node."
+    },
+    {
+        "wlr-scene-node-place-above", cfun_wlr_scene_node_place_above,
+        "(" MOD_NAME "/wlr-scene-node-place-above wlr-scene-node sibling)\n\n"
+        "Moves the node right above the specified sibling."
+    },
+    {
+        "wlr-scene-node-place-below", cfun_wlr_scene_node_place_below,
+        "(" MOD_NAME "/wlr-scene-node-place-below wlr-scene-node sibling)\n\n"
+        "Moves the node right below the specified sibling."
     },
     {
         "wlr-scene-node-raise-to-top", cfun_wlr_scene_node_raise_to_top,
@@ -3256,9 +3430,39 @@ static JanetReg cfuns[] = {
         "Move the node above all of its sibling nodes."
     },
     {
-        "wlr-scene-node-set-position", cfun_wlr_scene_node_set_position,
-        "(" MOD_NAME "/wlr-scene-node-set-position wlr-scene-node x y)\n\n"
-        "Sets the position of a scene node."
+        "wlr-scene-node-lower-to-bottom", cfun_wlr_scene_node_lower_to_bottom,
+        "(" MOD_NAME "/wlr-scene-node-lower-to-bottom wlr-scene-node)\n\n"
+        "Moves the node below all of its sibling nodes."
+    },
+    {
+        "wlr-scene-node-reparent", cfun_wlr_scene_node_reparent,
+        "(" MOD_NAME "/wlr-scene-node-reparent wlr-scene-node new-parent)\n\n"
+        "Moves the node to another location in the tree."
+    },
+    {
+        "wlr-scene-node-coords", cfun_wlr_scene_node_coords,
+        "(" MOD_NAME "/wlr-scene-node-coords wlr-scene-node)\n\n"
+        "Gets the node's layout-local coordinates."
+    },
+    {
+        "wlr-scene-tree-create", cfun_wlr_scene_tree_create,
+        "(" MOD_NAME "/wlr-scene-tree-create parent)\n\n"
+        "Adds a node displaying nothing but its children."
+    },
+    {
+        "wlr-scene-surface-create", cfun_wlr_scene_surface_create,
+        "(" MOD_NAME "/wlr-scene-surface-create parent wlr-surface)\n\n"
+        "Adds a node displaying a single surface."
+    },
+    {
+        "wlr-scene-subsurface-tree-create", cfun_wlr_scene_subsurface_tree_create,
+        "(" MOD_NAME "/wlr-scene-subsurface-tree-create parent wlr-surface)\n\n"
+        "Adds a node displaying a surface and all of its sub-surfaces."
+    },
+    {
+        "wlr-scene-node-at", cfun_wlr_scene_node_at,
+        "(" MOD_NAME "/wlr-scene-node-at wlr-scene-node x y)\n\n"
+        "Finds the topmost node that contains the specified point."
     },
     {
         "wlr-xdg-shell-create", cfun_wlr_xdg_shell_create,
