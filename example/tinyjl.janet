@@ -618,23 +618,36 @@
 (defn handle-xwayland-surface-destroy [view listener data]
   (def xw-surface (view :xwayland-surface))
   (wlr-log :debug "#### handle-xwayland-surface-destroy #### xw-surface = %p, data = %p" xw-surface data)
+
   (wl-signal-remove (view :xwayland-surface-destroy-listener))
+
   (wl-signal-remove (view :xwayland-surface-request-configure-listener))
-  (wl-signal-remove (view :xwayland-surface-request-fullscreen-listener))
-  (wl-signal-remove (view :xwayland-surface-request-minimize-listener))
-  (wl-signal-remove (view :xwayland-surface-request-activate-listener))
+
   (wl-signal-remove (view :xwayland-surface-request-move-listener))
   (wl-signal-remove (view :xwayland-surface-request-resize-listener))
+
+  (wl-signal-remove (view :xwayland-surface-request-minimize-listener))
+  (wl-signal-remove (view :xwayland-surface-request-maximize-listener))
+  (wl-signal-remove (view :xwayland-surface-request-fullscreen-listener))
+
+  (wl-signal-remove (view :xwayland-surface-request-activate-listener))
+
+  (wl-signal-remove (view :xwayland-surface-map-listener))
+  (wl-signal-remove (view :xwayland-surface-unmap-listener))
+
   (wl-signal-remove (view :xwayland-surface-set-title-listener))
   (wl-signal-remove (view :xwayland-surface-set-class-listener))
   (wl-signal-remove (view :xwayland-surface-set-role-listener))
+  (wl-signal-remove (view :xwayland-surface-set-parent-listener))
+  (wl-signal-remove (view :xwayland-surface-set-pid-listener))
   (wl-signal-remove (view :xwayland-surface-set-startup-id-listener))
   (wl-signal-remove (view :xwayland-surface-set-window-type-listener))
   (wl-signal-remove (view :xwayland-surface-set-hints-listener))
-  (wl-signal-remove (view :xwayland-surface-set-hints-listener))
-  (wl-signal-remove (view :xwayland-surface-unmap-listener))
-  (wl-signal-remove (view :xwayland-surface-map-listener))
-  (wl-signal-remove (view :xwayland-surface-set-override-redirect-listener)))
+  (wl-signal-remove (view :xwayland-surface-set-decorations-listener))
+  (wl-signal-remove (view :xwayland-surface-set-override-redirect-listener))
+  (wl-signal-remove (view :xwayland-surface-set-geometry-listener))
+
+  (wl-signal-remove (view :xwayland-surface-ping-timeout-listener)))
 
 
 (defn handle-xwayland-surface-request-configure [view listener data]
@@ -655,6 +668,13 @@
   # TODO
   (def xw-surface (view :xwayland-surface))
   (wlr-log :debug "#### handle-xwayland-surface-request-minimize #### xw-surface = %p, data = %p" xw-surface data)
+  )
+
+
+(defn handle-xwayland-surface-request-maximize [view listener data]
+  # TODO
+  (def xw-surface (view :xwayland-surface))
+  (wlr-log :debug "#### handle-xwayland-surface-request-maximize #### xw-surface = %p, data = %p" xw-surface data)
   )
 
 
@@ -704,6 +724,22 @@
   )
 
 
+(defn handle-xwayland-surface-set-parent [view listener data]
+  # TODO
+  (def xw-surface (view :xwayland-surface))
+  (wlr-log :debug "#### handle-xwayland-surface-set-parent #### xw-surface = %p, data = %p" xw-surface data)
+  (wlr-log :debug "#### (xw-surface :parent) = %p" (xw-surface :parent))
+  )
+
+
+(defn handle-xwayland-surface-set-pid [view listener data]
+  # TODO
+  (def xw-surface (view :xwayland-surface))
+  (wlr-log :debug "#### handle-xwayland-surface-set-pid #### xw-surface = %p, data = %p" xw-surface data)
+  (wlr-log :debug "#### (xw-surface :pid) = %p" (xw-surface :pid))
+  )
+
+
 (defn handle-xwayland-surface-set-startup-id [view listener data]
   # TODO
   (def xw-surface (view :xwayland-surface))
@@ -716,6 +752,7 @@
   # TODO
   (def xw-surface (view :xwayland-surface))
   (wlr-log :debug "#### handle-xwayland-surface-set-window-type #### xw-surface = %p, data = %p" xw-surface data)
+  (wlr-log :debug "#### (xw-surface :window-type) = %p" (xw-surface :window-type))
   )
 
 
@@ -741,6 +778,24 @@
   )
 
 
+(defn handle-xwayland-surface-set-geometry [view listener data]
+  # TODO
+  (def xw-surface (view :xwayland-surface))
+  (wlr-log :debug "#### handle-xwayland-surface-set-geometry #### xw-surface = %p, data = %p" xw-surface data)
+  (wlr-log :debug "#### (xw-surface :x) = %p" (xw-surface :x))
+  (wlr-log :debug "#### (xw-surface :y) = %p" (xw-surface :y))
+  (wlr-log :debug "#### (xw-surface :width) = %p" (xw-surface :width))
+  (wlr-log :debug "#### (xw-surface :height) = %p" (xw-surface :height))
+  )
+
+
+(defn handle-xwayland-surface-ping-timeout [view listener data]
+  # TODO
+  (def xw-surface (view :xwayland-surface))
+  (wlr-log :debug "#### handle-xwayland-surface-ping-timeout #### xw-surface = %p, data = %p" xw-surface data)
+  )
+
+
 (defn create-xwayland-view-unmanaged [server xw-surface]
   # TODO
   )
@@ -757,22 +812,12 @@
      (wl-signal-add (xw-surface :events.destroy)
                     (fn [listener data]
                       (handle-xwayland-surface-destroy view listener data))))
+
   (put view :xwayland-surface-request-configure-listener
      (wl-signal-add (xw-surface :events.request_configure)
                     (fn [listener data]
                       (handle-xwayland-surface-request-configure view listener data))))
-  (put view :xwayland-surface-request-fullscreen-listener
-     (wl-signal-add (xw-surface :events.request_fullscreen)
-                    (fn [listener data]
-                      (handle-xwayland-surface-request-fullscreen view listener data))))
-  (put view :xwayland-surface-request-minimize-listener
-     (wl-signal-add (xw-surface :events.request_minimize)
-                    (fn [listener data]
-                      (handle-xwayland-surface-request-minimize view listener data))))
-  (put view :xwayland-surface-request-activate-listener
-     (wl-signal-add (xw-surface :events.request_activate)
-                    (fn [listener data]
-                      (handle-xwayland-surface-request-activate view listener data))))
+
   (put view :xwayland-surface-request-move-listener
      (wl-signal-add (xw-surface :events.request_move)
                     (fn [listener data]
@@ -781,18 +826,54 @@
      (wl-signal-add (xw-surface :events.request_resize)
                     (fn [listener data]
                       (handle-xwayland-surface-request-resize view listener data))))
+
+  (put view :xwayland-surface-request-minimize-listener
+     (wl-signal-add (xw-surface :events.request_minimize)
+                    (fn [listener data]
+                      (handle-xwayland-surface-request-minimize view listener data))))
+  (put view :xwayland-surface-request-maximize-listener
+     (wl-signal-add (xw-surface :events.request_maximize)
+                    (fn [listener data]
+                      (handle-xwayland-surface-request-maximize view listener data))))
+  (put view :xwayland-surface-request-fullscreen-listener
+     (wl-signal-add (xw-surface :events.request_fullscreen)
+                    (fn [listener data]
+                      (handle-xwayland-surface-request-fullscreen view listener data))))
+
+  (put view :xwayland-surface-request-activate-listener
+     (wl-signal-add (xw-surface :events.request_activate)
+                    (fn [listener data]
+                      (handle-xwayland-surface-request-activate view listener data))))
+
+  (put view :xwayland-surface-map-listener
+     (wl-signal-add (xw-surface :events.map)
+                    (fn [listener data]
+                      (handle-surface-map view listener data))))
+  (put view :xwayland-surface-unmap-listener
+     (wl-signal-add (xw-surface :events.unmap)
+                    (fn [listener data]
+                      (handle-surface-unmap view listener data))))
+
   (put view :xwayland-surface-set-title-listener
      (wl-signal-add (xw-surface :events.set_title)
                     (fn [listener data]
                       (handle-xwayland-surface-set-title view listener data))))
   (put view :xwayland-surface-set-class-listener
-     (wl-signal-add (xw-surface :events.request_configure)
+     (wl-signal-add (xw-surface :events.set_class)
                     (fn [listener data]
                       (handle-xwayland-surface-set-class view listener data))))
   (put view :xwayland-surface-set-role-listener
-     (wl-signal-add (xw-surface :events.set_class)
+     (wl-signal-add (xw-surface :events.set_role)
                     (fn [listener data]
                       (handle-xwayland-surface-set-role view listener data))))
+  (put view :xwayland-surface-set-parent-listener
+     (wl-signal-add (xw-surface :events.set_parent)
+                    (fn [listener data]
+                      (handle-xwayland-surface-set-parent view listener data))))
+  (put view :xwayland-surface-set-pid-listener
+     (wl-signal-add (xw-surface :events.set_pid)
+                    (fn [listener data]
+                      (handle-xwayland-surface-set-pid view listener data))))
   (put view :xwayland-surface-set-startup-id-listener
      (wl-signal-add (xw-surface :events.set_startup_id)
                     (fn [listener data]
@@ -809,23 +890,28 @@
      (wl-signal-add (xw-surface :events.set_decorations)
                     (fn [listener data]
                       (handle-xwayland-surface-set-decorations view listener data))))
-  (put view :xwayland-surface-unmap-listener
-     (wl-signal-add (xw-surface :events.unmap)
-                    (fn [listener data]
-                      (handle-surface-unmap view listener data))))
-  (put view :xwayland-surface-map-listener
-     (wl-signal-add (xw-surface :events.map)
-                    (fn [listener data]
-                      (handle-surface-map view listener data))))
   (put view :xwayland-surface-set-override-redirect-listener
      (wl-signal-add (xw-surface :events.set_override_redirect)
                     (fn [listener data]
-                      (handle-xwayland-surface-set-override-redirect view listener data)))))
+                      (handle-xwayland-surface-set-override-redirect view listener data))))
+  (put view :xwayland-surface-set-geometry-listener
+     (wl-signal-add (xw-surface :events.set_geometry)
+                    (fn [listener data]
+                      (handle-xwayland-surface-set-geometry view listener data))))
+
+  (put view :xwayland-surface-ping-timeout-listener
+     (wl-signal-add (xw-surface :events.ping_timeout)
+                    (fn [listener data]
+                      (handle-xwayland-surface-ping-timeout view listener data)))))
 
 
 (defn handle-xwayland-new-surface [server listener data]
   (def xw-surface (get-abstract-listener-data data 'wlr/wlr-xwayland-surface))
   (wlr-log :debug "#### handle-xwayland-new-surface #### xw-surface = %p" xw-surface)
+  (wlr-log :debug "#### (xw-surface :x) = %p" (xw-surface :x))
+  (wlr-log :debug "#### (xw-surface :y) = %p" (xw-surface :y))
+  (wlr-log :debug "#### (xw-surface :width) = %p" (xw-surface :width))
+  (wlr-log :debug "#### (xw-surface :height) = %p" (xw-surface :height))
   (wlr-log :debug "#### (xw-surface :override-redirect) = %p" (xw-surface :override-redirect))
   (wlr-log :debug "#### (xw-surface :mapped) = %p" (xw-surface :mapped))
   (wlr-log :debug "#### (xw-surface :title) = %p" (xw-surface :title))
