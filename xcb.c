@@ -98,7 +98,7 @@ static const JanetAbstractType jxcb_at_xcb_generic_error_t = {
 };
 
 
-#define XCB_CONN_ERROR_DEFS_MAX 7
+#define __XCB_CONN_ERROR_DEFS_MAX 7
 static const jl_key_def_t xcb_conn_error_defs[] = {
     {"none", 0},
     {"error", XCB_CONN_ERROR},
@@ -163,7 +163,7 @@ static Janet cfun_xcb_connection_has_error(int32_t argc, Janet *argv)
 
     conn = jl_get_abs_obj_pointer(argv, 0, &jxcb_at_xcb_connection_t);
     err = xcb_connection_has_error(conn);
-    if (err < 0 || err > XCB_CONN_ERROR_DEFS_MAX) {
+    if (err < 0 || err > __XCB_CONN_ERROR_DEFS_MAX) {
         janet_panicf("unknown error code from xcb connection: %d", err);
     }
     return janet_ckeywordv(xcb_conn_error_defs[err].name);
