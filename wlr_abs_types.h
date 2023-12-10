@@ -243,6 +243,7 @@ static const jl_key_def_t wlr_xdg_surface_role_defs[] = {
     {"popup", WLR_XDG_SURFACE_ROLE_POPUP},
     {NULL, 0},
 };
+#define __WLR_XDG_SURFACE_ROLE_DEFS_COUNT JL_KEY_DEF_COUNT(wlr_xdg_surface_role_defs)
 
 static int method_wlr_xdg_surface_get(void *p, Janet key, Janet *out);
 static void method_wlr_xdg_surface_put(void *p, Janet key, Janet value);
@@ -415,7 +416,6 @@ static const JanetAbstractType jwlr_at_wlr_output = {
 };
 
 
-#define __WLR_OUTPUT_MODE_ASPECT_RATIO_MAX 4
 static const jl_key_def_t wlr_output_mode_aspect_ratio_defs[] = {
     {"none", WLR_OUTPUT_MODE_ASPECT_RATIO_NONE},
     {"4:3", WLR_OUTPUT_MODE_ASPECT_RATIO_4_3},
@@ -424,6 +424,7 @@ static const jl_key_def_t wlr_output_mode_aspect_ratio_defs[] = {
     {"256:135", WLR_OUTPUT_MODE_ASPECT_RATIO_256_135},
     {NULL, 0},
 };
+#define __WLR_OUTPUT_MODE_ASPECT_RATIO_DEFS_COUNT JL_KEY_DEF_COUNT(wlr_output_mode_aspect_ratio_defs)
 
 static int method_wlr_output_mode_get(void *p, Janet key, Janet *out);
 static const JanetAbstractType jwlr_at_wlr_output_mode = {
@@ -464,6 +465,7 @@ static const jl_key_def_t wlr_scene_node_type_defs[] = {
     {"buffer", WLR_SCENE_NODE_BUFFER},
     {NULL, 0},
 };
+#define __WLR_SCENE_NODE_TYPE_DEFS_COUNT JL_KEY_DEF_COUNT(wlr_scene_node_type_defs)
 
 static const jl_offset_def_t wlr_scene_node_signal_offsets[] = {
     JWLR_OFFSET_DEF(struct wlr_scene_node, events.destroy),
@@ -509,6 +511,7 @@ static const jl_key_def_t wlr_input_device_defs[] = {
     {"switch", WLR_INPUT_DEVICE_SWITCH},
     {NULL, 0},
 };
+#define __WLR_INPUT_DEVICE_DEFS_COUNT JL_KEY_DEF_COUNT(wlr_input_device_defs)
 
 static const jl_offset_def_t wlr_input_device_signal_offsets[] = {
     JWLR_OFFSET_DEF(struct wlr_input_device, events.destroy),
@@ -577,6 +580,7 @@ static const jl_key_def_t wlr_button_state_defs[] = {
     {"pressed", WLR_BUTTON_PRESSED},
     {NULL, 0},
 };
+#define __WLR_BUTTON_STATE_DEFS_COUNT JL_KEY_DEF_COUNT(wlr_button_state_defs)
 
 static int method_wlr_pointer_button_event_get(void *p, Janet key, Janet *out);
 static const JanetAbstractType jwlr_at_wlr_pointer_button_event = {
@@ -595,12 +599,14 @@ static const jl_key_def_t wlr_axis_source_defs[] = {
     {"wheel-tilt", WLR_AXIS_SOURCE_WHEEL_TILT},
     {NULL, 0},
 };
+#define __WLR_AXIS_SOURCE_DEFS_COUNT JL_KEY_DEF_COUNT(wlr_axis_source_defs)
 
 static const jl_key_def_t wlr_axis_orientation_defs[] = {
     {"vertical", WLR_AXIS_ORIENTATION_VERTICAL},
     {"horizontal", WLR_AXIS_ORIENTATION_HORIZONTAL},
     {NULL, 0},
 };
+#define __WLR_AXIS_ORIENTATION_DEFS_COUNT JL_KEY_DEF_COUNT(wlr_axis_orientation_defs)
 
 static int method_wlr_pointer_axis_event_get(void *p, Janet key, Janet *out);
 static const JanetAbstractType jwlr_at_wlr_pointer_axis_event = {

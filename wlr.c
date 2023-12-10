@@ -139,6 +139,11 @@ void jwlr_log_callback(enum wlr_log_importance importance, const char *fmt, va_l
         return;
     }
 
+    /* Guard against log_defs upper bound */
+    if (importance > WLR_LOG_IMPORTANCE_LAST) {
+        janet_panicf("unknown log level: %d", importance);
+    }
+
     va_list args_copy;
     int str_len;
     JanetBuffer *buf = janet_buffer(256); /* arbitrary size */
@@ -202,6 +207,10 @@ static Janet cfun_wlr_log_get_verbosity(int32_t argc, Janet *argv)
     janet_fixarity(argc, 0);
 
     enum wlr_log_importance verb = wlr_log_get_verbosity();
+    /* Guard against log_defs upper bound */
+    if (verb > WLR_LOG_IMPORTANCE_LAST) {
+        janet_panicf("unknown log level: %d", verb);
+    }
     return janet_ckeywordv(log_defs[verb].name);
 }
 
@@ -740,6 +749,9 @@ static int method_wlr_xdg_surface_get(void *p, Janet key, Janet *out) {
     }
 
     if (!janet_cstrcmp(kw, "role")) {
+        if (surface->role >= __WLR_XDG_SURFACE_ROLE_DEFS_COUNT) {
+            janet_panicf("unknown surface role: %d", surface->role);
+        }
         *out = janet_ckeywordv(wlr_xdg_surface_role_defs[surface->role].name);
         return 1;
     }
@@ -1551,7 +1563,7 @@ static int method_wlr_output_mode_get(void *p, Janet key, Janet *out) {
         return 1;
     }
     if (!janet_cstrcmp(kw, "picture-aspect-ratio")) {
-        if (mode->picture_aspect_ratio > __WLR_OUTPUT_MODE_ASPECT_RATIO_MAX) {
+        if (mode->picture_aspect_ratio >= __WLR_OUTPUT_MODE_ASPECT_RATIO_DEFS_COUNT) {
             janet_panicf("unknown aspect ration from wlroots output mode: %d", mode->picture_aspect_ratio);
         }
         *out = janet_ckeywordv(wlr_output_mode_aspect_ratio_defs[mode->picture_aspect_ratio].name);
@@ -2128,6 +2140,9 @@ static int method_wlr_scene_node_get(void *p, Janet key, Janet *out)
     }
 
     if (!janet_cstrcmp(kw, "type")) {
+        if (node->type >= __WLR_SCENE_NODE_TYPE_DEFS_COUNT) {
+            janet_panicf("unknown node type from wlroots scene node: %d", node->type);
+        }
         *out = janet_ckeywordv(wlr_scene_node_type_defs[node->type].name);
         return 1;
     }
@@ -2199,6 +2214,9 @@ static int method_wlr_input_device_get(void *p, Janet key, Janet *out)
     }
 
     if (!janet_cstrcmp(kw, "type")) {
+        if (device->type >= __WLR_INPUT_DEVICE_DEFS_COUNT) {
+            janet_panicf("unknown device type from wlroots input device: %d", device->type);
+        }
         *out = janet_ckeywordv(wlr_input_device_defs[device->type].name);
         return 1;
     }
@@ -2508,6 +2526,9 @@ static int method_wlr_pointer_button_event_get(void *p, Janet key, Janet *out)
         return 1;
     }
     if (!janet_cstrcmp(kw, "state")) {
+        if (event->state >= __WLR_BUTTON_STATE_DEFS_COUNT) {
+            janet_panicf("unknown button state from wlroots pointer button event: %d", event->state);
+        }
         *out = janet_ckeywordv(wlr_button_state_defs[event->state].name);
         return 1;
     }
@@ -2541,11 +2562,16 @@ static int method_wlr_pointer_axis_event_get(void *p, Janet key, Janet *out)
         return 1;
     }
     if (!janet_cstrcmp(kw, "source")) {
-        /* uint32_t -> uint64_t */
+        if (event->source >= __WLR_AXIS_SOURCE_DEFS_COUNT) {
+            janet_panicf("unknown axis source from wlroots pointer axis event: %d", event->source);
+        }
         *out = janet_ckeywordv(wlr_axis_source_defs[event->source].name);
         return 1;
     }
     if (!janet_cstrcmp(kw, "orientation")) {
+        if (event->orientation >= __WLR_AXIS_ORIENTATION_DEFS_COUNT) {
+            janet_panicf("unknown axis orientation from wlroots pointer axis event: %d", event->orientation);
+        }
         *out = janet_ckeywordv(wlr_axis_orientation_defs[event->orientation].name);
         return 1;
     }
