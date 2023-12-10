@@ -138,17 +138,6 @@ static const JanetAbstractType jutil_at_timespec = {
     JANET_ATEND_GCMARK
 };
 
-static clockid_t jutil_get_clock_id(const Janet *argv, int32_t n)
-{
-    const uint8_t *kw = janet_getkeyword(argv, n);
-    for (int i = 0; clock_id_defs[i].name; i++) {
-        if (!janet_cstrcmp(kw, clock_id_defs[i].name)) {
-            return clock_id_defs[i].key;
-        }
-    }
-    janet_panicf("unknown clock id: %v", argv[n]);
-}
-
 static Janet cfun_clock_gettime(int32_t argc, Janet *argv)
 {
     clockid_t clk_id;
@@ -156,7 +145,7 @@ static Janet cfun_clock_gettime(int32_t argc, Janet *argv)
 
     janet_fixarity(argc, 1);
 
-    clk_id = jutil_get_clock_id(argv, 0);
+    clk_id = jl_get_key_def(argv, 0, clock_id_defs);
     tspec = janet_abstract(&jutil_at_timespec, sizeof(*tspec));
     if (clock_gettime(clk_id, tspec) < 0) {
         janet_panicf("failed to get time with clock id %v: %d", argv[0], errno);
