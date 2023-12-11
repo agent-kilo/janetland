@@ -5,6 +5,16 @@
 (use janetland/util)
 
 
+(defn scene-xwayland-surface-create [parent xw-surface]
+  # TODO
+  (def tree (wlr-scene-tree-create parent))
+  (def scene-xw-surface
+    @{:xwayland-surface xw-surface
+      :tree tree
+      :surface-tree (wlr-scene-subsurface-tree-create tree (xw-surface :surface))})
+  tree)
+
+
 (defn remove-element [arr e]
   (for idx 0 (length arr)
     (when (= (in arr idx) e)
@@ -52,9 +62,15 @@
   (when (= prev-surface surface) (break))
 
   (when (not (nil? prev-surface))
-    (def previous (wlr-xdg-surface-from-wlr-surface prev-surface))
-    (wlr-log :debug "(previous :role) = %p" (previous :role))
-    (wlr-xdg-toplevel-set-activated (previous :toplevel) false))
+    (if (wlr-surface-is-xdg-surface prev-surface)
+      (do
+        (def previous (wlr-xdg-surface-from-wlr-surface prev-surface))
+        (wlr-log :debug "(previous :data) = %p" (previous :data))
+        (wlr-xdg-toplevel-set-activated (previous :toplevel) false))
+      (do
+        (def previous (wlr-xwayland-surface-from-wlr-surface prev-surface))
+        (wlr-log :debug "(previous :data) = %p" (previous :data))
+        (wlr-xwayland-surface-activate previous false))))
 
   (def keyboard (wlr-seat-get-keyboard seat))
   (wlr-scene-node-raise-to-top ((view :scene-tree) :node))
@@ -64,10 +80,17 @@
   (array/push (server :views) view)
   (wlr-log :debug "(length (server :views)) = %p" (length (server :views)))
 
-  (wlr-xdg-toplevel-set-activated (view :xdg-toplevel) true)
+  (def wlr-surface
+    (if (nil? (view :xwayland-surface))
+      (do
+        (wlr-xdg-toplevel-set-activated (view :xdg-toplevel) true)
+        (((view :xdg-toplevel) :base) :surface))
+      (do
+        (wlr-xwayland-surface-activate (view :xwayland-surface) true)
+        ((view :xwayland-surface) :surface))))
 
   (when (not (nil? keyboard))
-    (wlr-seat-keyboard-notify-enter seat (((view :xdg-toplevel) :base) :surface)
+    (wlr-seat-keyboard-notify-enter seat wlr-surface
                                     (keyboard :keycodes) (keyboard :modifiers))))
 
 
@@ -211,7 +234,9 @@
     (do
       (when (> (length (server :views)) 1)
         (def next-view ((server :views) 0))
-        (focus-view next-view (((next-view :xdg-toplevel) :base) :surface)))
+        (if (nil? (next-view :xwayland-surface))
+          (focus-view next-view (((next-view :xdg-toplevel) :base) :surface))
+          (focus-view next-view ((next-view :xwayland-surface) :surface))))
       true)
 
     # default
@@ -392,8 +417,25 @@
   (wlr-log :debug "#### handle-surface-map ####")
   (array/push ((view :server) :views) view)
   (wlr-log :debug "#### (length ((view :server) :views)) = %v" (length ((view :server) :views)))
-  (when (nil? (view :xwayland-surface))
-    (focus-view view (((view :xdg-toplevel) :base) :surface))))
+
+  (when (not (nil? (view :xwayland-surface)))
+    (def xw-surface (view :xwayland-surface))
+    (def xw-parent (xw-surface :parent))
+    (if (not (nil? xw-parent))
+      (do
+        (def xw-parent-tree (pointer-to-abstract-object (xw-parent :data) 'wlr/wlr-scene-tree))
+        (set (xw-surface :data) (scene-xwayland-surface-create xw-parent-tree xw-surface)))
+      (do
+        (def new-tree (scene-xwayland-surface-create (((view :server) :scene) :tree) xw-surface))
+        (put view :scene-tree new-tree)
+        (set (xw-surface :data) new-tree)
+        (set ((new-tree :node) :data) view))))
+
+  (def wlr-surface
+    (if (nil? (view :xwayland-surface))
+      (((view :xdg-toplevel) :base) :surface)
+      ((view :xwayland-surface) :surface)))
+  (focus-view view wlr-surface))
 
 
 (defn handle-surface-unmap [view listener data]
