@@ -421,15 +421,14 @@
   (when (not (nil? (view :xwayland-surface)))
     (def xw-surface (view :xwayland-surface))
     (def xw-parent (xw-surface :parent))
-    (if (not (nil? xw-parent))
-      (do
-        (def xw-parent-tree (pointer-to-abstract-object (xw-parent :data) 'wlr/wlr-scene-tree))
-        (set (xw-surface :data) (scene-xwayland-surface-create xw-parent-tree xw-surface)))
-      (do
-        (def new-tree (scene-xwayland-surface-create (((view :server) :scene) :tree) xw-surface))
-        (put view :scene-tree new-tree)
-        (set (xw-surface :data) new-tree)
-        (set ((new-tree :node) :data) view))))
+    (def parent-tree
+      (if (nil? xw-parent)
+        (((view :server) :scene) :tree)
+        (pointer-to-abstract-object (xw-parent :data) 'wlr/wlr-scene-tree)))
+    (def new-tree (scene-xwayland-surface-create parent-tree xw-surface))
+    (put view :scene-tree new-tree)
+    (set (xw-surface :data) new-tree)
+    (set ((new-tree :node) :data) view))
 
   (def wlr-surface
     (if (nil? (view :xwayland-surface))
