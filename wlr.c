@@ -1704,6 +1704,28 @@ static Janet cfun_wlr_surface_get_root_surface(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_surface_is_xwayland_surface(int32_t argc, Janet *argv)
+{
+    struct wlr_surface *surface;
+
+    janet_fixarity(argc, 1);
+
+    surface = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_surface);
+    return janet_wrap_boolean(wlr_surface_is_xwayland_surface(surface));
+}
+
+
+static Janet cfun_wlr_surface_is_xdg_surface(int32_t argc, Janet *argv)
+{
+    struct wlr_surface *surface;
+
+    janet_fixarity(argc, 1);
+
+    surface = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_surface);
+    return janet_wrap_boolean(wlr_surface_is_xdg_surface(surface));
+}
+
+
 static Janet cfun_wlr_xdg_surface_from_wlr_surface(int32_t argc, Janet *argv)
 {
     struct wlr_surface *surface;
@@ -1718,6 +1740,23 @@ static Janet cfun_wlr_xdg_surface_from_wlr_surface(int32_t argc, Janet *argv)
         janet_panic("cannot retrieve xdg surface from wlr-surface");
     }
     return janet_wrap_abstract(jl_pointer_to_abs_obj(xdg_surface, &jwlr_at_wlr_xdg_surface));
+}
+
+
+static Janet cfun_wlr_xwayland_surface_from_wlr_surface(int32_t argc, Janet *argv)
+{
+    struct wlr_surface *surface;
+
+    struct wlr_xwayland_surface *xw_surface;
+
+    janet_fixarity(argc, 1);
+
+    surface = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_surface);
+    xw_surface = wlr_xwayland_surface_from_wlr_surface(surface);
+    if (!xw_surface) {
+        janet_panic("cannot retrieve xwayland surface from wlr-surface");
+    }
+    return janet_wrap_abstract(jl_pointer_to_abs_obj(xw_surface, &jwlr_at_wlr_xwayland_surface));
 }
 
 
@@ -3175,6 +3214,10 @@ static int method_wlr_xwayland_surface_get(void *p, Janet key, Janet *out)
        return 1;
    }
    if (!janet_cstrcmp(kw, "data")) {
+       if (!(surface->data)) {
+           *out = janet_wrap_nil();
+           return 1;
+       }
        *out = janet_wrap_pointer(surface->data);
        return 1;
    }
@@ -3729,6 +3772,16 @@ static JanetReg cfuns[] = {
         "Gets the root of the subsurface tree for the specified surface."
     },
     {
+        "wlr-surface-is-xwayland-surface", cfun_wlr_surface_is_xwayland_surface,
+        "(" MOD_NAME "/wlr-surface-is-xwayland-surface wlr-surface)\n\n"
+        "Check whether a wlroots surface is an XWayland surface."
+    },
+    {
+        "wlr-surface-is-xdg-surface", cfun_wlr_surface_is_xdg_surface,
+        "(" MOD_NAME "/wlr-surface-is-xdg-surface wlr-surface)\n\n"
+        "Check whether a wlroots surface is an xdg surface."
+    },
+    {
         "wlr-xdg-surface-from-wlr-surface", cfun_wlr_xdg_surface_from_wlr_surface,
         "(" MOD_NAME "/wlr-xdg-surface-from-wlr-surface wlr-surface)\n\n"
         "Wraps a surface object with an xdg surface object."
@@ -3857,6 +3910,11 @@ static JanetReg cfuns[] = {
         "wlr-xwayland-surface-restack", cfun_wlr_xwayland_surface_restack,
         "(" MOD_NAME "/wlr-xwayland-surface-restack wlr-xwayland-surface sibling mode)\n\n"
         "Restacks surface relative to sibling."
+    },
+    {
+        "wlr-xwayland-surface-from-wlr-surface", cfun_wlr_xwayland_surface_from_wlr_surface,
+        "(" MOD_NAME "/wlr-xwayland-surface-from-wlr-surface wlr-surface)\n\n"
+        "Retrieves the associated XWayland surface from a wlroots surface."
     },
     {NULL, NULL, NULL},
 };
