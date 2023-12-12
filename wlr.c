@@ -810,6 +810,83 @@ static void method_wlr_xdg_surface_put(void *p, Janet key, Janet value) {
 }
 
 
+static int method_wlr_surface_get(void *p, Janet key, Janet *out) {
+    struct wlr_surface **surface_p = (struct wlr_surface **)p;
+    struct wlr_surface *surface = *surface_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    struct wl_signal **signal_p = get_abstract_struct_signal_member(surface, kw, wlr_surface_signal_offsets);
+    if (signal_p) {
+        *out = janet_wrap_abstract(signal_p);
+        return 1;
+    }
+
+    if (!janet_cstrcmp(kw, "renderer")) {
+        if (!(surface->renderer)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(surface->renderer, &jwlr_at_wlr_renderer));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "sx")) {
+        *out = janet_wrap_integer(surface->sx);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "sy")) {
+        *out = janet_wrap_integer(surface->sy);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "data")) {
+        if (!(surface->data)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
+        *out = janet_wrap_pointer(surface->data);
+        return 1;
+    }
+
+    return 0;
+}
+
+static void method_wlr_surface_put(void *p, Janet key, Janet value) {
+    struct wlr_surface **surface_p = (struct wlr_surface **)p;
+    struct wlr_surface *surface = *surface_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    if (!janet_cstrcmp(kw, "sx")) {
+        if (!janet_checkint(value)) {
+            janet_panicf("expected a 32-bit signed integer, got %v", value);
+        }
+        surface->sx = janet_unwrap_integer(value);
+        return;
+    }
+    if (!janet_cstrcmp(kw, "sy")) {
+        if (!janet_checkint(value)) {
+            janet_panicf("expected a 32-bit signed integer, got %v", value);
+        }
+        surface->sy = janet_unwrap_integer(value);
+        return;
+    }
+    if (!janet_cstrcmp(kw, "data")) {
+        surface->data = jl_value_to_data_pointer(value);
+        return;
+    }
+
+    janet_panicf("unknown key: %v", key);
+}
+
+
 static int method_wlr_cursor_get(void *p, Janet key, Janet *out) {
     struct wlr_cursor **cursor_p = (struct wlr_cursor **)p;
     struct wlr_cursor *cursor = *cursor_p;

@@ -150,12 +150,22 @@ static const JanetAbstractType jwlr_at_wlr_xdg_shell = {
 };
 
 
+static const jl_offset_def_t wlr_surface_signal_offsets[] = {
+    JWLR_OFFSET_DEF(struct wlr_surface, events.client_commit),
+    JWLR_OFFSET_DEF(struct wlr_surface, events.commit),
+    JWLR_OFFSET_DEF(struct wlr_surface, events.new_subsurface),
+    JWLR_OFFSET_DEF(struct wlr_surface, events.destroy),
+    {NULL, 0},
+};
+
+static int method_wlr_surface_get(void *p, Janet key, Janet *out);
+static void method_wlr_surface_put(void *p, Janet key, Janet value);
 static const JanetAbstractType jwlr_at_wlr_surface = {
     .name = MOD_NAME "/wlr-surface",
     .gc = NULL,
     .gcmark = NULL,
-    .get = NULL,
-    .put = NULL,
+    .get = method_wlr_surface_get,
+    .put = method_wlr_surface_put,
     .marshal = NULL,
     .unmarshal = NULL,
     .tostring = NULL,
