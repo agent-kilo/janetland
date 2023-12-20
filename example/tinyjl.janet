@@ -6,13 +6,42 @@
 
 
 (defn scene-xwayland-surface-create [parent xw-surface]
-  # TODO
   (def tree (wlr-scene-tree-create parent))
+  (def surface-tree (wlr-scene-subsurface-tree-create tree (xw-surface :surface)))
   (def scene-xw-surface
     @{:xwayland-surface xw-surface
       :tree tree
-      :surface-tree (wlr-scene-subsurface-tree-create tree (xw-surface :surface))})
-  tree)
+      :surface-tree surface-tree})
+
+  (put scene-xw-surface :tree-node-destroy-listener
+     (wl-signal-add ((tree :node) :events.destroy)
+                    (fn [listener data]
+                      (wlr-log :debug "######## :tree-node-destroy-listener ######## xw-surface = %p" xw-surface)
+                      (wl-signal-remove (scene-xw-surface :tree-node-destroy-listener))
+                      (wl-signal-remove (scene-xw-surface :xwayland-surface-destroy-listener))
+                      (wl-signal-remove (scene-xw-surface :xwayland-surface-map-listener))
+                      (wl-signal-remove (scene-xw-surface :xwayland-surface-unmap-listener))
+                      )))
+  (put scene-xw-surface :xwayland-surface-destroy-listener
+     (wl-signal-add (xw-surface :events.destroy)
+                    (fn [listener data]
+                      (wlr-log :debug "######## :xwayland-surface-destroy-listener ######## xw-surface = %p" xw-surface)
+                      (wlr-scene-node-destroy ((scene-xw-surface :tree) :node)))))
+  (put scene-xw-surface :xwayland-surface-map-listener
+     (wl-signal-add (xw-surface :events.map)
+                    (fn [listener data]
+                      (wlr-log :debug "######## :xwayland-surface-map-listener ######## xw-surface = %p" xw-surface)
+                      (wlr-scene-node-set-enabled ((scene-xw-surface :tree) :node) true))))
+  (put scene-xw-surface :xwayland-surface-unmap-listener
+     (wl-signal-add (xw-surface :events.map)
+                    (fn [listener data]
+                      (wlr-log :debug "######## :xwayland-surface-unmap-listener ######## xw-surface = %p" xw-surface)
+                      (wlr-scene-node-set-enabled ((scene-xw-surface :tree) :node) false))))
+
+  (wlr-scene-node-set-enabled (tree :node) (xw-surface :mapped))
+  (wlr-scene-node-set-position (surface-tree :node) (xw-surface :x) (xw-surface :y))
+
+  [tree surface-tree])
 
 
 (defn remove-element [arr e]
@@ -35,11 +64,13 @@
 (defn desktop-view-at [server x y]
   (def [node sx sy] (wlr-scene-node-at (((server :scene) :tree) :node) x y))
   (when (or (nil? node) (not (= (node :type) :buffer)))
+    (wlr-log :debug "#### desktop-view-at #### bogus node from wlr-scene-node-at")
     (break [nil nil 0 0]))
 
   (def scene-buffer (wlr-scene-buffer-from-node node))
   (def scene-surface (wlr-scene-surface-from-buffer scene-buffer))
   (when (nil? scene-surface)
+    (wlr-log :debug "#### desktop-view-at #### bogus scene surface from wlr-scene-surface-from-buffer")
     (break [nil nil 0 0]))
 
   (def surface (scene-surface :surface))
@@ -48,7 +79,7 @@
     (set tree ((tree :node) :parent)))
   (def view (pointer-to-table ((tree :node) :data)))
 
-  (wlr-log :debug "#### desktop-view-at #### sx = %p, sy = %p" sx sy)
+  (wlr-log :debug "#### desktop-view-at #### view = %v, surface = %p, sx = %p, sy = %p" view surface sx sy)
   [view surface sx sy])
 
 
@@ -75,9 +106,10 @@
   (def keyboard (wlr-seat-get-keyboard seat))
   (wlr-scene-node-raise-to-top ((view :scene-tree) :node))
 
-  # Move the view to the front of the list
-  (remove-element (server :views) view)
-  (array/push (server :views) view)
+  # Move the view to the front of the list, if it's focusable
+  (when (contains? (server :views) view)
+    (remove-element (server :views) view)
+    (array/push (server :views) view))
   (wlr-log :debug "(length (server :views)) = %p" (length (server :views)))
 
   (def wlr-surface
@@ -425,10 +457,22 @@
       (if (nil? xw-parent)
         (((view :server) :scene) :tree)
         (pointer-to-abstract-object (xw-parent :data) 'wlr/wlr-scene-tree)))
-    (def new-tree (scene-xwayland-surface-create parent-tree xw-surface))
+    (def [new-tree new-surface-tree] (scene-xwayland-surface-create parent-tree xw-surface))
     (put view :scene-tree new-tree)
+    (put view :surface-tree new-surface-tree)
     (set (xw-surface :data) new-tree)
-    (set ((new-tree :node) :data) view))
+    (set ((new-tree :node) :data) view)
+
+    (when (not (wlr-xwayland-or-surface-wants-focus xw-surface))
+      (array/pop ((view :server) :views))
+      (wlr-log :debug "#### removed unfocusable view, (length ((view :server) :views)) = %v"
+               (length ((view :server) :views)))))
+
+  (when (and (not (nil? (view :xwayland-surface)))
+             (not (wlr-xwayland-or-surface-wants-focus (view :xwayland-surface))))
+    # Do not focus the new XWayland surface if it doesn't want us to.
+    (wlr-log :debug "#### skipping unfocusable xwayland surface: %p" (view :xwayland-surface))
+    (break))
 
   (def wlr-surface
     (if (nil? (view :xwayland-surface))
@@ -447,8 +491,11 @@
 
   (when (> (length view-list) 0)
     (def next-view (view-list (- (length view-list) 1)))
-    (when (nil? (next-view :xwayland-surface))
-      (focus-view next-view (((next-view :xdg-toplevel) :base) :surface)))))
+    (def wlr-surface
+      (if (nil? (next-view :xwayland-surface))
+        (((next-view :xdg-toplevel) :base) :surface)
+        ((next-view :xwayland-surface) :surface)))
+    (focus-view next-view wlr-surface)))
 
 
 (defn handle-xdg-surface-destroy [view listener data]
@@ -580,7 +627,8 @@
   (if (= (event :state) :released)
     (reset-cursor-mode server)
     (let [[view surface _sx _sy] (desktop-view-at server ((server :cursor) :x) ((server :cursor) :y))]
-      (focus-view view surface))))
+      (when (or (nil? (view :xwayland-surface)) (wlr-xwayland-or-surface-wants-focus (view :xwayland-surface)))
+        (focus-view view surface)))))
 
 
 (defn handle-cursor-axis [server listener data]
@@ -827,7 +875,9 @@
   (wlr-log :debug "#### (xw-surface :y) = %p" (xw-surface :y))
   (wlr-log :debug "#### (xw-surface :width) = %p" (xw-surface :width))
   (wlr-log :debug "#### (xw-surface :height) = %p" (xw-surface :height))
-  )
+  (wlr-log :debug "#### (view :surface-tree) = %p" (view :surface-tree))
+  (when (and (xw-surface :mapped) (not (nil? (view :surface-tree))))
+    (wlr-scene-node-set-position ((view :surface-tree) :node) (xw-surface :x) (xw-surface :y))))
 
 
 (defn handle-xwayland-surface-ping-timeout [view listener data]
