@@ -168,7 +168,7 @@ static const JanetAbstractType jwlr_at_wlr_surface = {
     .put = method_wlr_surface_put,
     .marshal = NULL,
     .unmarshal = NULL,
-    .tostring = NULL,
+    .tostring = method_wlr_abs_obj_tostring,
     .compare = method_wlr_abs_obj_compare,
     JANET_ATEND_COMPARE
 };
@@ -263,7 +263,11 @@ static const JanetAbstractType jwlr_at_wlr_xdg_surface = {
     .gcmark = NULL,
     .get = method_wlr_xdg_surface_get,
     .put = method_wlr_xdg_surface_put,
-    JANET_ATEND_PUT
+    .marshal = NULL,
+    .unmarshal = NULL,
+    .tostring = method_wlr_abs_obj_tostring,
+    .compare = method_wlr_abs_obj_compare,
+    JANET_ATEND_COMPARE
 };
 
 
