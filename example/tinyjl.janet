@@ -1141,5 +1141,6 @@
   (wlr-log :info "#### running on WAYLAND_DISPLAY=%s" (server :socket))
   (wl-display-run (server :display))
 
+  (wlr-xwayland-destroy (server :xwayland))
   (wl-display-destroy-clients (server :display))
   (wl-display-destroy (server :display)))
