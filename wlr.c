@@ -3073,6 +3073,18 @@ static Janet cfun_wlr_xwayland_create(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_xwayland_destroy(int32_t argc, Janet *argv)
+{
+    struct wlr_xwayland *xwayland;
+
+    janet_fixarity(argc, 1);
+
+    xwayland = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_xwayland);
+    wlr_xwayland_destroy(xwayland);
+    return janet_wrap_nil();
+}
+
+
 static Janet cfun_wlr_xwayland_set_seat(int32_t argc, Janet *argv)
 {
     struct wlr_xwayland *xwayland;
@@ -3937,6 +3949,11 @@ static JanetReg cfuns[] = {
         "wlr-xwayland-create", cfun_wlr_xwayland_create,
         "(" MOD_NAME "/wlr-xwayland-create wl-display wlr-compositor lazy)\n\n"
         "Creates an XWayland server and XWM."
+    },
+    {
+        "wlr-xwayland-destroy", cfun_wlr_xwayland_destroy,
+        "(" MOD_NAME "/wlr-xwayland-destroy wlr-xwayland)\n\n"
+        "Destroys the XWayland server."
     },
     {
         "wlr-xwayland-set-seat", cfun_wlr_xwayland_set_seat,
