@@ -118,6 +118,7 @@
         (wlr-xdg-toplevel-set-activated (view :xdg-toplevel) true)
         (((view :xdg-toplevel) :base) :surface))
       (do
+        (wlr-xwayland-surface-restack (view :xwayland-surface) nil :above)
         (wlr-xwayland-surface-activate (view :xwayland-surface) true)
         ((view :xwayland-surface) :surface))))
 
@@ -793,6 +794,7 @@
   # TODO
   (def xw-surface (view :xwayland-surface))
   (wlr-log :debug "#### handle-xwayland-surface-set-title #### xw-surface = %p, data = %p" xw-surface data)
+  (wlr-log :debug "#### (xw-surface :surface) = %p" (xw-surface :surface))
   (wlr-log :debug "#### (xw-surface :title) = %p" (xw-surface :title))
   )
 
