@@ -878,6 +878,14 @@ static int method_wlr_surface_get(void *p, Janet key, Janet *out) {
         *out = janet_wrap_integer(surface->sy);
         return 1;
     }
+    if (!janet_cstrcmp(kw, "current")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(&surface->current, &jwlr_at_wlr_surface_state));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "pending")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(&surface->current, &jwlr_at_wlr_surface_state));
+        return 1;
+    }
     if (!janet_cstrcmp(kw, "data")) {
         if (!(surface->data)) {
             *out = janet_wrap_nil();
@@ -920,6 +928,58 @@ static void method_wlr_surface_put(void *p, Janet key, Janet value) {
     }
 
     janet_panicf("unknown key: %v", key);
+}
+
+
+static int method_wlr_surface_state_get(void *p, Janet key, Janet *out) {
+    struct wlr_surface_state **state_p = (struct wlr_surface_state **)p;
+    struct wlr_surface_state *state = *state_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    if (!janet_cstrcmp(kw, "committed")) {
+        *out = janet_wrap_array(jl_get_flag_keys(state->committed, wlr_surface_state_field_defs));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "seq")) {
+        /* uint32_t -> uint64_t conversion */
+        *out = janet_wrap_u64(state->seq);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "dx")) {
+        *out = janet_wrap_integer(state->dx);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "dy")) {
+        *out = janet_wrap_integer(state->dy);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "scale")) {
+        *out = janet_wrap_integer(state->scale);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "width")) {
+        *out = janet_wrap_integer(state->width);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "height")) {
+        *out = janet_wrap_integer(state->height);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "buffer-width")) {
+        *out = janet_wrap_integer(state->buffer_width);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "buffer-height")) {
+        *out = janet_wrap_integer(state->buffer_height);
+        return 1;
+    }
+
+    return 0;
 }
 
 
@@ -4073,6 +4133,7 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_scene_surface);
     janet_register_abstract_type(&jwlr_at_wlr_xdg_shell);
     janet_register_abstract_type(&jwlr_at_wlr_surface);
+    janet_register_abstract_type(&jwlr_at_wlr_surface_state);
     janet_register_abstract_type(&jwlr_at_wlr_xdg_surface);
     janet_register_abstract_type(&jwlr_at_wlr_xdg_toplevel);
     janet_register_abstract_type(&jwlr_at_wlr_xdg_toplevel_move_event);

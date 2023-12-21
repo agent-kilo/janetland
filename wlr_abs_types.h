@@ -174,6 +174,30 @@ static const JanetAbstractType jwlr_at_wlr_surface = {
 };
 
 
+static const jl_key_def_t wlr_surface_state_field_defs[] = {
+    {"buffer", WLR_SURFACE_STATE_BUFFER},
+    {"surface-damage", WLR_SURFACE_STATE_SURFACE_DAMAGE},
+    {"buffer-damage", WLR_SURFACE_STATE_BUFFER_DAMAGE},
+    {"opaque-region", WLR_SURFACE_STATE_OPAQUE_REGION},
+    {"input-region", WLR_SURFACE_STATE_INPUT_REGION},
+    {"transform", WLR_SURFACE_STATE_TRANSFORM},
+    {"scale", WLR_SURFACE_STATE_SCALE},
+    {"frame-callback-list", WLR_SURFACE_STATE_FRAME_CALLBACK_LIST},
+    {"viewport", WLR_SURFACE_STATE_VIEWPORT},
+    {"offset", WLR_SURFACE_STATE_OFFSET},
+    {NULL, 0},
+};
+
+static int method_wlr_surface_state_get(void *p, Janet key, Janet *out);
+static const JanetAbstractType jwlr_at_wlr_surface_state = {
+    .name = MOD_NAME "/wlr-surface-state",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_surface_state_get,
+    JANET_ATEND_GET
+};
+
+
 static const jl_offset_def_t wlr_xdg_popup_signal_offsets[] = {
     JWLR_OFFSET_DEF(struct wlr_xdg_popup, events.reposition),
     {NULL, 0},
