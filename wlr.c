@@ -4075,6 +4075,7 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_surface);
     janet_register_abstract_type(&jwlr_at_wlr_xdg_surface);
     janet_register_abstract_type(&jwlr_at_wlr_xdg_toplevel);
+    janet_register_abstract_type(&jwlr_at_wlr_xdg_toplevel_move_event);
     janet_register_abstract_type(&jwlr_at_wlr_xdg_toplevel_resize_event);
     janet_register_abstract_type(&jwlr_at_wlr_xdg_popup);
     janet_register_abstract_type(&jwlr_at_wlr_cursor);
