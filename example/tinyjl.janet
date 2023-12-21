@@ -511,14 +511,25 @@
 
 
 (defn handle-xdg-toplevel-request-move [view listener data]
-  (wlr-log :debug "#### handle-xdg-toplevel-request-move ####")
-  (begin-interactive view :move []))
+  (def event (get-abstract-listener-data data 'wlr/wlr-xdg-toplevel-move-event))
+  (wlr-log :debug "#### handle-xdg-toplevel-request-move #### serial = %p" (event :serial))
+  (def last-btn-event ((view :server) :last-button-event))
+  (when (or (nil? last-btn-event)
+            (do
+              (def [last-serial last-state] last-btn-event)
+              (and (= last-serial (event :serial)) (= last-state :pressed))))
+    (begin-interactive view :move [])))
 
 
 (defn handle-xdg-toplevel-request-resize [view listener data]
-  (wlr-log :debug "#### handle-xdg-toplevel-request-resize ####")
   (def event (get-abstract-listener-data data 'wlr/wlr-xdg-toplevel-resize-event))
-  (begin-interactive view :resize (event :edges)))
+  (wlr-log :debug "#### handle-xdg-toplevel-request-resize #### serial = %p" (event :serial))
+  (def last-btn-event ((view :server) :last-button-event))
+  (when (or (nil? last-btn-event)
+            (do
+              (def [last-serial last-state] last-btn-event)
+              (and (= last-serial (event :serial)) (= last-state :pressed))))
+    (begin-interactive view :resize (event :edges))))
 
 
 (defn handle-xdg-toplevel-request-maximize [view listener data]
@@ -621,10 +632,14 @@
   (wlr-log :debug "#### (event :button) = %p" (event :button))
   (wlr-log :debug "#### (event :state) = %p" (event :state))
 
-  (wlr-seat-pointer-notify-button (server :seat)
-                                  (event :time-msec)
-                                  (event :button)
-                                  (event :state))
+  (def btn-serial
+    (wlr-seat-pointer-notify-button (server :seat)
+                                    (event :time-msec)
+                                    (event :button)
+                                    (event :state)))
+  (wlr-log :debug "#### btn-serial = %p" btn-serial)
+  (put server :last-button-event [btn-serial (event :state)])
+
   (if (= (event :state) :released)
     (reset-cursor-mode server)
     (let [[view surface _sx _sy] (desktop-view-at server ((server :cursor) :x) ((server :cursor) :y))]
