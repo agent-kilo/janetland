@@ -133,8 +133,12 @@
   (def server (view :server))
   (def focused-surface (((server :seat) :pointer-state) :focused-surface))
 
-  (when (not (= (((view :xdg-toplevel) :base) :surface)
-                (wlr-surface-get-root-surface focused-surface)))
+  (def view-surface
+    (if (nil? (view :xwayland-surface))
+      (((view :xdg-toplevel) :base) :surface)
+      ((view :xwayland-surface) :surface)))
+
+  (when (not (= view-surface (wlr-surface-get-root-surface focused-surface)))
     (break))
 
   (put server :grabbed-view view)
@@ -631,6 +635,21 @@
   (wlr-log :debug "#### (event :time-msec) = %p" (event :time-msec))
   (wlr-log :debug "#### (event :button) = %p" (event :button))
   (wlr-log :debug "#### (event :state) = %p" (event :state))
+
+  (def keyboard (((server :seat) :keyboard-state) :keyboard))
+  (def modifiers (if (nil? keyboard)
+                   @[]
+                   (wlr-keyboard-get-modifiers keyboard)))
+  (wlr-log :debug "#### modifiers = %p" modifiers)
+
+  (when (contains? modifiers :alt)
+    (case (event :state)
+      :pressed (do
+                 (def [view _surface _sx _sy]
+                   (desktop-view-at server ((server :cursor) :x) ((server :cursor) :y)))
+                 (begin-interactive view :move []))
+      :released (reset-cursor-mode server))
+    (break))
 
   (def btn-serial
     (wlr-seat-pointer-notify-button (server :seat)
