@@ -127,6 +127,13 @@
                                     (keyboard :keycodes) (keyboard :modifiers))))
 
 
+(defn get-geometry-from-view [view]
+  (if (nil? (view :xwayland-surface))
+    (wlr-xdg-surface-get-geometry ((view :xdg-toplevel) :base))
+    (box :width ((((view :xwayland-surface) :surface) :current) :width)
+         :height ((((view :xwayland-surface) :surface) :current) :height))))
+
+
 (defn begin-interactive [view mode edges]
   (wlr-log :debug "#### begin-interactive #### mode = %p, edges = %p" mode edges)
 
@@ -152,7 +159,7 @@
 
     :resize
     (do
-      (def geo-box (wlr-xdg-surface-get-geometry ((view :xdg-toplevel) :base)))
+      (def geo-box (get-geometry-from-view view))
       (def border-x (+ (view :x) (geo-box :x)
                        (if (contains? edges :right) (geo-box :width) 0)))
       (def border-y (+ (view :y) (geo-box :y)
@@ -170,9 +177,13 @@
   (put view :x (math/round (- ((server :cursor) :x) (server :grab-x))))
   (put view :y (math/round (- ((server :cursor) :y) (server :grab-y))))
   (wlr-log :debug "#### process-cursor-move #### (view :x) = %p, (view :y) = %p" (view :x) (view :y))
-  (wlr-scene-node-set-position ((view :scene-tree) :node)
-                               (view :x)
-                               (view :y)))
+  (wlr-scene-node-set-position ((view :scene-tree) :node) (view :x) (view :y))
+  # XXX: The window movement is wrong when x & y coordinates are involved???
+  #(when (not (nil? (view :xwayland-surface)))
+  #  (wlr-xwayland-surface-configure (view :xwayland-surface) (view :x) (view :y)
+  #                                  ((((view :xwayland-surface) :surface) :current) :width)
+  #                                  ((((view :xwayland-surface) :surface) :current) :height)))
+  )
 
 
 (defn process-cursor-resize [server time]
@@ -212,14 +223,19 @@
       (when (<= new-right new-left)
         (set new-right (+ new-left 1)))))
 
-  (def geo-box (wlr-xdg-surface-get-geometry ((view :xdg-toplevel) :base)))
+  (def geo-box (get-geometry-from-view view))
   (set (view :x) (math/round (- new-left (geo-box :x))))
   (set (view :y) (math/round (- new-top (geo-box :y))))
   (wlr-scene-node-set-position ((view :scene-tree) :node) (view :x) (view :y))
 
   (def new-width (math/round (- new-right new-left)))
   (def new-height (math/round (- new-bottom new-top)))
-  (wlr-xdg-toplevel-set-size (view :xdg-toplevel) new-width new-height))
+  (if (nil? (view :xwayland-surface))
+    (wlr-xdg-toplevel-set-size (view :xdg-toplevel) new-width new-height)
+    # XXX: The window movement is wrong when x & y coordinates are involved???
+    #(wlr-xwayland-surface-configure (view :xwayland-surface) (view :x) (view :y) new-width new-height)
+    (wlr-xwayland-surface-configure (view :xwayland-surface) 0 0 new-width new-height)
+    ))
 
 
 (defn process-cursor-motion [server time]
@@ -518,10 +534,9 @@
   (def event (get-abstract-listener-data data 'wlr/wlr-xdg-toplevel-move-event))
   (wlr-log :debug "#### handle-xdg-toplevel-request-move #### serial = %p" (event :serial))
   (def last-btn-event ((view :server) :last-button-event))
-  (when (or (nil? last-btn-event)
-            (do
-              (def [last-serial last-state] last-btn-event)
-              (and (= last-serial (event :serial)) (= last-state :pressed))))
+  (when (nil? last-btn-event) (break))
+  (def [last-serial last-state _last-btn] last-btn-event)
+  (when (and (= last-serial (event :serial)) (= last-state :pressed))
     (begin-interactive view :move [])))
 
 
@@ -529,10 +544,9 @@
   (def event (get-abstract-listener-data data 'wlr/wlr-xdg-toplevel-resize-event))
   (wlr-log :debug "#### handle-xdg-toplevel-request-resize #### serial = %p" (event :serial))
   (def last-btn-event ((view :server) :last-button-event))
-  (when (or (nil? last-btn-event)
-            (do
-              (def [last-serial last-state] last-btn-event)
-              (and (= last-serial (event :serial)) (= last-state :pressed))))
+  (when (nil? last-btn-event) (break))
+  (def [last-serial last-state _last-btn] last-btn-event)
+  (when (and (= last-serial (event :serial)) (= last-state :pressed))
     (begin-interactive view :resize (event :edges))))
 
 
@@ -644,11 +658,14 @@
 
   (when (contains? modifiers :alt)
     (case (event :state)
-      :pressed (do
-                 (def [view _surface _sx _sy]
-                   (desktop-view-at server ((server :cursor) :x) ((server :cursor) :y)))
-                 (begin-interactive view :move []))
-      :released (reset-cursor-mode server))
+      :pressed
+      (do
+        (def [view _surface _sx _sy] (desktop-view-at server ((server :cursor) :x) ((server :cursor) :y)))
+        (case (event :button)
+          (int/u64 272) (begin-interactive view :move [])
+          (int/u64 273) (begin-interactive view :resize [:right :bottom])))
+      :released
+      (reset-cursor-mode server))
     (break))
 
   (def btn-serial
@@ -657,11 +674,12 @@
                                     (event :button)
                                     (event :state)))
   (wlr-log :debug "#### btn-serial = %p" btn-serial)
-  (put server :last-button-event [btn-serial (event :state)])
+  (put server :last-button-event [btn-serial (event :state) (event :button)])
 
   (if (= (event :state) :released)
     (reset-cursor-mode server)
     (let [[view surface _sx _sy] (desktop-view-at server ((server :cursor) :x) ((server :cursor) :y))]
+      (when (nil? view) (break))
       (when (or (nil? (view :xwayland-surface)) (wlr-xwayland-or-surface-wants-focus (view :xwayland-surface)))
         (focus-view view surface)))))
 
@@ -778,7 +796,11 @@
   (def xw-surface (view :xwayland-surface))
   (def event (get-abstract-listener-data data 'wlr/wlr-xwayland-surface-configure-event))
   (wlr-log :debug "#### handle-xwayland-surface-request-configure #### xw-surface = %p, event = %p" xw-surface event)
-  (wlr-xwayland-surface-configure xw-surface (event :x) (event :y) (event :width) (event :height)))
+  (wlr-xwayland-surface-configure xw-surface (event :x) (event :y) (event :width) (event :height))
+  (when (and (xw-surface :mapped) (not (nil? (view :surface-tree))))
+    (put view :x (event :x))
+    (put view :y (event :y))
+    (wlr-scene-node-set-position ((view :surface-tree) :node) (event :x) (event :y))))
 
 
 (defn handle-xwayland-surface-request-fullscreen [view listener data]
@@ -912,6 +934,8 @@
   (wlr-log :debug "#### (xw-surface :width) = %p" (xw-surface :width))
   (wlr-log :debug "#### (xw-surface :height) = %p" (xw-surface :height))
   (wlr-log :debug "#### (view :surface-tree) = %p" (view :surface-tree))
+  (put view :x (xw-surface :x))
+  (put view :y (xw-surface :y))
   (when (and (xw-surface :mapped) (not (nil? (view :surface-tree))))
     (wlr-scene-node-set-position ((view :surface-tree) :node) (xw-surface :x) (xw-surface :y))))
 
