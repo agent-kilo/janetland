@@ -726,6 +726,42 @@ static int method_wlr_xdg_toplevel_resize_event_get(void *p, Janet key, Janet *o
 }
 
 
+static int method_wlr_xdg_toplevel_move_event_get(void *p, Janet key, Janet *out) {
+    struct wlr_xdg_toplevel_move_event **event_p = (struct wlr_xdg_toplevel_move_event **)p;
+    struct wlr_xdg_toplevel_move_event *event = *event_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    if (!janet_cstrcmp(kw, "toplevel")) {
+        if (!(event->toplevel)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(event->toplevel, &jwlr_at_wlr_xdg_toplevel));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "seat")) {
+        if (!(event->seat)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(event->seat, &jwlr_at_wlr_seat_client));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "serial")) {
+        /* XXX: uint32_t -> int32_t conversion */
+        *out = janet_wrap_integer(event->serial);
+        return 1;
+    }
+
+    return 0;
+}
+
+
 static int method_wlr_xdg_surface_get(void *p, Janet key, Janet *out) {
     struct wlr_xdg_surface **surface_p = (struct wlr_xdg_surface **)p;
     struct wlr_xdg_surface *surface = *surface_p;

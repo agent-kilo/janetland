@@ -231,6 +231,16 @@ static const JanetAbstractType jwlr_at_wlr_xdg_toplevel_resize_event = {
 };
 
 
+static int method_wlr_xdg_toplevel_move_event_get(void *p, Janet key, Janet *out);
+static const JanetAbstractType jwlr_at_wlr_xdg_toplevel_move_event = {
+    .name = MOD_NAME "/wlr-xdg-toplevel-move-event",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_xdg_toplevel_move_event_get,
+    JANET_ATEND_GET
+};
+
+
 static const jl_offset_def_t wlr_xdg_surface_signal_offsets[] = {
     JWLR_OFFSET_DEF(struct wlr_xdg_surface, events.destroy),
     JWLR_OFFSET_DEF(struct wlr_xdg_surface, events.ping_timeout),
