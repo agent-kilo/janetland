@@ -3611,7 +3611,63 @@ static int method_wlr_xwayland_surface_configure_event_get(void *p, Janet key, J
        return 1;
    }
 
-    return 0;
+   return 0;
+}
+
+
+static int method_wlr_xwayland_resize_event_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_xwayland_resize_event **event_p = (struct wlr_xwayland_resize_event **)p;
+    struct wlr_xwayland_resize_event *event = *event_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+   if (!janet_cstrcmp(kw, "surface")) {
+       if (!(event->surface)) {
+           *out = janet_wrap_nil();
+           return 1;
+       }
+       *out = janet_wrap_abstract(jl_pointer_to_abs_obj(event->surface, &jwlr_at_wlr_xwayland_surface));
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "edges")) {
+       *out = janet_wrap_array(jl_get_flag_keys(event->edges, wlr_edges_defs));
+       return 1;
+   }
+
+   return 0;
+}
+
+
+static int method_wlr_xwayland_minimize_event_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_xwayland_minimize_event **event_p = (struct wlr_xwayland_minimize_event **)p;
+    struct wlr_xwayland_minimize_event *event = *event_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+   if (!janet_cstrcmp(kw, "surface")) {
+       if (!(event->surface)) {
+           *out = janet_wrap_nil();
+           return 1;
+       }
+       *out = janet_wrap_abstract(jl_pointer_to_abs_obj(event->surface, &jwlr_at_wlr_xwayland_surface));
+       return 1;
+   }
+   if (!janet_cstrcmp(kw, "minimize")) {
+       *out = janet_wrap_boolean(event->minimize);
+       return 1;
+   }
+
+   return 0;
 }
 
 
@@ -4161,6 +4217,8 @@ JANET_MODULE_ENTRY(JanetTable *env)
     janet_register_abstract_type(&jwlr_at_wlr_keyboard_key_event);
     janet_register_abstract_type(&jwlr_at_wlr_xwayland);
     janet_register_abstract_type(&jwlr_at_wlr_xwayland_surface);
+    janet_register_abstract_type(&jwlr_at_wlr_xwayland_resize_event);
+    janet_register_abstract_type(&jwlr_at_wlr_xwayland_minimize_event);
     janet_register_abstract_type(&jwlr_at_wlr_xwayland_surface_configure_event);
 
     janet_cfuns(env, MOD_NAME, cfuns);
