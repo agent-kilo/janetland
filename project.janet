@@ -98,6 +98,9 @@
                 :header ["jl.h"]
                 :cflags [;common-cflags ;wlr-cflags])
 
+(declare-source :source [(string generated-tables-dir "/keysyms.janet")]
+                :prefix ((dyn :project) :name))
+
 
 (task "proto-headers" []
   (def wl-proto-dir (pkg-config "--variable=pkgdatadir" "wayland-protocols"))
