@@ -3,6 +3,7 @@
 (use janetland/xkb)
 (use janetland/xcb)
 (use janetland/util)
+(use janetland/keysyms)
 
 
 (defn scene-xwayland-surface-create [parent xw-surface]
@@ -273,17 +274,17 @@
 (defn handle-keybinding [server sym]
   (wlr-log :debug "#### handle-keybinding #### sym = %p" sym)
   (case sym
-    (int/u64 0xff1b) # XKB_KEY_Escape
+    (xkb-key :Escape)
     (do
       (wl-display-terminate (server :display))
       true)
 
-    (int/u64 0xff0d) # XKB_KEY_Return
+    (xkb-key :Return)
     (do
       (os/spawn ["/bin/sh" "-c" "kitty"])
       true)
 
-    (int/u64 0xffbe) # XKB_KEY_F1
+    (xkb-key :F1)
     (do
       (when (> (length (server :views)) 1)
         (def next-view ((server :views) 0))
