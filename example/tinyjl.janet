@@ -860,7 +860,24 @@
     (wlr-scene-node-set-position ((view :surface-tree) :node) (xw-surface :x) (xw-surface :y))))
 
 
-(defn create-xwayland-view [server xw-surface]
+(defn handle-xwayland-new-surface [server listener data]
+  (def xw-surface (get-abstract-listener-data data 'wlr/wlr-xwayland-surface))
+  (wlr-log :debug "#### handle-xwayland-new-surface #### xw-surface = %p" xw-surface)
+  (wlr-log :debug "#### (xw-surface :x) = %p" (xw-surface :x))
+  (wlr-log :debug "#### (xw-surface :y) = %p" (xw-surface :y))
+  (wlr-log :debug "#### (xw-surface :width) = %p" (xw-surface :width))
+  (wlr-log :debug "#### (xw-surface :height) = %p" (xw-surface :height))
+  (wlr-log :debug "#### (xw-surface :override-redirect) = %p" (xw-surface :override-redirect))
+  (wlr-log :debug "#### (xw-surface :mapped) = %p" (xw-surface :mapped))
+  (wlr-log :debug "#### (xw-surface :title) = %p" (xw-surface :title))
+  (wlr-log :debug "#### (xw-surface :class) = %p" (xw-surface :class))
+  (wlr-log :debug "#### (xw-surface :instance) = %p" (xw-surface :instance))
+  (wlr-log :debug "#### (xw-surface :role) = %p" (xw-surface :role))
+  (wlr-log :debug "#### (xw-surface :startup-id) = %p" (xw-surface :startup-id))
+  (wlr-log :debug "#### (xw-surface :parent) = %p" (xw-surface :parent))
+  (when (not (nil? (xw-surface :parent)))
+    (wlr-log :debug "#### ((xw-surface :parent) :title) = %p" ((xw-surface :parent) :title)))
+
   (def view @{:server server
               :xwayland-surface xw-surface
               :x 0
@@ -921,27 +938,6 @@
      (wl-signal-add (xw-surface :events.set_geometry)
                     (fn [listener data]
                       (handle-xwayland-surface-set-geometry view listener data)))))
-
-
-(defn handle-xwayland-new-surface [server listener data]
-  (def xw-surface (get-abstract-listener-data data 'wlr/wlr-xwayland-surface))
-  (wlr-log :debug "#### handle-xwayland-new-surface #### xw-surface = %p" xw-surface)
-  (wlr-log :debug "#### (xw-surface :x) = %p" (xw-surface :x))
-  (wlr-log :debug "#### (xw-surface :y) = %p" (xw-surface :y))
-  (wlr-log :debug "#### (xw-surface :width) = %p" (xw-surface :width))
-  (wlr-log :debug "#### (xw-surface :height) = %p" (xw-surface :height))
-  (wlr-log :debug "#### (xw-surface :override-redirect) = %p" (xw-surface :override-redirect))
-  (wlr-log :debug "#### (xw-surface :mapped) = %p" (xw-surface :mapped))
-  (wlr-log :debug "#### (xw-surface :title) = %p" (xw-surface :title))
-  (wlr-log :debug "#### (xw-surface :class) = %p" (xw-surface :class))
-  (wlr-log :debug "#### (xw-surface :instance) = %p" (xw-surface :instance))
-  (wlr-log :debug "#### (xw-surface :role) = %p" (xw-surface :role))
-  (wlr-log :debug "#### (xw-surface :startup-id) = %p" (xw-surface :startup-id))
-  (wlr-log :debug "#### (xw-surface :parent) = %p" (xw-surface :parent))
-  (when (not (nil? (xw-surface :parent)))
-    (wlr-log :debug "#### ((xw-surface :parent) :title) = %p" ((xw-surface :parent) :title)))
-
-  (create-xwayland-view server xw-surface))
 
 
 (defn main [& argv]
