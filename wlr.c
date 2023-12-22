@@ -536,6 +536,98 @@ static Janet cfun_wlr_output_layout_create(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_output_layout_destroy(int32_t argc, Janet *argv)
+{
+    struct wlr_output_layout *layout;
+
+    janet_fixarity(argc, 1);
+
+    layout = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_output_layout);
+    wlr_output_layout_destroy(layout);
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wlr_output_layout_get(int32_t argc, Janet *argv)
+{
+    struct wlr_output_layout *layout;
+    struct wlr_output *reference;
+
+    struct wlr_output_layout_output *layout_output;
+
+    janet_fixarity(argc, 2);
+
+    layout = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_output_layout);
+    reference = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_output);
+
+    layout_output = wlr_output_layout_get(layout, reference);
+    if (!layout_output) {
+        return janet_wrap_nil();
+    } else {
+        return janet_wrap_abstract(jl_pointer_to_abs_obj(layout_output, &jwlr_at_wlr_output_layout_output));
+    }
+}
+
+
+static Janet cfun_wlr_output_layout_add_auto(int32_t argc, Janet *argv)
+{
+    struct wlr_output_layout *layout;
+    struct wlr_output *output;
+
+    janet_fixarity(argc, 2);
+
+    layout = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_output_layout);
+    output = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_output);
+
+    wlr_output_layout_add_auto(layout, output);
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wlr_output_layout_get_box(int32_t argc, Janet *argv)
+{
+    struct wlr_output_layout *layout;
+    struct wlr_output *output;
+
+    struct wlr_box *box;
+
+    janet_fixarity(argc, 2);
+
+    layout = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_output_layout);
+    if (janet_checktype(argv[1], JANET_NIL)) {
+        output = NULL;
+    } else {
+        output = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_output);
+    }
+    box = janet_abstract(&jwlr_at_box, sizeof(*box));
+
+    wlr_output_layout_get_box(layout, output, box);
+    return janet_wrap_abstract(box);
+}
+
+
+static Janet cfun_wlr_output_layout_output_at(int32_t argc, Janet *argv)
+{
+    struct wlr_output_layout *layout;
+    double lx, ly;
+
+    struct wlr_output *output;
+
+    janet_fixarity(argc, 3);
+
+    layout = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_output_layout);
+    lx = janet_getnumber(argv, 1);
+    ly = janet_getnumber(argv, 2);
+
+    output = wlr_output_layout_output_at(layout, lx, ly);
+    if (!output) {
+        return janet_wrap_nil();
+    } else {
+        return janet_wrap_abstract(jl_pointer_to_abs_obj(output, &jwlr_at_wlr_output));
+    }
+}
+
+
 static int method_wlr_scene_get(void *p, Janet key, Janet *out)
 {
     struct wlr_scene **scene_p = (struct wlr_scene **)p;
@@ -1819,43 +1911,6 @@ static Janet cfun_wlr_output_commit(int32_t argc, Janet *argv)
 
     output = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_output);
     return janet_wrap_boolean(wlr_output_commit(output));
-}
-
-
-static Janet cfun_wlr_output_layout_add_auto(int32_t argc, Janet *argv)
-{
-    struct wlr_output_layout *layout;
-    struct wlr_output *output;
-
-    janet_fixarity(argc, 2);
-
-    layout = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_output_layout);
-    output = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_output);
-
-    wlr_output_layout_add_auto(layout, output);
-    return janet_wrap_nil();
-}
-
-
-static Janet cfun_wlr_output_layout_get_box(int32_t argc, Janet *argv)
-{
-    struct wlr_output_layout *layout;
-    struct wlr_output *output;
-
-    struct wlr_box *box;
-
-    janet_fixarity(argc, 2);
-
-    layout = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_output_layout);
-    if (janet_checktype(argv[1], JANET_NIL)) {
-        output = NULL;
-    } else {
-        output = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_output);
-    }
-    box = janet_abstract(&jwlr_at_box, sizeof(*box));
-
-    wlr_output_layout_get_box(layout, output, box);
-    return janet_wrap_abstract(box);
 }
 
 
@@ -3738,11 +3793,6 @@ static JanetReg cfuns[] = {
         "Creates a wlroots data device manager object."
     },
     {
-        "wlr-output-layout-create", cfun_wlr_output_layout_create,
-        "(" MOD_NAME "/wlr-output-layout-create)\n\n"
-        "Creates a wlroots output layout object."
-    },
-    {
         "wlr-scene-create", cfun_wlr_scene_create,
         "(" MOD_NAME "/wlr-scene-create)\n\n"
         "Creates a wlroots scene object."
@@ -3998,6 +4048,21 @@ static JanetReg cfuns[] = {
         "Commits an output object."
     },
     {
+        "wlr-output-layout-create", cfun_wlr_output_layout_create,
+        "(" MOD_NAME "/wlr-output-layout-create)\n\n"
+        "Creates a wlroots output layout object."
+    },
+    {
+        "wlr-output-layout-destroy", cfun_wlr_output_layout_destroy,
+        "(" MOD_NAME "/wlr-output-layout-destroy wlr-output-layout)\n\n"
+        "Destroys a wlroots output layout object."
+    },
+    {
+        "wlr-output-layout-get", cfun_wlr_output_layout_get,
+        "(" MOD_NAME "/wlr-output-layout-get wlr-output-layout wlr-output)\n\n"
+        "Gets the output layout for the specified output."
+    },
+    {
         "wlr-output-layout-add-auto", cfun_wlr_output_layout_add_auto,
         "(" MOD_NAME "/wlr-output-layout-add-auto wlr-output-layout wlr-output)\n\n"
         "Adds an output object to an output layout."
@@ -4005,7 +4070,12 @@ static JanetReg cfuns[] = {
     {
         "wlr-output-layout-get-box", cfun_wlr_output_layout_get_box,
         "(" MOD_NAME "/wlr-output-layout-get-box wlr-output-layout wlr-output)\n\n"
-        "Get the box of the layout for the given reference output."
+        "Gets the box of the layout for the given reference output."
+    },
+    {
+        "wlr-output-layout-output-at", cfun_wlr_output_layout_output_at,
+        "(" MOD_NAME "/wlr-output-layout-output-at wlr-output-layout lx ly)\n\n"
+        "Gets the output at the specified layout coordinates."
     },
     {
         "wlr-surface-get-root-surface", cfun_wlr_surface_get_root_surface,
