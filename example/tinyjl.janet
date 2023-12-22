@@ -823,17 +823,18 @@
 
 
 (defn handle-xwayland-surface-request-move [view listener data]
-  # TODO
   (def xw-surface (view :xwayland-surface))
   (wlr-log :debug "#### handle-xwayland-surface-request-move #### xw-surface = %p, data = %p" xw-surface data)
-  )
+  (when (not (xw-surface :mapped)) (break))
+  (begin-interactive view :move []))
 
 
 (defn handle-xwayland-surface-request-resize [view listener data]
-  # TODO
   (def xw-surface (view :xwayland-surface))
-  (wlr-log :debug "#### handle-xwayland-surface-request-resize #### xw-surface = %p, data = %p" xw-surface data)
-  )
+  (def event (get-abstract-listener-data data 'wlr/wlr-xwayland-resize-event))
+  (wlr-log :debug "#### handle-xwayland-surface-request-resize #### xw-surface = %p, data = %p" xw-surface event)
+  (when (not (xw-surface :mapped)) (break))
+  (begin-interactive view :resize (event :edges)))
 
 
 (defn handle-xwayland-surface-set-override-redirect [view listener data]
