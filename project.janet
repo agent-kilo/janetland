@@ -39,6 +39,7 @@
 
 
 (def generated-headers-dir "generated_headers")
+(def generated-tables-dir "generated_tables")
 
 (def wlr-cflags
   (let [arr @[]]
@@ -50,6 +51,23 @@
      (string/split " " (pkg-config "--cflags" "--libs" "xkbcommon")))))
 
 (def common-cflags ["-g" "-Wall" "-Wextra"])
+
+(def include-path-peg
+  (peg/compile
+   ~{:main (sequence :i-flag :path -1)
+     :i-flag (sequence (any :s) "-I")
+     :path (sequence (any :s) (capture (some 1)) (any :s))}))
+
+(def keysym-define-peg
+  (peg/compile
+   ~{:main (sequence :define :name :value (opt :comment) -1)
+     :define (sequence (any :s) "#define" (some :s))
+     :name (sequence "XKB_KEY_" (capture (some (choice "_" :w))) (some :s))
+     :value (sequence (number (sequence "0x" :h+)) (any :s))
+     :comment (choice (sequence "//" (any :s) (capture (some 1)))
+                      (sequence :ml-comment-begin  (capture (to :ml-comment-end)) :ml-comment-end))
+     :ml-comment-begin (sequence "/*" (any :s))
+     :ml-comment-end (sequence (any :s) "*/")}))
 
 
 (declare-native :name (project-module "wlr")
@@ -98,3 +116,38 @@
          (print scanner-out)
          (printf "generated %s" out-file))
        proto-files))
+
+
+(task "keysym-table" []
+  (def xkbcommon-cflags (pkg-config "--cflags" "xkbcommon"))
+  (def matched-arr (peg/match include-path-peg xkbcommon-cflags))
+  (when (or (nil? matched-arr) (empty? matched-arr))
+    (error (string/format "unrecognised flags from pkg-config: %s" xkbcommon-cflags)))
+
+  (def include-path (in matched-arr 0))
+  (def keysym-file-path (string include-path "/xkbcommon/xkbcommon-keysyms.h"))
+  (def keysym-file (file/open keysym-file-path :rn))
+  (ensure-dir generated-tables-dir)
+  (def keysym-table-file-path (string generated-tables-dir "/keysyms.janet"))
+  (def keysym-table-file (file/open keysym-table-file-path :wn))
+
+  (file/write keysym-table-file
+              "(def xkb-key {\n")
+
+  (each line (file/lines keysym-file)
+    (def matched (peg/match keysym-define-peg (string/trim line)))
+    (when (not (nil? matched))
+      (def [name value comment] matched)
+      (file/write keysym-table-file
+                  (string/format "  :%s    (int/u64 %d)%s\n"
+                                 name
+                                 value
+                                 (if (nil? comment)
+                                   ""
+                                   (string/format "    # %s" comment))))))
+
+  (file/write keysym-table-file
+              "})\n")
+
+  (file/close keysym-table-file)
+  (printf "generated %s" keysym-table-file-path))
