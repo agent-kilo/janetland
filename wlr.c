@@ -740,6 +740,73 @@ static Janet cfun_wlr_output_layout_intersects(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_output_layout_closest_point(int32_t argc, Janet *argv)
+{
+    struct wlr_output_layout *layout;
+    struct wlr_output *reference;
+    double lx, ly;
+
+    double dest_lx, dest_ly;
+    Janet ret_tuple[2];
+
+    janet_fixarity(argc, 4);
+
+    layout = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_output_layout);
+    reference = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_output);
+    lx = janet_getnumber(argv, 2);
+    ly = janet_getnumber(argv, 3);
+
+    wlr_output_layout_closest_point(layout, reference, lx, ly, &dest_lx, &dest_ly);
+    ret_tuple[0] = janet_wrap_number(dest_lx);
+    ret_tuple[1] = janet_wrap_number(dest_ly);
+    return janet_wrap_tuple(janet_tuple_n(ret_tuple, 2));
+}
+
+
+static Janet cfun_wlr_output_layout_get_center_output(int32_t argc, Janet *argv)
+{
+    struct wlr_output_layout *layout;
+
+    struct wlr_output *output;
+
+    janet_fixarity(argc, 1);
+
+    layout = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_output_layout);
+    output = wlr_output_layout_get_center_output(layout);
+    if (!output) {
+        return janet_wrap_nil();
+    } else {
+        return janet_wrap_abstract(jl_pointer_to_abs_obj(output, &jwlr_at_wlr_output));
+    }
+}
+
+
+static Janet cfun_wlr_output_layout_adjacent_output(int32_t argc, Janet *argv)
+{
+    struct wlr_output_layout *layout;
+    enum wlr_direction direction;
+    struct wlr_output *reference;
+    double ref_lx, ref_ly;
+
+    struct wlr_output *output;
+
+    janet_fixarity(argc, 5);
+
+    layout = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_output_layout);
+    direction = jl_get_key_def(argv, 1, wlr_direction_defs);
+    reference = jl_get_abs_obj_pointer(argv, 2, &jwlr_at_wlr_output);
+    ref_lx = janet_getnumber(argv, 3);
+    ref_ly = janet_getnumber(argv, 4);
+
+    output = wlr_output_layout_adjacent_output(layout, direction, reference, ref_lx, ref_ly);
+    if (!output) {
+        return janet_wrap_nil();
+    } else {
+        return janet_wrap_abstract(jl_pointer_to_abs_obj(output, &jwlr_at_wlr_output));
+    }
+}
+
+
 static int method_wlr_scene_get(void *p, Janet key, Janet *out)
 {
     struct wlr_scene **scene_p = (struct wlr_scene **)p;
@@ -4218,6 +4285,21 @@ static JanetReg cfuns[] = {
         "wlr-output-layout-intersects", cfun_wlr_output_layout_intersects,
         "(" MOD_NAME "/wlr-output-layout-intersects wlr-output-layout wlr-output box)\n\n"
         "Checks whether the output intersects with the specified box."
+    },
+    {
+        "wlr-output-layout-closest-point", cfun_wlr_output_layout_closest_point,
+        "(" MOD_NAME "/wlr-output-layout-closest-point wlr-output-layout wlr-output lx ly)\n\n"
+        "Gets the closest point on this layout from the given point from the specified output."
+    },
+    {
+        "wlr-output-layout-get-center-output", cfun_wlr_output_layout_get_center_output,
+        "(" MOD_NAME "/wlr-output-layout-get-center-output wlr-output-layout)\n\n"
+        "Gets the output closest to the center of the layout."
+    },
+    {
+        "wlr-output-layout-adjacent-output", cfun_wlr_output_layout_adjacent_output,
+        "(" MOD_NAME "/wlr-output-layout-adjacent-output wlr-output-layout direction wlr-output ref-lx ref-ly)\n\n"
+        "Gets the closest adjacent output to the reference output from the reference point in the given direction."
     },
     {
         "wlr-surface-get-root-surface", cfun_wlr_surface_get_root_surface,
