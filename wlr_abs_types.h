@@ -82,6 +82,14 @@ static const JanetAbstractType jwlr_at_wlr_data_device_manager = {
 };
 
 
+static const jl_key_def_t wlr_direction_defs[] = {
+    {"up", WLR_DIRECTION_UP},
+    {"down", WLR_DIRECTION_DOWN},
+    {"left", WLR_DIRECTION_LEFT},
+    {"right", WLR_DIRECTION_RIGHT},
+    {NULL, 0},
+};
+
 static const jl_offset_def_t wlr_output_layout_signal_offsets[] = {
     JWLR_OFFSET_DEF(struct wlr_output_layout, events.add),
     JWLR_OFFSET_DEF(struct wlr_output_layout, events.change),

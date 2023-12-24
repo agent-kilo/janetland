@@ -807,6 +807,32 @@ static Janet cfun_wlr_output_layout_adjacent_output(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_output_layout_farthest_output(int32_t argc, Janet *argv)
+{
+    struct wlr_output_layout *layout;
+    enum wlr_direction direction;
+    struct wlr_output *reference;
+    double ref_lx, ref_ly;
+
+    struct wlr_output *output;
+
+    janet_fixarity(argc, 5);
+
+    layout = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_output_layout);
+    direction = jl_get_key_def(argv, 1, wlr_direction_defs);
+    reference = jl_get_abs_obj_pointer(argv, 2, &jwlr_at_wlr_output);
+    ref_lx = janet_getnumber(argv, 3);
+    ref_ly = janet_getnumber(argv, 4);
+
+    output = wlr_output_layout_farthest_output(layout, direction, reference, ref_lx, ref_ly);
+    if (!output) {
+        return janet_wrap_nil();
+    } else {
+        return janet_wrap_abstract(jl_pointer_to_abs_obj(output, &jwlr_at_wlr_output));
+    }
+}
+
+
 static int method_wlr_scene_get(void *p, Janet key, Janet *out)
 {
     struct wlr_scene **scene_p = (struct wlr_scene **)p;
@@ -4300,6 +4326,11 @@ static JanetReg cfuns[] = {
         "wlr-output-layout-adjacent-output", cfun_wlr_output_layout_adjacent_output,
         "(" MOD_NAME "/wlr-output-layout-adjacent-output wlr-output-layout direction wlr-output ref-lx ref-ly)\n\n"
         "Gets the closest adjacent output to the reference output from the reference point in the given direction."
+    },
+    {
+        "wlr-output-layout-farthest-output", cfun_wlr_output_layout_farthest_output,
+        "(" MOD_NAME "/wlr-output-layout-farthest-output wlr-output-layout direction wlr-output ref-lx ref-ly)\n\n"
+        "Gets the farthest output to the reference output from the reference point in the given direction."
     },
     {
         "wlr-surface-get-root-surface", cfun_wlr_surface_get_root_surface,
