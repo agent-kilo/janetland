@@ -552,13 +552,43 @@
 
 
 (defn handle-xdg-toplevel-request-maximize [view listener data]
-  (wlr-log :debug "#### handle-xdg-toplevel-request-maximize ####")
-  (wlr-xdg-surface-schedule-configure ((view :xdg-toplevel) :base)))
+  (wlr-log :debug "#### handle-xdg-toplevel-request-maximize #### data = %p" data)
+  (if (not (truthy? (view :maximized)))
+    (do
+      (put view :maximized (get-geometry-from-view view))
+      (def output (wlr-output-layout-output-at ((view :server) :output-layout) 0 0))
+      (def output-box (wlr-output-layout-get-box ((view :server) :output-layout) output))
+      (wlr-scene-node-set-position ((view :scene-tree) :node) (output-box :x) (output-box :y))
+      (wlr-xdg-toplevel-set-size (view :xdg-toplevel) (output-box :width) (output-box :height))
+      (wlr-xdg-toplevel-set-maximized (view :xdg-toplevel) true))
+    (do
+      (def old-box (view :maximized))
+      (put view :maximized false)
+      (wlr-scene-node-set-position ((view :scene-tree) :node) (old-box :x) (old-box :y))
+      (wlr-xdg-toplevel-set-size (view :xdg-toplevel) (old-box :width) (old-box :height))
+      (wlr-xdg-toplevel-set-maximized (view :xdg-toplevel) false)))
+  #(wlr-xdg-surface-schedule-configure ((view :xdg-toplevel) :base))
+  )
 
 
 (defn handle-xdg-toplevel-request-fullscreen [view listener data]
   (wlr-log :debug "#### handle-xdg-toplevel-request-fullscreen ####")
-  (wlr-xdg-surface-schedule-configure ((view :xdg-toplevel) :base)))
+  (if (not (truthy? (view :fullscreen)))
+    (do
+      (put view :fullscreen (get-geometry-from-view view))
+      (def output (wlr-output-layout-output-at ((view :server) :output-layout) 0 0))
+      (def output-box (wlr-output-layout-get-box ((view :server) :output-layout) output))
+      (wlr-scene-node-set-position ((view :scene-tree) :node) (output-box :x) (output-box :y))
+      (wlr-xdg-toplevel-set-size (view :xdg-toplevel) (output-box :width) (output-box :height))
+      (wlr-xdg-toplevel-set-fullscreen (view :xdg-toplevel) true))
+    (do
+      (def old-box (view :fullscreen))
+      (put view :fullscreen false)
+      (wlr-scene-node-set-position ((view :scene-tree) :node) (old-box :x) (old-box :y))
+      (wlr-xdg-toplevel-set-size (view :xdg-toplevel) (old-box :width) (old-box :height))
+      (wlr-xdg-toplevel-set-fullscreen (view :xdg-toplevel) false)))
+  #(wlr-xdg-surface-schedule-configure ((view :xdg-toplevel) :base))
+  )
 
 
 (defn handle-xdg-shell-new-surface [server listener data]
