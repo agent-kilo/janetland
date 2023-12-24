@@ -584,6 +584,57 @@ static Janet cfun_wlr_output_layout_add_auto(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_output_layout_add(int32_t argc, Janet *argv)
+{
+    struct wlr_output_layout *layout;
+    struct wlr_output *output;
+    int lx, ly;
+
+    janet_fixarity(argc, 4);
+
+    layout = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_output_layout);
+    output = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_output);
+    lx = janet_getinteger(argv, 2);
+    ly = janet_getinteger(argv, 3);
+
+    wlr_output_layout_add(layout, output, lx, ly);
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wlr_output_layout_move(int32_t argc, Janet *argv)
+{
+    struct wlr_output_layout *layout;
+    struct wlr_output *output;
+    int lx, ly;
+
+    janet_fixarity(argc, 4);
+
+    layout = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_output_layout);
+    output = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_output);
+    lx = janet_getinteger(argv, 2);
+    ly = janet_getinteger(argv, 3);
+
+    wlr_output_layout_move(layout, output, lx, ly);
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wlr_output_layout_remove(int32_t argc, Janet *argv)
+{
+    struct wlr_output_layout *layout;
+    struct wlr_output *output;
+
+    janet_fixarity(argc, 2);
+
+    layout = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_output_layout);
+    output = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_output);
+
+    wlr_output_layout_remove(layout, output);
+    return janet_wrap_nil();
+}
+
+
 static Janet cfun_wlr_output_layout_get_box(int32_t argc, Janet *argv)
 {
     struct wlr_output_layout *layout;
@@ -625,6 +676,67 @@ static Janet cfun_wlr_output_layout_output_at(int32_t argc, Janet *argv)
     } else {
         return janet_wrap_abstract(jl_pointer_to_abs_obj(output, &jwlr_at_wlr_output));
     }
+}
+
+
+static Janet cfun_wlr_output_layout_output_coords(int32_t argc, Janet *argv)
+{
+    struct wlr_output_layout *layout;
+    struct wlr_output *reference;
+    double lx, ly;
+
+    Janet ret_tuple[2];
+
+    janet_fixarity(argc, 4);
+
+    layout = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_output_layout);
+    reference = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_output);
+    lx = janet_getnumber(argv, 2);
+    ly = janet_getnumber(argv, 3);
+
+    wlr_output_layout_output_coords(layout, reference, &lx, &ly);
+    ret_tuple[0] = janet_wrap_number(lx);
+    ret_tuple[1] = janet_wrap_number(ly);
+    return janet_wrap_tuple(janet_tuple_n(ret_tuple, 2));
+}
+
+
+static Janet cfun_wlr_output_layout_contains_point(int32_t argc, Janet *argv)
+{
+    struct wlr_output_layout *layout;
+    struct wlr_output *reference;
+    int lx, ly;
+
+    bool ret;
+
+    janet_fixarity(argc, 4);
+
+    layout = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_output_layout);
+    reference = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_output);
+    lx = janet_getinteger(argv, 2);
+    ly = janet_getinteger(argv, 3);
+
+    ret = wlr_output_layout_contains_point(layout, reference, lx, ly);
+    return janet_wrap_boolean(ret);
+}
+
+
+static Janet cfun_wlr_output_layout_intersects(int32_t argc, Janet *argv)
+{
+    struct wlr_output_layout *layout;
+    struct wlr_output *reference;
+    const struct wlr_box *target_lbox;
+
+    bool ret;
+
+    janet_fixarity(argc, 3);
+
+    layout = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_output_layout);
+    reference = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_output);
+    target_lbox = janet_getabstract(argv, 2, &jwlr_at_box);
+
+    ret = wlr_output_layout_intersects(layout, reference, target_lbox);
+    return janet_wrap_boolean(ret);
 }
 
 
@@ -4068,6 +4180,21 @@ static JanetReg cfuns[] = {
         "Adds an output object to an output layout."
     },
     {
+        "wlr-output-layout-add", cfun_wlr_output_layout_add,
+        "(" MOD_NAME "/wlr-output-layout-add wlr-output-layout wlr-output lx ly)\n\n"
+        "Adds the output to the layout at the specified coordinates."
+    },
+    {
+        "wlr-output-layout-move", cfun_wlr_output_layout_move,
+        "(" MOD_NAME "/wlr-output-layout-move wlr-output-layout wlr-output lx ly)\n\n"
+        "Moves the output to the specified coordinates."
+    },
+    {
+        "wlr-output-layout-remove", cfun_wlr_output_layout_remove,
+        "(" MOD_NAME "/wlr-output-layout-remove wlr-output-layout wlr-output)\n\n"
+        "Removes the output from the layout."
+    },
+    {
         "wlr-output-layout-get-box", cfun_wlr_output_layout_get_box,
         "(" MOD_NAME "/wlr-output-layout-get-box wlr-output-layout wlr-output)\n\n"
         "Gets the box of the layout for the given reference output."
@@ -4076,6 +4203,21 @@ static JanetReg cfuns[] = {
         "wlr-output-layout-output-at", cfun_wlr_output_layout_output_at,
         "(" MOD_NAME "/wlr-output-layout-output-at wlr-output-layout lx ly)\n\n"
         "Gets the output at the specified layout coordinates."
+    },
+    {
+        "wlr-output-layout-output-coords", cfun_wlr_output_layout_output_coords,
+        "(" MOD_NAME "/wlr-output-layout-output-coords wlr-output-layout wlr-output lx ly)\n\n"
+        "Adjusts lx and ly to local output coordinates."
+    },
+    {
+        "wlr-output-layout-contains-point", cfun_wlr_output_layout_contains_point,
+        "(" MOD_NAME "/wlr-output-layout-contains-point wlr-output-layout wlr-output lx ly)\n\n"
+        "Checks whether the coordinates are inside the specified output."
+    },
+    {
+        "wlr-output-layout-intersects", cfun_wlr_output_layout_intersects,
+        "(" MOD_NAME "/wlr-output-layout-intersects wlr-output-layout wlr-output box)\n\n"
+        "Checks whether the output intersects with the specified box."
     },
     {
         "wlr-surface-get-root-surface", cfun_wlr_surface_get_root_surface,
