@@ -2159,6 +2159,78 @@ static Janet cfun_wlr_surface_is_xdg_surface(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_surface_surface_at(int32_t argc, Janet *argv)
+{
+    struct wlr_surface *surface;
+    double sx, sy;
+
+    struct wlr_surface *sub_surface;
+    double sub_x = 0, sub_y = 0;
+    Janet ret_tuple[3];
+
+    janet_fixarity(argc, 3);
+
+    surface = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_surface);
+    sx = janet_getnumber(argv, 1);
+    sy = janet_getnumber(argv, 2);
+
+    sub_surface = wlr_surface_surface_at(surface, sx, sy, &sub_x, &sub_y);
+    ret_tuple[1] = janet_wrap_number(sub_x);
+    ret_tuple[2] = janet_wrap_number(sub_y);
+    if (!sub_surface) {
+        ret_tuple[0] = janet_wrap_nil();
+    } else {
+        ret_tuple[0] = janet_wrap_abstract(jl_pointer_to_abs_obj(sub_surface, &jwlr_at_wlr_surface));
+    }
+    return janet_wrap_tuple(janet_tuple_n(ret_tuple, 3));
+}
+
+
+static Janet cfun_wlr_surface_send_enter(int32_t argc, Janet *argv)
+{
+    struct wlr_surface *surface;
+    struct wlr_output *output;
+
+    janet_fixarity(argc, 2);
+
+    surface = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_surface);
+    output = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_output);
+
+    wlr_surface_send_enter(surface, output);
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wlr_surface_send_leave(int32_t argc, Janet *argv)
+{
+    struct wlr_surface *surface;
+    struct wlr_output *output;
+
+    janet_fixarity(argc, 2);
+
+    surface = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_surface);
+    output = jl_get_abs_obj_pointer(argv, 1, &jwlr_at_wlr_output);
+
+    wlr_surface_send_leave(surface, output);
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wlr_surface_send_frame_done(int32_t argc, Janet *argv)
+{
+    struct wlr_surface *surface;
+    const struct timespec *when;
+
+    janet_fixarity(argc, 2);
+
+    surface = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_surface);
+    when = janet_getabstract(argv, 1, jl_get_abstract_type_by_name(UTIL_MOD_NAME "/timespec"));
+
+    wlr_surface_send_frame_done(surface, when);
+    return janet_wrap_nil();
+}
+
+
 static Janet cfun_wlr_xdg_surface_from_wlr_surface(int32_t argc, Janet *argv)
 {
     struct wlr_surface *surface;
@@ -4346,6 +4418,26 @@ static JanetReg cfuns[] = {
         "wlr-surface-is-xdg-surface", cfun_wlr_surface_is_xdg_surface,
         "(" MOD_NAME "/wlr-surface-is-xdg-surface wlr-surface)\n\n"
         "Check whether a wlroots surface is an xdg surface."
+    },
+    {
+        "wlr-surface-surface-at", cfun_wlr_surface_surface_at,
+        "(" MOD_NAME "/wlr-surface-surface-at wlr-surface sx sy)\n\n"
+        "Finds a surface in this surface's tree that accepts input events and has all parents mapped."
+    },
+    {
+        "wlr-surface-send-enter", cfun_wlr_surface_send_enter,
+        "(" MOD_NAME "/wlr-surface-send-enter wlr-surface wlr-output)\n\n"
+        "Notifies interested parties that a surface has entered an output."
+    },
+    {
+        "wlr-surface-send-leave", cfun_wlr_surface_send_leave,
+        "(" MOD_NAME "/wlr-surface-send-leave wlr-surface wlr-output)\n\n"
+        "Notifies interested parties that a surface has left an output."
+    },
+    {
+        "wlr-surface-send-frame-done", cfun_wlr_surface_send_frame_done,
+        "(" MOD_NAME "/wlr-surface-send-frame-done wlr-surface timespec)\n\n"
+        "Notifies interested parties that a surface has done drawing a frame."
     },
     {
         "wlr-xdg-surface-from-wlr-surface", cfun_wlr_xdg_surface_from_wlr_surface,
