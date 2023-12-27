@@ -176,6 +176,19 @@ static int method_event_source_gcmark(void *p, size_t len)
 }
 
 
+static int method_listener_gcmark(void *p, size_t len)
+{
+    (void)len;
+    jwl_listener_t *listener = p;
+
+    if (listener->notify_fn) {
+        janet_mark(janet_wrap_function(listener->notify_fn));
+    }
+
+    return 0;
+}
+
+
 static Janet cfun_wl_event_loop_create(int32_t argc, Janet *argv)
 {
     (void)argv;
@@ -394,7 +407,6 @@ static Janet cfun_wl_event_loop_add_destroy_listener(int32_t argc, Janet *argv)
     listener = janet_abstract(&jwl_at_listener, sizeof(*listener));
     listener->wl_listener.notify = jwl_listener_notify_callback;
     listener->notify_fn = notify_fn;
-    janet_gcroot(janet_wrap_function(notify_fn));
 
     wl_event_loop_add_destroy_listener(event_loop, &listener->wl_listener);
 
@@ -547,7 +559,6 @@ static Janet cfun_wl_signal_add(int32_t argc, Janet *argv)
     listener = janet_abstract(&jwl_at_listener, sizeof(*listener));
     listener->wl_listener.notify = jwl_listener_notify_callback;
     listener->notify_fn = notify_fn;
-    janet_gcroot(janet_wrap_function(notify_fn));
 
     wl_signal_add(signal, &listener->wl_listener);
 

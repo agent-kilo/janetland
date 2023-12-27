@@ -79,10 +79,11 @@ static const JanetAbstractType jwl_at_wl_signal = {
 };
 
 
+static int method_listener_gcmark(void *p, size_t len);
 static const JanetAbstractType jwl_at_listener = {
     .name = MOD_NAME "/listener",
     .gc = NULL,
-    .gcmark = NULL,
+    .gcmark = method_listener_gcmark,
     JANET_ATEND_GCMARK
 };
 
