@@ -544,6 +544,23 @@ static Janet cfun_wl_display_add_socket_auto(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wl_display_get_event_loop(int32_t argc, Janet *argv)
+{
+    struct wl_display *display;
+
+    struct wl_event_loop *event_loop;
+
+    janet_fixarity(argc, 1);
+
+    display = jl_get_abs_obj_pointer(argv, 0, &jwl_at_wl_display);
+    event_loop = wl_display_get_event_loop(display);
+    if (!event_loop) {
+        janet_panic("failed to get Wayland event loop");
+    }
+    return janet_wrap_abstract(jl_pointer_to_abs_obj(event_loop, &jwl_at_wl_event_loop));
+}
+
+
 static Janet cfun_wl_signal_add(int32_t argc, Janet *argv)
 {
     struct wl_signal *signal;
@@ -710,6 +727,11 @@ static JanetReg cfuns[] = {
         "wl-display-add-socket-auto", cfun_wl_display_add_socket_auto,
         "(" MOD_NAME "/wl-display-add-socket-auto wl-display)\n\n"
         "Adds a Unix socket to the Wayland display."
+    },
+    {
+        "wl-display-get-event-loop", cfun_wl_display_get_event_loop,
+        "(" MOD_NAME "/wl-display-get-event-loop wl-display)\n\n"
+        "Retrieves the Wayland event loop."
     },
     {
         "wl-signal-add", cfun_wl_signal_add,
