@@ -129,10 +129,16 @@
 
 
 (defn get-geometry-from-view [view]
-  (if (nil? (view :xwayland-surface))
-    (wlr-xdg-surface-get-geometry ((view :xdg-toplevel) :base))
-    (box :width ((((view :xwayland-surface) :surface) :current) :width)
-         :height ((((view :xwayland-surface) :surface) :current) :height))))
+  (def geo-box 
+    (if (nil? (view :xwayland-surface))
+      (wlr-xdg-surface-get-geometry ((view :xdg-toplevel) :base))
+      (box :width ((((view :xwayland-surface) :surface) :current) :width)
+           :height ((((view :xwayland-surface) :surface) :current) :height))))
+  (wlr-log :debug "#### get-geometry-from-view #### x = %p, y = %p, width = %p, height = %p"
+           (geo-box :x) (geo-box :y)
+           (geo-box :width) (geo-box :height))
+  geo-box)
+
 
 
 (defn begin-interactive [view mode edges]
