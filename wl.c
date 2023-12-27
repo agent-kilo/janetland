@@ -1,3 +1,5 @@
+#include <signal.h>
+
 #include <janet.h>
 
 #include <wayland-server-core.h>
@@ -72,6 +74,88 @@ int jwl_event_loop_timer_callback(void *data)
             janet_eprintf("non-integer return value from event loop timer callback: %v\n", ret);
             return 0;
         }
+    }
+}
+
+
+int jwl_event_loop_signal_callback(int signal_number, void *data)
+{
+    jwl_event_source_t *source = data;
+    Janet ret = janet_wrap_nil();
+    JanetFiber *fiber = NULL;
+    Janet argv[1];
+    const char *signal_name = NULL;
+
+    for (int i = 0; NULL != posix_signal_defs[i].name; i++) {
+        if (signal_number == posix_signal_defs[i].key) {
+            signal_name = posix_signal_defs[i].name;
+            break;
+        }
+    }
+
+    if (signal_name) {
+        argv[0] = janet_ckeywordv(signal_name);
+    } else {
+        argv[0] = janet_wrap_integer(signal_number);
+    }
+
+    int locked = janet_gclock();
+    int sig = janet_pcall(source->cb_fn, 1, argv, &ret, &fiber);
+    janet_gcunlock(locked);
+
+    if (JANET_SIGNAL_OK != sig) {
+        janet_stacktrace(fiber, ret);
+        return 0;
+    } else {
+        if (janet_checkint(ret)) {
+            return janet_unwrap_integer(ret);
+        } else {
+            janet_eprintf("non-integer return value from event loop signal callback: %v\n", ret);
+            return 0;
+        }
+    }
+}
+
+
+void jwl_event_loop_idle_callback(void *data)
+{
+    jwl_event_source_t *source = data;
+    Janet ret = janet_wrap_nil();
+    JanetFiber *fiber = NULL;
+
+    int locked = janet_gclock();
+    int sig = janet_pcall(source->cb_fn, 0, NULL, &ret, &fiber);
+    janet_gcunlock(locked);
+
+    if (JANET_SIGNAL_OK != sig) {
+        janet_stacktrace(fiber, ret);
+    }
+}
+
+
+typedef struct {
+    struct wl_listener wl_listener;
+    JanetFunction *notify_fn;
+} jwl_listener_t;
+
+
+void jwl_listener_notify_callback(struct wl_listener *wl_listener, void *data)
+{
+    jwl_listener_t *listener = wl_container_of(wl_listener, listener, wl_listener);
+    JanetFunction *notify_fn = listener->notify_fn;
+    Janet argv[] = {
+        janet_wrap_abstract(listener),
+        janet_wrap_pointer(data),
+    };
+    Janet ret = janet_wrap_nil();
+    JanetFiber *fiber = NULL;
+    /* XXX: janet_pcall() without janet_gclock() here causes memory violation,
+       don't know why */
+    int locked = janet_gclock();
+    int sig = janet_pcall(notify_fn, 2, argv, &ret, &fiber);
+    janet_gcunlock(locked);
+    if (JANET_SIGNAL_OK != sig) {
+        janet_stacktrace(fiber, ret);
     }
 }
 
@@ -230,6 +314,94 @@ static Janet cfun_wl_event_source_timer_update(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wl_event_loop_add_signal(int32_t argc, Janet *argv)
+{
+    struct wl_event_loop *event_loop;
+    int signal_number;
+    JanetFunction *func;
+
+    jwl_event_source_t *source;
+
+    janet_fixarity(argc, 3);
+
+    source = janet_abstract(&jwl_at_event_source, sizeof(*source));
+    memset(source, 0, sizeof(*source));
+
+    event_loop = jl_get_abs_obj_pointer(argv, 0, &jwl_at_wl_event_loop);
+    if (janet_checkint(argv[1])) {
+        signal_number = janet_getinteger(argv, 1);
+    } else {
+        signal_number = jl_get_key_def(argv, 1, posix_signal_defs);
+    }
+    func = janet_getfunction(argv, 2);
+
+    source->cb_fn = func;
+    source->event_source = wl_event_loop_add_signal(event_loop, signal_number, jwl_event_loop_signal_callback, source);
+    if (!(source->event_source)) {
+        janet_panic("failed to add signal handler to wayland event loop");
+    }
+    return janet_wrap_abstract(source);
+}
+
+
+static Janet cfun_wl_event_loop_add_idle(int32_t argc, Janet *argv)
+{
+    struct wl_event_loop *event_loop;
+    JanetFunction *func;
+
+    jwl_event_source_t *source;
+
+    janet_fixarity(argc, 2);
+
+    source = janet_abstract(&jwl_at_event_source, sizeof(*source));
+    memset(source, 0, sizeof(*source));
+
+    event_loop = jl_get_abs_obj_pointer(argv, 0, &jwl_at_wl_event_loop);
+    func = janet_getfunction(argv, 1);
+
+    source->cb_fn = func;
+    source->event_source = wl_event_loop_add_idle(event_loop, jwl_event_loop_idle_callback, source);
+    if (!(source->event_source)) {
+        janet_panic("failed to add idle source to wayland event loop");
+    }
+    return janet_wrap_abstract(source);
+}
+
+
+static Janet cfun_wl_event_loop_get_fd(int32_t argc, Janet *argv)
+{
+    struct wl_event_loop *event_loop;
+
+    janet_fixarity(argc, 1);
+
+    event_loop = jl_get_abs_obj_pointer(argv, 0, &jwl_at_wl_event_loop);
+    return janet_wrap_integer(wl_event_loop_get_fd(event_loop));
+}
+
+
+static Janet cfun_wl_event_loop_add_destroy_listener(int32_t argc, Janet *argv)
+{
+    struct wl_event_loop *event_loop;
+    JanetFunction *notify_fn;
+
+    jwl_listener_t *listener;
+
+    janet_fixarity(argc, 2);
+
+    event_loop = jl_get_abs_obj_pointer(argv, 0, &jwl_at_wl_event_loop);
+    notify_fn = janet_getfunction(argv, 1);
+
+    listener = janet_abstract(&jwl_at_listener, sizeof(*listener));
+    listener->wl_listener.notify = jwl_listener_notify_callback;
+    listener->notify_fn = notify_fn;
+    janet_gcroot(janet_wrap_function(notify_fn));
+
+    wl_event_loop_add_destroy_listener(event_loop, &listener->wl_listener);
+
+    return janet_wrap_abstract(listener);
+}
+
+
 static Janet cfun_wl_event_source_check(int32_t argc, Janet *argv)
 {
     jwl_event_source_t *source;
@@ -360,33 +532,6 @@ static Janet cfun_wl_display_add_socket_auto(int32_t argc, Janet *argv)
 }
 
 
-typedef struct {
-    struct wl_listener wl_listener;
-    JanetFunction *notify_fn;
-} jwl_listener_t;
-
-
-void jwl_listener_notify_callback(struct wl_listener *wl_listener, void *data)
-{
-    jwl_listener_t *listener = wl_container_of(wl_listener, listener, wl_listener);
-    JanetFunction *notify_fn = listener->notify_fn;
-    Janet argv[] = {
-        janet_wrap_abstract(listener),
-        janet_wrap_pointer(data),
-    };
-    Janet ret = janet_wrap_nil();
-    JanetFiber *fiber = NULL;
-    /* XXX: janet_pcall() without janet_gclock() here causes memory violation,
-       don't know why */
-    int locked = janet_gclock();
-    int sig = janet_pcall(notify_fn, 2, argv, &ret, &fiber);
-    janet_gcunlock(locked);
-    if (JANET_SIGNAL_OK != sig) {
-        janet_stacktrace(fiber, ret);
-    }
-}
-
-
 static Janet cfun_wl_signal_add(int32_t argc, Janet *argv)
 {
     struct wl_signal *signal;
@@ -484,6 +629,26 @@ static JanetReg cfuns[] = {
         "wl-event-source-timer-update", cfun_wl_event_source_timer_update,
         "(" MOD_NAME "/wl-event-source-timer-update event-source ms-delay)\n\n"
         "Updates a timer source's expiration time."
+    },
+    {
+        "wl-event-loop-add-signal", cfun_wl_event_loop_add_signal,
+        "(" MOD_NAME "/wl-event-loop-add-signal wl-event-loop signal func)\n\n"
+        "Blocks a POSIX signal and dispatches it through the event loop."
+    },
+    {
+        "wl-event-loop-add-idle", cfun_wl_event_loop_add_idle,
+        "(" MOD_NAME "/wl-event-loop-add-idle wl-event-loop func)\n\n"
+        "Adds an idle event source to the event loop."
+    },
+    {
+        "wl-event-loop-get-fd", cfun_wl_event_loop_get_fd,
+        "(" MOD_NAME "/wl-event-loop-get-fd wl-event-loop)\n\n"
+        "Returns the file descriptor for the event loop."
+    },
+    {
+        "wl-event-loop-add-destroy-listener", cfun_wl_event_loop_add_destroy_listener,
+        "(" MOD_NAME "/wl-event-loop-add-destroy-listener wl-event-loop func)\n\n"
+        "Listens to the destroy event for the event loop."
     },
     {
         "wl-event-source-check", cfun_wl_event_source_check,

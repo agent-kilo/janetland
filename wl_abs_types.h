@@ -8,6 +8,39 @@
 #endif
 
 
+static const jl_key_def_t posix_signal_defs[] = {
+    {"abrt", SIGABRT},
+    {"alrm", SIGALRM},
+    {"bus", SIGBUS},
+    {"chld", SIGCHLD},
+    {"cont", SIGCONT},
+    {"fpe", SIGFPE},
+    {"hup", SIGHUP},
+    {"ill", SIGILL},
+    {"int", SIGINT},
+    {"kill", SIGKILL},
+    {"pipe", SIGPIPE},
+    {"quit", SIGQUIT},
+    {"segv", SIGSEGV},
+    {"stop", SIGSTOP},
+    {"term", SIGTERM},
+    {"tstp", SIGTSTP},
+    {"ttin", SIGTTIN},
+    {"ttou", SIGTTOU},
+    {"usr1", SIGUSR1},
+    {"usr2", SIGUSR2},
+    {"poll", SIGPOLL},
+    {"prof", SIGPROF},
+    {"sys", SIGSYS},
+    {"trap", SIGTRAP},
+    {"urg", SIGURG},
+    {"vtalrm", SIGVTALRM},
+    {"xcpu", SIGXCPU},
+    {"xfsz", SIGXFSZ},
+    {NULL, 0},
+};
+
+
 static const jl_key_def_t wl_event_defs[] = {
     {"readable", WL_EVENT_READABLE},
     {"writable", WL_EVENT_WRITABLE},
