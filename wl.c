@@ -12,6 +12,247 @@
 #endif
 
 
+typedef struct {
+    struct wl_event_source *event_source;
+    JanetStream *stream;
+    JanetFunction *cb_fn;
+} jwl_event_source_t;
+
+
+int jwl_event_loop_fd_callback(int fd, uint32_t mask, void *data)
+{
+    jwl_event_source_t *source = data;
+    Janet argv[2];
+    Janet ret = janet_wrap_nil();
+    JanetFiber *fiber = NULL;
+
+    if (source->stream) {
+        argv[0] = janet_wrap_abstract(source->stream);
+    } else {
+        argv[0] = janet_wrap_integer(fd);
+    }
+
+    argv[1] = janet_wrap_array(jl_get_flag_keys(mask, wl_event_defs));
+
+    int locked = janet_gclock();
+    int sig = janet_pcall(source->cb_fn, 2, argv, &ret, &fiber);
+    janet_gcunlock(locked);
+
+    if (JANET_SIGNAL_OK != sig) {
+        janet_stacktrace(fiber, ret);
+        return 0;
+    } else {
+        if (janet_checkint(ret)) {
+            return janet_unwrap_integer(ret);
+        } else {
+            janet_eprintf("non-integer return value from event loop fd callback: %v\n", ret);
+            return 0;
+        }
+    }
+}
+
+
+int jwl_event_loop_timer_callback(void *data)
+{
+    jwl_event_source_t *source = data;
+    Janet ret = janet_wrap_nil();
+    JanetFiber *fiber = NULL;
+
+    int locked = janet_gclock();
+    int sig = janet_pcall(source->cb_fn, 0, NULL, &ret, &fiber);
+    janet_gcunlock(locked);
+
+    if (JANET_SIGNAL_OK != sig) {
+        janet_stacktrace(fiber, ret);
+        return 0;
+    } else {
+        if (janet_checkint(ret)) {
+            return janet_unwrap_integer(ret);
+        } else {
+            janet_eprintf("non-integer return value from event loop timer callback: %v\n", ret);
+            return 0;
+        }
+    }
+}
+
+
+static int method_event_source_gcmark(void *p, size_t len)
+{
+    (void)len;
+    jwl_event_source_t *source = p;
+
+    if (source->stream) {
+        janet_mark(janet_wrap_abstract(source->stream));
+    }
+    if (source->cb_fn) {
+        janet_mark(janet_wrap_function(source->cb_fn));
+    }
+
+    return 0;
+}
+
+
+static Janet cfun_wl_event_loop_create(int32_t argc, Janet *argv)
+{
+    (void)argv;
+
+    struct wl_event_loop *event_loop;
+
+    janet_fixarity(argc, 0);
+
+    event_loop = wl_event_loop_create();
+    if (!event_loop) {
+        janet_panic("failed to create wayland event loop");
+    }
+    return janet_wrap_abstract(jl_pointer_to_abs_obj(event_loop, &jwl_at_wl_event_loop));
+}
+
+
+static Janet cfun_wl_event_loop_destroy(int32_t argc, Janet *argv)
+{
+    struct wl_event_loop *event_loop;
+
+    janet_fixarity(argc, 1);
+
+    event_loop = jl_get_abs_obj_pointer(argv, 0, &jwl_at_wl_event_loop);
+    wl_event_loop_destroy(event_loop);
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wl_event_loop_dispatch(int32_t argc, Janet *argv)
+{
+    struct wl_event_loop *event_loop;
+    int timeout;
+
+    janet_fixarity(argc, 2);
+
+    event_loop = jl_get_abs_obj_pointer(argv, 0, &jwl_at_wl_event_loop);
+    timeout = janet_getinteger(argv, 1);
+    return janet_wrap_integer(wl_event_loop_dispatch(event_loop, timeout));
+}
+
+
+static Janet cfun_wl_event_loop_dispatch_idle(int32_t argc, Janet *argv)
+{
+    struct wl_event_loop *event_loop;
+
+    janet_fixarity(argc, 1);
+
+    event_loop = jl_get_abs_obj_pointer(argv, 0, &jwl_at_wl_event_loop);
+    wl_event_loop_dispatch_idle(event_loop);
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wl_event_loop_add_fd(int32_t argc, Janet *argv)
+{
+    struct wl_event_loop *event_loop;
+    int fd;
+    uint32_t mask;
+    JanetFunction *func;
+
+    jwl_event_source_t *source;
+
+    janet_fixarity(argc, 4);
+
+    source = janet_abstract(&jwl_at_event_source, sizeof(*source));
+    memset(source, 0, sizeof(*source));
+
+    event_loop = jl_get_abs_obj_pointer(argv, 0, &jwl_at_wl_event_loop);
+    if (janet_checkint(argv[1])) {
+        fd = janet_getinteger(argv, 1);
+    } else {
+        JanetStream *stream = janet_getabstract(argv, 1, &janet_stream_type);
+        source->stream = stream;
+        /* XXX: Check whether the handle is a valid fd? */
+        fd = stream->handle;
+    }
+    mask = jl_get_key_flags(argv, 2, wl_event_defs);
+    func = janet_getfunction(argv, 3);
+
+    source->cb_fn = func;
+    source->event_source = wl_event_loop_add_fd(event_loop, fd, mask, jwl_event_loop_fd_callback, source);
+    if (!(source->event_source)) {
+        janet_panic("failed to add fd to wayland event loop");
+    }
+    return janet_wrap_abstract(source);
+}
+
+
+static Janet cfun_wl_event_source_fd_update(int32_t argc, Janet *argv)
+{
+    jwl_event_source_t *source;
+    uint32_t mask;
+
+    janet_fixarity(argc, 2);
+
+    source = janet_getabstract(argv, 0, &jwl_at_event_source);
+    mask = jl_get_key_flags(argv, 1, wl_event_defs);
+    return janet_wrap_integer(wl_event_source_fd_update(source->event_source, mask));
+}
+
+
+static Janet cfun_wl_event_loop_add_timer(int32_t argc, Janet *argv)
+{
+    struct wl_event_loop *event_loop;
+    JanetFunction *func;
+
+    jwl_event_source_t *source;
+
+    janet_fixarity(argc, 2);
+
+    source = janet_abstract(&jwl_at_event_source, sizeof(*source));
+    memset(source, 0, sizeof(*source));
+
+    event_loop = jl_get_abs_obj_pointer(argv, 0, &jwl_at_wl_event_loop);
+    func = janet_getfunction(argv, 1);
+
+    source->cb_fn = func;
+    source->event_source = wl_event_loop_add_timer(event_loop, jwl_event_loop_timer_callback, source);
+    if (!(source->event_source)) {
+        janet_panic("failed to add timer to wayland event loop");
+    }
+    return janet_wrap_abstract(source);
+}
+
+
+static Janet cfun_wl_event_source_timer_update(int32_t argc, Janet *argv)
+{
+    jwl_event_source_t *source;
+    int ms_delay;
+
+    janet_fixarity(argc, 2);
+
+    source = janet_getabstract(argv, 0, &jwl_at_event_source);
+    ms_delay = janet_getinteger(argv, 1);
+    return janet_wrap_integer(wl_event_source_timer_update(source->event_source, ms_delay));
+}
+
+
+static Janet cfun_wl_event_source_check(int32_t argc, Janet *argv)
+{
+    jwl_event_source_t *source;
+
+    janet_fixarity(argc, 1);
+
+    source = janet_getabstract(argv, 0, &jwl_at_event_source);
+    wl_event_source_check(source->event_source);
+    return janet_wrap_nil();
+}
+
+
+static Janet cfun_wl_event_source_remove(int32_t argc, Janet *argv)
+{
+    jwl_event_source_t *source;
+
+    janet_fixarity(argc, 1);
+
+    source = janet_getabstract(argv, 0, &jwl_at_event_source);
+    return janet_wrap_integer(wl_event_source_remove(source->event_source));
+}
+
+
 static Janet cfun_wl_list_empty(int32_t argc, Janet *argv)
 {
     struct wl_list *list;
@@ -205,6 +446,56 @@ static Janet cfun_wl_signal_emit(int32_t argc, Janet *argv)
 
 static JanetReg cfuns[] = {
     {
+        "wl-event-loop-create", cfun_wl_event_loop_create,
+        "(" MOD_NAME "/wl-event-loop-create)\n\n"
+        "Creates a Wayland event loop."
+    },
+    {
+        "wl-event-loop-destroy", cfun_wl_event_loop_destroy,
+        "(" MOD_NAME "/wl-event-loop-destroy)\n\n"
+        "Destroys a Wayland event loop."
+    },
+    {
+        "wl-event-loop-dispatch", cfun_wl_event_loop_dispatch,
+        "(" MOD_NAME "/wl-event-loop-dispatch wl-event-loop timeout)\n\n"
+        "Dispatches events from the event sources registered in the event loop."
+    },
+    {
+        "wl-event-loop-dispatch-idle", cfun_wl_event_loop_dispatch_idle,
+        "(" MOD_NAME "/wl-event-loop-dispatch-idle wl-event-loop)\n\n"
+        "Dispatches idle events registered in the event loop."
+    },
+    {
+        "wl-event-loop-add-fd", cfun_wl_event_loop_add_fd,
+        "(" MOD_NAME "/wl-event-loop-add-fd wl-event-loop fd-or-stream mask func)\n\n"
+        "Adds a file descriptor as an event source."
+    },
+    {
+        "wl-event-source-fd-update", cfun_wl_event_source_fd_update,
+        "(" MOD_NAME "/wl-event-source-fd-update event-source mask)\n\n"
+        "Updates a file descriptor source's event mask."
+    },
+    {
+        "wl-event-loop-add-timer", cfun_wl_event_loop_add_timer,
+        "(" MOD_NAME "/wl-event-loop-add-timer wl-event-loop func)\n\n"
+        "Adds a timer as an event source."
+    },
+    {
+        "wl-event-source-timer-update", cfun_wl_event_source_timer_update,
+        "(" MOD_NAME "/wl-event-source-timer-update event-source ms-delay)\n\n"
+        "Updates a timer source's expiration time."
+    },
+    {
+        "wl-event-source-check", cfun_wl_event_source_check,
+        "(" MOD_NAME "/wl-event-source-check event-source)\n\n"
+        "Schedules an event source to be checked again by the event loop."
+    },
+    {
+        "wl-event-source-remove", cfun_wl_event_source_remove,
+        "(" MOD_NAME "/wl-event-source-remove event-source)\n\n"
+        "Removes an event source from the event loop."
+    },
+    {
         "wl-list-empty", cfun_wl_list_empty,
         "(" MOD_NAME "/wl-list-empty wl-list)\n\n"
         "Check if a wl-list is empty."
@@ -266,6 +557,8 @@ static JanetReg cfuns[] = {
 
 JANET_MODULE_ENTRY(JanetTable *env)
 {
+    janet_register_abstract_type(&jwl_at_wl_event_loop);
+    janet_register_abstract_type(&jwl_at_event_source);
     janet_register_abstract_type(&jwl_at_wl_list);
     janet_register_abstract_type(&jwl_at_wl_signal);
     janet_register_abstract_type(&jwl_at_listener);
