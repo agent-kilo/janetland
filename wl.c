@@ -3,6 +3,7 @@
 #include <janet.h>
 
 #include <wayland-server-core.h>
+#include <wlr/util/log.h>    /* for wlr_log(...) */
 
 #include "jl.h"
 #include "types.h"
@@ -392,6 +393,119 @@ static Janet cfun_wl_event_loop_get_fd(int32_t argc, Janet *argv)
 }
 
 
+void wl_event_loop_stream_dispatch_callback(JanetFiber *fiber, JanetAsyncEvent event)
+{
+    struct wl_event_loop *event_loop = (struct wl_event_loop *)fiber->ev_state;
+
+    wlr_log(WLR_DEBUG, "event = %d", event);
+
+    switch (event) {
+    case JANET_ASYNC_EVENT_ERR:
+        wlr_log(WLR_ERROR, "error from wayland event loop fd");
+        /* fall through */
+    case JANET_ASYNC_EVENT_HUP:
+    case JANET_ASYNC_EVENT_READ:
+    case JANET_ASYNC_EVENT_WRITE: {
+        wlr_log(WLR_DEBUG, "dispatching events from wayland event loop....");
+        int ret = wl_event_loop_dispatch(event_loop, 0);
+        if (ret < 0) {
+            wlr_log(WLR_ERROR, "wl_event_loop_dispatch() failed: %d", ret);
+        }
+        janet_schedule(fiber, janet_wrap_integer(ret));
+        /* ev_state was pointing to the wayland event loop object. Set it to NULL
+           before janet_async_end() to save the event loop object from being
+           automatically freed */
+        fiber->ev_state = NULL;
+        janet_async_end(fiber);
+        break;
+    }
+    case JANET_ASYNC_EVENT_CLOSE: {
+        janet_cancel(fiber, janet_cstringv("stream closed"));
+        /* See the same line above */
+        fiber->ev_state = NULL;
+        janet_async_end(fiber);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+
+static Janet method_wl_event_loop_stream_dispatch(int32_t argc, Janet *argv)
+{
+    JanetStream *stream;
+    struct wl_event_loop *event_loop;
+
+    janet_fixarity(argc, 2);
+
+    stream = janet_getabstract(argv, 0, &janet_stream_type);
+    event_loop = jl_get_abs_obj_pointer(argv, 1, &jwl_at_wl_event_loop);
+
+    if ((stream->flags & JANET_STREAM_CLOSED) || (stream->handle < 0)) {
+        /* -1 means error, see wl_event_loop_dispatch() */
+        return janet_wrap_integer(-1);
+    }
+
+    if (wl_event_loop_get_fd(event_loop) != stream->handle) {
+        janet_panicf("inconsistent file descriptors, stream: %d, event loop: %d",
+                     stream->handle, wl_event_loop_get_fd(event_loop));
+    }
+
+    janet_async_start(stream,
+                      JANET_ASYNC_LISTEN_READ | JANET_ASYNC_LISTEN_WRITE,
+                      wl_event_loop_stream_dispatch_callback,
+                      event_loop);
+}
+
+/* XXX: This close method has different signature from normal close methods.
+   We need to pass the Wayland event loop object to properly destroy it. */
+static Janet method_wl_event_loop_stream_close(int32_t argc, Janet *argv)
+{
+    JanetStream *stream;
+    struct wl_event_loop *event_loop;
+
+    janet_fixarity(argc, 2);
+
+    stream = janet_getabstract(argv, 0, &janet_stream_type);
+    event_loop = jl_get_abs_obj_pointer(argv, 1, &jwl_at_wl_event_loop);
+
+    if ((stream->flags & JANET_STREAM_CLOSED) || (stream->handle < 0)) {
+        return argv[0];
+    }
+
+    if (wl_event_loop_get_fd(event_loop) != stream->handle) {
+        janet_panicf("inconsistent file descriptors, stream: %d, event loop: %d",
+                     stream->handle, wl_event_loop_get_fd(event_loop));
+    }
+
+    wl_event_loop_destroy(event_loop);
+    janet_stream_close(stream);
+
+    return argv[0];
+}
+
+static const JanetMethod wl_event_loop_stream_methods[] = {
+    {"dispatch", method_wl_event_loop_stream_dispatch},
+    {"close", method_wl_event_loop_stream_close},
+    {NULL, NULL}
+};
+
+
+static Janet cfun_wl_event_loop_fd_to_stream(int32_t argc, Janet *argv)
+{
+    int fd;
+
+    JanetStream *stream;
+
+    janet_fixarity(argc, 1);
+
+    fd = janet_getinteger(argv, 0);
+    stream = janet_stream(fd, JANET_STREAM_READABLE | JANET_STREAM_WRITABLE, wl_event_loop_stream_methods);
+    return janet_wrap_abstract(stream);
+}
+
+
 static Janet cfun_wl_event_loop_add_destroy_listener(int32_t argc, Janet *argv)
 {
     struct wl_event_loop *event_loop;
@@ -672,6 +786,11 @@ static JanetReg cfuns[] = {
         "wl-event-loop-get-fd", cfun_wl_event_loop_get_fd,
         "(" MOD_NAME "/wl-event-loop-get-fd wl-event-loop)\n\n"
         "Returns the file descriptor for the event loop."
+    },
+    {
+        "wl-event-loop-fd-to-stream", cfun_wl_event_loop_fd_to_stream,
+        "(" MOD_NAME "/wl-event-loop-fd-to-stream fd)\n\n"
+        "Registers a Wayland event loop file descriptor to the Janet event loop."
     },
     {
         "wl-event-loop-add-destroy-listener", cfun_wl_event_loop_add_destroy_listener,
