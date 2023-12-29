@@ -675,6 +675,18 @@ static Janet cfun_wl_display_get_event_loop(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wl_display_flush_clients(int32_t argc, Janet *argv)
+{
+    struct wl_display *display;
+
+    janet_fixarity(argc, 1);
+
+    display = jl_get_abs_obj_pointer(argv, 0, &jwl_at_wl_display);
+    wl_display_flush_clients(display);
+    return janet_wrap_nil();
+}
+
+
 static Janet cfun_wl_signal_add(int32_t argc, Janet *argv)
 {
     struct wl_signal *signal;
@@ -851,6 +863,11 @@ static JanetReg cfuns[] = {
         "wl-display-get-event-loop", cfun_wl_display_get_event_loop,
         "(" MOD_NAME "/wl-display-get-event-loop wl-display)\n\n"
         "Retrieves the Wayland event loop."
+    },
+    {
+        "wl-display-flush-clients", cfun_wl_display_flush_clients,
+        "(" MOD_NAME "/wl-display-flush-clients wl-display)\n\n"
+        "Flushes all client connections."
     },
     {
         "wl-signal-add", cfun_wl_signal_add,
