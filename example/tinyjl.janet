@@ -6,6 +6,27 @@
 (use janetland/keysyms)
 
 
+(defn server-run [server]
+  (def display (server :display))
+  (def loop (wl-display-get-event-loop display))
+  (def loop-fd (wl-event-loop-get-fd loop))
+  (def loop-stream (wl-event-loop-fd-to-stream loop-fd))
+
+  (put server :running true)
+  (while (server :running)
+    (wl-display-flush-clients display)
+    (:dispatch loop-stream loop))
+
+  # Terminating
+  (wlr-xwayland-destroy (server :xwayland))
+  (wl-display-destroy-clients (server :display))
+  (wl-display-destroy (server :display)))
+
+
+(defn server-stop [server]
+  (put server :running false))
+
+
 (defn scene-xwayland-surface-create [parent xw-surface]
   (def tree (wlr-scene-tree-create parent))
   (def surface-tree (wlr-scene-subsurface-tree-create tree (xw-surface :surface)))
@@ -80,7 +101,7 @@
     (set tree ((tree :node) :parent)))
   (def view (pointer-to-table ((tree :node) :data)))
 
-  (wlr-log :debug "#### desktop-view-at #### view = %v, surface = %p, sx = %p, sy = %p" view surface sx sy)
+  #(wlr-log :debug "#### desktop-view-at #### view = %v, surface = %p, sx = %p, sy = %p" view surface sx sy)
   [view surface sx sy])
 
 
@@ -282,7 +303,8 @@
   (case sym
     (xkb-key :Escape)
     (do
-      (wl-display-terminate (server :display))
+      #(wl-display-terminate (server :display))
+      (server-stop server)
       true)
 
     (xkb-key :Return)
@@ -383,7 +405,7 @@
 
 
 (defn handle-wlr-output-frame [server wlr-output listener data]
-  (wlr-log :debug "#### handle-wlr-output-frame ####")
+  #(wlr-log :debug "#### handle-wlr-output-frame ####")
   (def scene-output (wlr-scene-get-scene-output (server :scene) wlr-output))
   (wlr-scene-output-commit scene-output)
   (wlr-scene-output-send-frame-done scene-output (clock-gettime :monotonic)))
@@ -658,10 +680,10 @@
 (defn handle-cursor-motion [server listener data]
   (def event (get-abstract-listener-data data 'wlr/wlr-pointer-motion-event))
 
-  (wlr-log :debug "#### handle-cursor-motion #### data = %p" event)
-  (wlr-log :debug "#### (event :time-msec) = %p" (event :time-msec))
-  (wlr-log :debug "#### (event :delta-x) = %p" (event :delta-x))
-  (wlr-log :debug "#### (event :delta-y) = %p" (event :delta-y))
+  #(wlr-log :debug "#### handle-cursor-motion #### data = %p" event)
+  #(wlr-log :debug "#### (event :time-msec) = %p" (event :time-msec))
+  #(wlr-log :debug "#### (event :delta-x) = %p" (event :delta-x))
+  #(wlr-log :debug "#### (event :delta-y) = %p" (event :delta-y))
 
   (wlr-cursor-move (server :cursor) ((event :pointer) :base) (event :delta-x) (event :delta-y))
   (process-cursor-motion server (event :time-msec)))
@@ -670,10 +692,10 @@
 (defn handle-cursor-motion-absolute [server listener data]
   (def event (get-abstract-listener-data data 'wlr/wlr-pointer-motion-absolute-event))
 
-  (wlr-log :debug "#### handle-cursor-motion-absolute #### data = %p" event)
-  (wlr-log :debug "#### (event :time-msec) = %p" (event :time-msec))
-  (wlr-log :debug "#### (event :x) = %p" (event :x))
-  (wlr-log :debug "#### (event :y) = %p" (event :y))
+  #(wlr-log :debug "#### handle-cursor-motion-absolute #### data = %p" event)
+  #(wlr-log :debug "#### (event :time-msec) = %p" (event :time-msec))
+  #(wlr-log :debug "#### (event :x) = %p" (event :x))
+  #(wlr-log :debug "#### (event :y) = %p" (event :y))
 
   (wlr-cursor-warp-absolute (server :cursor) ((event :pointer) :base) (event :x) (event :y))
   (process-cursor-motion server (event :time-msec)))
@@ -740,7 +762,7 @@
 
 
 (defn handle-cursor-frame [server listener data]
-  (wlr-log :debug "#### handle-cursor-frame ####")
+  #(wlr-log :debug "#### handle-cursor-frame ####")
   (wlr-seat-pointer-notify-frame (server :seat)))
 
 
@@ -976,6 +998,44 @@
                       (handle-xwayland-surface-set-geometry view listener data)))))
 
 
+(defn handle-repl-connection [client mask state]
+  (wlr-log :info "#### repl client event #### mask = %p" mask)
+  (when (or (contains? mask :error) (contains? mask :hangup))
+    (wlr-log :info "#### error or hangup, removing client %p" client)
+    (wl-event-source-remove (state :event-source))
+    (break))
+
+  (when (contains? mask :readable)
+    (def msg (net/read client 1024 nil 0))
+    (wlr-log :info "#### repl message: %p" msg))
+  # default return code for event loop callbacks
+  0)
+
+
+(defn init-repl [event-loop]
+  (def repl-server (net/server :unix "/tmp/jl-repl.socket"))
+  (wl-event-loop-add-fd event-loop repl-server :readable
+     (fn [sstream mask]
+       (wlr-log :info "#### repl server event #### mask = %p" mask)
+       (when (or (contains? mask :error) (contains? mask :hangup)) (break))
+       # May raise errors
+       (def cstream
+         (try
+           (do
+             # XXX: This doesn't work, may need to combine and fix Janet & Wayland event loops
+             (net/accept sstream 0))
+           ((err fiber)
+            (wlr-log :error "#### err = %p, fiber = %p" err fiber))))
+       (wlr-log :info "#### new client: %p" cstream)
+       (def cstate @{})
+       (put cstate :event-source
+          (wl-event-loop-add-fd event-loop cstream :readable
+             (fn [cstream mask]
+               (handle-repl-connection cstream mask cstate))))
+       # default return code for event loop callbacks
+       0)))
+
+
 (defn main [& argv]
   (wlr-log-init :debug)
 
@@ -1078,6 +1138,8 @@
 
   (put server :socket (wl-display-add-socket-auto (server :display)))
 
+  #(init-repl (wl-display-get-event-loop (server :display)))
+
   (when (not (wlr-backend-start (server :backend)))
     (wlr-log :debug "#### failed to start backend")
     (wlr-backend-destroy (server :backend))
@@ -1090,8 +1152,10 @@
     (os/spawn ["/bin/sh" "-c" ;(slice argv 1)]))
 
   (wlr-log :info "#### running on WAYLAND_DISPLAY=%s" (server :socket))
-  (wl-display-run (server :display))
+  #(wl-display-run (server :display))
 
-  (wlr-xwayland-destroy (server :xwayland))
-  (wl-display-destroy-clients (server :display))
-  (wl-display-destroy (server :display)))
+  #(wlr-xwayland-destroy (server :xwayland))
+  #(wl-display-destroy-clients (server :display))
+  #(wl-display-destroy (server :display))
+  (ev/spawn (server-run server))
+  )

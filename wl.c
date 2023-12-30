@@ -397,7 +397,7 @@ void wl_event_loop_stream_dispatch_callback(JanetFiber *fiber, JanetAsyncEvent e
 {
     struct wl_event_loop *event_loop = (struct wl_event_loop *)fiber->ev_state;
 
-    wlr_log(WLR_DEBUG, "event = %d", event);
+    //wlr_log(WLR_DEBUG, "event = %d", event);
 
     switch (event) {
     case JANET_ASYNC_EVENT_ERR:
@@ -406,7 +406,7 @@ void wl_event_loop_stream_dispatch_callback(JanetFiber *fiber, JanetAsyncEvent e
     case JANET_ASYNC_EVENT_HUP:
     case JANET_ASYNC_EVENT_READ:
     case JANET_ASYNC_EVENT_WRITE: {
-        wlr_log(WLR_DEBUG, "dispatching events from wayland event loop....");
+        //wlr_log(WLR_DEBUG, "dispatching events from wayland event loop....");
         int ret = wl_event_loop_dispatch(event_loop, 0);
         if (ret < 0) {
             wlr_log(WLR_ERROR, "wl_event_loop_dispatch() failed: %d", ret);
