@@ -395,7 +395,8 @@ static Janet cfun_wl_event_loop_get_fd(int32_t argc, Janet *argv)
 
 void wl_event_loop_stream_dispatch_callback(JanetFiber *fiber, JanetAsyncEvent event)
 {
-    struct wl_event_loop *event_loop = (struct wl_event_loop *)fiber->ev_state;
+    struct wl_event_loop **event_loop_p = (struct wl_event_loop **)fiber->ev_state;
+    struct wl_event_loop *event_loop = *event_loop_p;
 
     //wlr_log(WLR_DEBUG, "event = %d", event);
 
@@ -412,17 +413,11 @@ void wl_event_loop_stream_dispatch_callback(JanetFiber *fiber, JanetAsyncEvent e
             wlr_log(WLR_ERROR, "wl_event_loop_dispatch() failed: %d", ret);
         }
         janet_schedule(fiber, janet_wrap_integer(ret));
-        /* ev_state was pointing to the wayland event loop object. Set it to NULL
-           before janet_async_end() to save the event loop object from being
-           automatically freed */
-        fiber->ev_state = NULL;
         janet_async_end(fiber);
         break;
     }
     case JANET_ASYNC_EVENT_CLOSE: {
         janet_cancel(fiber, janet_cstringv("stream closed"));
-        /* See the same line above */
-        fiber->ev_state = NULL;
         janet_async_end(fiber);
         break;
     }
@@ -452,10 +447,12 @@ static Janet method_wl_event_loop_stream_dispatch(int32_t argc, Janet *argv)
                      stream->handle, wl_event_loop_get_fd(event_loop));
     }
 
+    struct wl_event_loop **state = janet_malloc(sizeof(*state));
+    *state = event_loop;
     janet_async_start(stream,
                       JANET_ASYNC_LISTEN_READ | JANET_ASYNC_LISTEN_WRITE,
                       wl_event_loop_stream_dispatch_callback,
-                      event_loop);
+                      state);
 }
 
 /* XXX: This close method has different signature from normal close methods.
