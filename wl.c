@@ -519,6 +519,7 @@ static Janet cfun_wl_event_loop_add_destroy_listener(int32_t argc, Janet *argv)
     listener->wl_listener.notify = jwl_listener_notify_callback;
     listener->notify_fn = notify_fn;
 
+    janet_gcroot(janet_wrap_function(notify_fn));
     wl_event_loop_add_destroy_listener(event_loop, &listener->wl_listener);
 
     return janet_wrap_abstract(listener);
@@ -700,6 +701,7 @@ static Janet cfun_wl_signal_add(int32_t argc, Janet *argv)
     listener->wl_listener.notify = jwl_listener_notify_callback;
     listener->notify_fn = notify_fn;
 
+    janet_gcroot(janet_wrap_function(notify_fn));
     wl_signal_add(signal, &listener->wl_listener);
 
     return janet_wrap_abstract(listener);
