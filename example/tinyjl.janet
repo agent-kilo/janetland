@@ -86,7 +86,7 @@
 (defn desktop-view-at [server x y]
   (def [node sx sy] (wlr-scene-node-at (((server :scene) :tree) :node) x y))
   (when (or (nil? node) (not (= (node :type) :buffer)))
-    (wlr-log :debug "#### desktop-view-at #### bogus node from wlr-scene-node-at")
+    #(wlr-log :debug "#### desktop-view-at #### bogus node from wlr-scene-node-at")
     (break [nil nil 0 0]))
 
   (def scene-buffer (wlr-scene-buffer-from-node node))
@@ -309,7 +309,7 @@
 
     (xkb-key :Return)
     (do
-      (os/spawn ["/bin/sh" "-c" "kitty"])
+      (os/spawn ["/bin/sh" "-c" "kitty"] :pd)
       true)
 
     (xkb-key :F1)
@@ -1147,9 +1147,10 @@
     (break))
 
   (os/setenv "WAYLAND_DISPLAY" (server :socket))
+
   (when (> (length argv) 1)
     (wlr-log :debug "#### running command: %p" (slice argv 1))
-    (os/spawn ["/bin/sh" "-c" ;(slice argv 1)]))
+    (os/spawn ["/bin/sh" "-c" ;(slice argv 1)] :pd))
 
   (wlr-log :info "#### running on WAYLAND_DISPLAY=%s" (server :socket))
   #(wl-display-run (server :display))
