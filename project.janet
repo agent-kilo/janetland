@@ -1,4 +1,7 @@
-(declare-project :name "janetland")
+(declare-project
+ :name "janetland"
+ :dependencies [{:url "https://github.com/janet-lang/spork.git"
+                 :tag "d644da0fd05612a2d5a3c97277bf7b9bb96dcf6b"}])
 
 
 (def proto-files
