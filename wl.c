@@ -269,10 +269,14 @@ static Janet cfun_wl_event_loop_add_fd(int32_t argc, Janet *argv)
     mask = jl_get_key_flags(argv, 2, wl_event_defs);
     func = janet_getfunction(argv, 3);
 
-    source->cb_fn = func;
     source->event_source = wl_event_loop_add_fd(event_loop, fd, mask, jwl_event_loop_fd_callback, source);
     if (!(source->event_source)) {
         janet_panic("failed to add fd to wayland event loop");
+    }
+    source->cb_fn = func;
+    janet_gcroot(janet_wrap_function(func));
+    if (source->stream) {
+        janet_gcroot(janet_wrap_abstract(source->stream));
     }
     return janet_wrap_abstract(source);
 }
@@ -306,11 +310,12 @@ static Janet cfun_wl_event_loop_add_timer(int32_t argc, Janet *argv)
     event_loop = jl_get_abs_obj_pointer(argv, 0, &jwl_at_wl_event_loop);
     func = janet_getfunction(argv, 1);
 
-    source->cb_fn = func;
     source->event_source = wl_event_loop_add_timer(event_loop, jwl_event_loop_timer_callback, source);
     if (!(source->event_source)) {
         janet_panic("failed to add timer to wayland event loop");
     }
+    source->cb_fn = func;
+    janet_gcroot(janet_wrap_function(func));
     return janet_wrap_abstract(source);
 }
 
@@ -349,11 +354,12 @@ static Janet cfun_wl_event_loop_add_signal(int32_t argc, Janet *argv)
     }
     func = janet_getfunction(argv, 2);
 
-    source->cb_fn = func;
     source->event_source = wl_event_loop_add_signal(event_loop, signal_number, jwl_event_loop_signal_callback, source);
     if (!(source->event_source)) {
         janet_panic("failed to add signal handler to wayland event loop");
     }
+    source->cb_fn = func;
+    janet_gcroot(janet_wrap_function(func));
     return janet_wrap_abstract(source);
 }
 
@@ -373,11 +379,12 @@ static Janet cfun_wl_event_loop_add_idle(int32_t argc, Janet *argv)
     event_loop = jl_get_abs_obj_pointer(argv, 0, &jwl_at_wl_event_loop);
     func = janet_getfunction(argv, 1);
 
-    source->cb_fn = func;
     source->event_source = wl_event_loop_add_idle(event_loop, jwl_event_loop_idle_callback, source);
     if (!(source->event_source)) {
         janet_panic("failed to add idle source to wayland event loop");
     }
+    source->cb_fn = func;
+    janet_gcroot(janet_wrap_function(func));
     return janet_wrap_abstract(source);
 }
 
@@ -542,10 +549,21 @@ static Janet cfun_wl_event_source_remove(int32_t argc, Janet *argv)
 {
     jwl_event_source_t *source;
 
+    int ret;
+
     janet_fixarity(argc, 1);
 
     source = janet_getabstract(argv, 0, &jwl_at_event_source);
-    return janet_wrap_integer(wl_event_source_remove(source->event_source));
+    /* At the time of writing this code, wl_event_source_remove()
+       ALWAYS succeeds and returns zero. */
+    ret = wl_event_source_remove(source->event_source);
+    if (source->stream) {
+        janet_gcunroot(janet_wrap_abstract(source->stream));
+    }
+    if (source->cb_fn) {
+        janet_gcunroot(janet_wrap_function(source->cb_fn));
+    }
+    return janet_wrap_integer(ret);
 }
 
 
