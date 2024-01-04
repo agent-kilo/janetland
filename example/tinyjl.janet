@@ -1,9 +1,15 @@
+(import spork/netrepl)
+
 (use janetland/wl)
 (use janetland/wlr)
 (use janetland/xkb)
 (use janetland/xcb)
 (use janetland/util)
 (use janetland/keysyms)
+
+
+(defn repl-socket-name [server]
+  (string "/tmp/" (server :socket) "-repl.socket"))
 
 
 (defn server-run [server]
@@ -20,7 +26,9 @@
   # Terminating
   (wlr-xwayland-destroy (server :xwayland))
   (wl-display-destroy-clients (server :display))
-  (wl-display-destroy (server :display)))
+  (wl-display-destroy (server :display))
+  (:close (server :repl-server))
+  (os/rm (repl-socket-name server)))
 
 
 (defn server-stop [server]
@@ -998,42 +1006,16 @@
                       (handle-xwayland-surface-set-geometry view listener data)))))
 
 
-(defn handle-repl-connection [client mask state]
-  (wlr-log :info "#### repl client event #### mask = %p" mask)
-  (when (or (contains? mask :error) (contains? mask :hangup))
-    (wlr-log :info "#### error or hangup, removing client %p" client)
-    (wl-event-source-remove (state :event-source))
-    (break))
-
-  (when (contains? mask :readable)
-    (def msg (net/read client 1024 nil 0))
-    (wlr-log :info "#### repl message: %p" msg))
-  # default return code for event loop callbacks
-  0)
-
-
-(defn init-repl [event-loop]
-  (def repl-server (net/server :unix "/tmp/jl-repl.socket"))
-  (wl-event-loop-add-fd event-loop repl-server :readable
-     (fn [sstream mask]
-       (wlr-log :info "#### repl server event #### mask = %p" mask)
-       (when (or (contains? mask :error) (contains? mask :hangup)) (break))
-       # May raise errors
-       (def cstream
-         (try
-           (do
-             # XXX: This doesn't work, may need to combine and fix Janet & Wayland event loops
-             (net/accept sstream 0))
-           ((err fiber)
-            (wlr-log :error "#### err = %p, fiber = %p" err fiber))))
-       (wlr-log :info "#### new client: %p" cstream)
-       (def cstate @{})
-       (put cstate :event-source
-          (wl-event-loop-add-fd event-loop cstream :readable
-             (fn [cstream mask]
-               (handle-repl-connection cstream mask cstate))))
-       # default return code for event loop callbacks
-       0)))
+(defn init-repl [server]
+  (netrepl/server :unix (repl-socket-name server)
+                  (fn [name stream]
+                    (def new-env (make-env))
+                    (put new-env 'server @{:value server})
+                    (put new-env 'client-name @{:value name})
+                    (put new-env 'client-stream @{:value stream})
+                    (table/setproto @{} new-env))
+                  nil
+                  "Welcom to Janet Land!\n"))
 
 
 (defn main [& argv]
@@ -1138,7 +1120,7 @@
 
   (put server :socket (wl-display-add-socket-auto (server :display)))
 
-  #(init-repl (wl-display-get-event-loop (server :display)))
+  (put server :repl-server (init-repl server))
 
   (when (not (wlr-backend-start (server :backend)))
     (wlr-log :debug "#### failed to start backend")
@@ -1159,4 +1141,6 @@
   #(wl-display-destroy-clients (server :display))
   #(wl-display-destroy (server :display))
   (ev/spawn (server-run server))
+  (os/sigaction :int (fn [&] (put server :running false)))
+  (os/sigaction :term (fn [&] (put server :running false)))
   )
