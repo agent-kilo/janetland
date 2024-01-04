@@ -134,10 +134,17 @@ static const JanetAbstractType jwlr_at_wlr_scene = {
 };
 
 
+static const jl_offset_def_t wlr_scene_output_signal_offsets[] = {
+    JWLR_OFFSET_DEF(struct wlr_scene_output, events.destroy),
+    {NULL, 0},
+};
+
+static int method_wlr_scene_output_get(void *p, Janet key, Janet *out);
 static const JanetAbstractType jwlr_at_wlr_scene_output = {
     .name = MOD_NAME "/wlr-scene-output",
     .gc = NULL,
     .gcmark = NULL,
+    .get = method_wlr_scene_output_get,
     JANET_ATEND_GET
 };
 

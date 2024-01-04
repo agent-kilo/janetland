@@ -61,6 +61,7 @@ static const jl_link_offset_def_t link_offsets[] =
     JUTIL_LINK_OFFSET_DEF(WLR_MOD_NAME "/wlr-xdg-surface", struct wlr_xdg_surface, link),
     JUTIL_LINK_OFFSET_DEF(WLR_MOD_NAME "/wlr-xdg-popup", struct wlr_xdg_popup, link),
     JUTIL_LINK_OFFSET_DEF(WLR_MOD_NAME "/wlr-scene-node", struct wlr_scene_node, link),
+    JUTIL_LINK_OFFSET_DEF(WLR_MOD_NAME "/wlr-scene-output", struct wlr_scene_output, link),
     JUTIL_LINK_OFFSET_DEF(WLR_MOD_NAME "/wlr-xwayland-surface", struct wlr_xwayland_surface, parent_link),
     {NULL, NULL, 0},
 };
@@ -167,7 +168,7 @@ static JanetReg cfuns[] = {
     },
     {
         "wl-list-to-array", cfun_wl_list_to_array,
-        "(" MOD_NAME "/wl-list-to-array wl-list element-abstract-type)\n\n"
+        "(" MOD_NAME "/wl-list-to-array wl-list element-abstract-type field-name)\n\n"
         "Converts a wl-list to a Janet array containing elements of element-abstract-type."
     },
     {

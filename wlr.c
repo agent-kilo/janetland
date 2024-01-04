@@ -895,6 +895,46 @@ static Janet cfun_wlr_scene_attach_output_layout(int32_t argc, Janet *argv)
 }
 
 
+static int method_wlr_scene_output_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_scene_output **scene_output_p = (struct wlr_scene_output **)p;
+    struct wlr_scene_output *scene_output = *scene_output_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    struct wl_signal **signal_p = get_abstract_struct_signal_member(scene_output,
+                                                                    janet_unwrap_keyword(key),
+                                                                    wlr_scene_output_signal_offsets);
+    if (signal_p) {
+        *out = janet_wrap_abstract(signal_p);
+        return 1;
+    }
+
+    if (!janet_cstrcmp(kw, "output")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(scene_output->output, &jwlr_at_wlr_output));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "scene")) {
+        *out = janet_wrap_abstract(jl_pointer_to_abs_obj(scene_output->scene, &jwlr_at_wlr_scene));
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "x")) {
+        *out = janet_wrap_integer(scene_output->x);
+        return 1;
+    }
+    if (!janet_cstrcmp(kw, "y")) {
+        *out = janet_wrap_integer(scene_output->y);
+        return 1;
+    }
+
+    return 0;
+}
+
+
 static int method_wlr_xdg_shell_get(void *p, Janet key, Janet *out) {
     struct wlr_xdg_shell **xdg_shell_p = (struct wlr_xdg_shell **)p;
     struct wlr_xdg_shell *xdg_shell = *xdg_shell_p;
