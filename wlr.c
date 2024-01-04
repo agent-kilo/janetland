@@ -2493,6 +2493,23 @@ static Janet cfun_wlr_scene_tree_create(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_scene_tree_from_node(int32_t argc, Janet *argv)
+{
+    struct wlr_scene_node *node;
+
+    struct wlr_scene_tree *tree;
+
+    janet_fixarity(argc, 1);
+
+    node = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_scene_node);
+    if (node->type != WLR_SCENE_NODE_TREE) {
+        janet_panic("not a tree node");
+    }
+    tree = wl_container_of(node, tree, node);
+    return janet_wrap_abstract(jl_pointer_to_abs_obj(tree, &jwlr_at_wlr_scene_tree));
+}
+
+
 static Janet cfun_wlr_scene_surface_create(int32_t argc, Janet *argv)
 {
     struct wlr_scene_tree *parent;
@@ -4174,6 +4191,11 @@ static JanetReg cfuns[] = {
         "wlr-scene-tree-create", cfun_wlr_scene_tree_create,
         "(" MOD_NAME "/wlr-scene-tree-create parent)\n\n"
         "Adds a node displaying nothing but its children."
+    },
+    {
+        "wlr-scene-tree-from-node", cfun_wlr_scene_tree_from_node,
+        "(" MOD_NAME "/wlr-scene-tree-from-node wlr-scene-node)\n\n"
+        "Gets a scene tree from a scene node."
     },
     {
         "wlr-scene-surface-create", cfun_wlr_scene_surface_create,
