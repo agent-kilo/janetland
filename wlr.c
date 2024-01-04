@@ -194,6 +194,8 @@ static Janet cfun_wlr_log_init(int32_t argc, Janet *argv)
         janet_gcroot(janet_wrap_function(cb));
         ccb = jwlr_log_callback;
     }
+    /* XXX: There's no way to reset the callback to the default
+       one provided by wlroots */
 
     wlr_log_init(verbosity, ccb);
 
@@ -228,6 +230,10 @@ static Janet cfun_wlr_log(int32_t argc, Janet *argv)
     janet_arity(argc, 2, -1);
 
     verb = jl_get_key_def(argv, 0, log_defs);
+    if (verb > wlr_log_get_verbosity()) {
+        return janet_wrap_nil();
+    }
+
     fmt_argv = &(argv[1]);
     fmt_argc = argc - 1;
 
