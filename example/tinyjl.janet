@@ -299,8 +299,8 @@
   (def seat ((keyboard :server) :seat))
   (def wlr-keyboard (keyboard :wlr-keyboard))
 
-  (wlr-log :debug "#### handle-wlr-keyboard-modifiers ####")
-  (wlr-log :debug "#### ((wlr-keyboard :modifiers) :depressed) = %p ####" ((wlr-keyboard :modifiers) :depressed))
+  #(wlr-log :debug "#### handle-wlr-keyboard-modifiers ####")
+  #(wlr-log :debug "#### ((wlr-keyboard :modifiers) :depressed) = %p ####" ((wlr-keyboard :modifiers) :depressed))
 
   (wlr-seat-set-keyboard seat wlr-keyboard)
   (wlr-seat-keyboard-notify-modifiers seat (wlr-keyboard :modifiers)))
@@ -338,26 +338,26 @@
   (def seat (server :seat))
   (def event (get-abstract-listener-data data 'wlr/wlr-keyboard-key-event))
 
-  (wlr-log :debug "#### handle-wlr-keyboard-key ####")
-  (wlr-log :debug "#### (event :time-msec) = %p" (event :time-msec))
-  (wlr-log :debug "#### (event :keycode) = %p" (event :keycode))
-  (wlr-log :debug "#### (event :update-state) = %p" (event :update-state))
-  (wlr-log :debug "#### (event :state) = %p" (event :state))
+  #(wlr-log :debug "#### handle-wlr-keyboard-key ####")
+  #(wlr-log :debug "#### (event :time-msec) = %p" (event :time-msec))
+  #(wlr-log :debug "#### (event :keycode) = %p" (event :keycode))
+  #(wlr-log :debug "#### (event :update-state) = %p" (event :update-state))
+  #(wlr-log :debug "#### (event :state) = %p" (event :state))
 
   (def keycode (+ (event :keycode) 8))
   (def syms (xkb-state-key-get-syms ((keyboard :wlr-keyboard) :xkb-state) keycode))
   (def modifiers (wlr-keyboard-get-modifiers (keyboard :wlr-keyboard)))
 
-  (wlr-log :debug "#### syms = %p" syms)
-  (wlr-log :debug "#### modifiers = %p" modifiers)
+  #(wlr-log :debug "#### syms = %p" syms)
+  #(wlr-log :debug "#### modifiers = %p" modifiers)
 
   (def handled-syms
     (if (and (contains? modifiers :alt) (= (event :state) :pressed))
       (map (fn [sym] (handle-keybinding server sym)) syms)
       (map (fn [_] false) syms)))
 
-  (wlr-log :debug "#### handled-syms = %p" handled-syms)
-  (wlr-log :debug "#### (not (any? handled-syms)) = %p" (not (any? handled-syms)))
+  #(wlr-log :debug "#### handled-syms = %p" handled-syms)
+  #(wlr-log :debug "#### (not (any? handled-syms)) = %p" (not (any? handled-syms)))
 
   (when (not (any? handled-syms))
     (wlr-seat-set-keyboard seat (keyboard :wlr-keyboard))
