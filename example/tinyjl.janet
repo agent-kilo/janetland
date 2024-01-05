@@ -215,10 +215,10 @@
   (wlr-log :debug "#### process-cursor-move #### (view :x) = %p, (view :y) = %p" (view :x) (view :y))
   (wlr-scene-node-set-position ((view :scene-tree) :node) (view :x) (view :y))
   # XXX: The window movement is wrong when x & y coordinates are involved???
-  #(when (not (nil? (view :xwayland-surface)))
-  #  (wlr-xwayland-surface-configure (view :xwayland-surface) (view :x) (view :y)
-  #                                  ((((view :xwayland-surface) :surface) :current) :width)
-  #                                  ((((view :xwayland-surface) :surface) :current) :height)))
+  (when (not (nil? (view :xwayland-surface)))
+    (wlr-xwayland-surface-configure (view :xwayland-surface) (view :x) (view :y)
+                                    ((((view :xwayland-surface) :surface) :current) :width)
+                                    ((((view :xwayland-surface) :surface) :current) :height)))
   )
 
 
@@ -268,9 +268,7 @@
   (def new-height (math/round (- new-bottom new-top)))
   (if (nil? (view :xwayland-surface))
     (wlr-xdg-toplevel-set-size (view :xdg-toplevel) new-width new-height)
-    # XXX: The window movement is wrong when x & y coordinates are involved???
-    #(wlr-xwayland-surface-configure (view :xwayland-surface) (view :x) (view :y) new-width new-height)
-    (wlr-xwayland-surface-configure (view :xwayland-surface) 0 0 new-width new-height)
+    (wlr-xwayland-surface-configure (view :xwayland-surface) (view :x) (view :y) new-width new-height)
     ))
 
 
@@ -852,10 +850,10 @@
   (def event (get-abstract-listener-data data 'wlr/wlr-xwayland-surface-configure-event))
   (wlr-log :debug "#### handle-xwayland-surface-request-configure #### xw-surface = %p, event = %p" xw-surface event)
   (wlr-xwayland-surface-configure xw-surface (event :x) (event :y) (event :width) (event :height))
-  (when (and (xw-surface :mapped) (not (nil? (view :surface-tree))))
+  (when (and (xw-surface :mapped) (not (nil? (view :scene-tree))))
     (put view :x (event :x))
     (put view :y (event :y))
-    (wlr-scene-node-set-position ((view :surface-tree) :node) (event :x) (event :y))))
+    (wlr-scene-node-set-position ((view :scene-tree) :node) (event :x) (event :y))))
 
 
 (defn handle-xwayland-surface-request-fullscreen [view listener data]
@@ -909,15 +907,15 @@
   (wlr-log :debug "#### (xw-surface :y) = %p" (xw-surface :y))
   (wlr-log :debug "#### (xw-surface :width) = %p" (xw-surface :width))
   (wlr-log :debug "#### (xw-surface :height) = %p" (xw-surface :height))
-  (wlr-log :debug "#### (view :surface-tree) = %p" (view :surface-tree))
+  (wlr-log :debug "#### (view :scene-tree) = %p" (view :scene-tree))
 
   (when (and (= (view :x) (xw-surface :x)) (= (view :y) (xw-surface :y)))
     (break))
 
   (put view :x (xw-surface :x))
   (put view :y (xw-surface :y))
-  (when (and (xw-surface :mapped) (not (nil? (view :surface-tree))))
-    (wlr-scene-node-set-position ((view :surface-tree) :node) (xw-surface :x) (xw-surface :y))))
+  (when (and (xw-surface :mapped) (not (nil? (view :scene-tree))))
+    (wlr-scene-node-set-position ((view :scene-tree) :node) (xw-surface :x) (xw-surface :y))))
 
 
 (defn handle-xwayland-new-surface [server listener data]
