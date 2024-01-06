@@ -35,6 +35,11 @@
   (put server :running false))
 
 
+(defn get-maximize-geo-box [view]
+  (def output (wlr-output-layout-output-at ((view :server) :output-layout) (view :x) (view :y)))
+  (wlr-output-layout-get-box ((view :server) :output-layout) output))
+
+
 (defn xw-local-coords [xw-surface]
   (var local-x (xw-surface :x))
   (var local-y (xw-surface :y))
@@ -620,8 +625,7 @@
       (set (geo-box :x) (view :x))
       (set (geo-box :y) (view :y))
       (put view :maximized geo-box)
-      (def output (wlr-output-layout-output-at ((view :server) :output-layout) 0 0))
-      (def output-box (wlr-output-layout-get-box ((view :server) :output-layout) output))
+      (def output-box (get-maximize-geo-box view))
       (put view :x (output-box :x))
       (put view :y (output-box :y))
       (wlr-scene-node-set-position ((view :scene-tree) :node) (output-box :x) (output-box :y))
@@ -645,8 +649,7 @@
       (set (geo-box :x) (view :x))
       (set (geo-box :y) (view :y))
       (put view :fullscreen geo-box)
-      (def output (wlr-output-layout-output-at ((view :server) :output-layout) 0 0))
-      (def output-box (wlr-output-layout-get-box ((view :server) :output-layout) output))
+      (def output-box (get-maximize-geo-box view))
       (put view :x (output-box :x))
       (put view :y (output-box :y))
       (wlr-scene-node-set-position ((view :scene-tree) :node) (output-box :x) (output-box :y))
@@ -894,10 +897,28 @@
 
 
 (defn handle-xwayland-surface-request-fullscreen [view listener data]
-  # TODO
   (def xw-surface (view :xwayland-surface))
   (wlr-log :debug "#### handle-xwayland-surface-request-fullscreen #### xw-surface = %p, data = %p" xw-surface data)
-  )
+  (if (not (truthy? (view :fullscreen)))
+    (do
+      (def geo-box (get-geometry-from-view view))
+      (set (geo-box :x) (view :x))
+      (set (geo-box :y) (view :y))
+      (put view :fullscreen geo-box)
+      (def output-box (get-maximize-geo-box view))
+      (put view :x (output-box :x))
+      (put view :y (output-box :y))
+      (wlr-scene-node-set-position ((view :scene-tree) :node) (output-box :x) (output-box :y))
+      (wlr-xwayland-surface-configure xw-surface (output-box :x) (output-box :y) (output-box :width) (output-box :height))
+      (wlr-xwayland-surface-set-fullscreen xw-surface true))
+    (do
+      (def old-box (view :fullscreen))
+      (put view :fullscreen false)
+      (put view :x (old-box :x))
+      (put view :y (old-box :y))
+      (wlr-scene-node-set-position ((view :scene-tree) :node) (old-box :x) (old-box :y))
+      (wlr-xwayland-surface-configure xw-surface (old-box :x) (old-box :y) (old-box :width) (old-box :height))
+      (wlr-xwayland-surface-set-fullscreen xw-surface false))))
 
 
 (defn handle-xwayland-surface-request-minimize [view listener data]
@@ -908,10 +929,28 @@
 
 
 (defn handle-xwayland-surface-request-maximize [view listener data]
-  # TODO
   (def xw-surface (view :xwayland-surface))
   (wlr-log :debug "#### handle-xwayland-surface-request-maximize #### xw-surface = %p, data = %p" xw-surface data)
-  )
+  (if (not (truthy? (view :maximized)))
+    (do
+      (def geo-box (get-geometry-from-view view))
+      (set (geo-box :x) (view :x))
+      (set (geo-box :y) (view :y))
+      (put view :maximized geo-box)
+      (def output-box (get-maximize-geo-box view))
+      (put view :x (output-box :x))
+      (put view :y (output-box :y))
+      (wlr-scene-node-set-position ((view :scene-tree) :node) (output-box :x) (output-box :y))
+      (wlr-xwayland-surface-configure xw-surface (output-box :x) (output-box :y) (output-box :width) (output-box :height))
+      (wlr-xwayland-surface-set-maximized xw-surface true))
+    (do
+      (def old-box (view :maximized))
+      (put view :maximized false)
+      (put view :x (old-box :x))
+      (put view :y (old-box :y))
+      (wlr-scene-node-set-position ((view :scene-tree) :node) (old-box :x) (old-box :y))
+      (wlr-xwayland-surface-configure xw-surface (old-box :x) (old-box :y) (old-box :width) (old-box :height))
+      (wlr-xwayland-surface-set-maximized xw-surface false))))
 
 
 (defn handle-xwayland-surface-request-move [view listener data]
