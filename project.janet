@@ -5,9 +5,8 @@
 
 
 (def proto-files
-  ["xdg-shell"
-   "viewporter"
-   "presentation-time"])
+  ["stable/xdg-shell/xdg-shell.xml"
+   "staging/ext-session-lock/ext-session-lock-v1.xml"])
 
 
 (defn spawn-and-wait [& args]
@@ -54,6 +53,14 @@
      (string/split " " (pkg-config "--cflags" "--libs" "xkbcommon")))))
 
 (def common-cflags ["-g" "-Wall" "-Wextra"])
+
+(def protocol-file-peg
+  (peg/compile
+   ~{:main (sequence (opt :sep) (any :dir) (capture :file-name) :ext)
+     :sep (some "/")
+     :dir (sequence :file-name :sep)
+     :file-name (some (choice "_" "-" :w))
+     :ext ".xml"}))
 
 (def include-path-peg
   (peg/compile
@@ -109,7 +116,12 @@
   (def wl-proto-dir (pkg-config "--variable=pkgdatadir" "wayland-protocols"))
   (def wl-scanner (pkg-config "--variable=wayland_scanner" "wayland-scanner"))
   (ensure-dir generated-headers-dir)
-  (map (fn [pfile]
+  (map (fn [pfile-path]
+         (def matched (peg/match protocol-file-peg pfile-path))
+         (when (nil? matched)
+           (printf "failed to match file, skipping: %s" pfile-path)
+           (break))
+         (def pfile (in matched 0))
          (def out-file (string generated-headers-dir "/" pfile "-protocol.h"))
          (when (file-exists? out-file)
            (printf "%s exists, skipping" out-file)
@@ -117,7 +129,7 @@
          (def scanner-out
            (spawn-and-wait wl-scanner
                            "server-header"
-                           (string wl-proto-dir "/stable/" pfile "/" pfile ".xml")
+                           (string wl-proto-dir "/" pfile-path)
                            out-file))
          (print scanner-out)
          (printf "generated %s" out-file))
