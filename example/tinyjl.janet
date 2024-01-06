@@ -35,6 +35,20 @@
   (put server :running false))
 
 
+(defn xw-local-coords [xw-surface]
+  (var local-x (xw-surface :x))
+  (var local-y (xw-surface :y))
+  (var xw-parent (xw-surface :parent))
+  (while (not (nil? xw-parent))
+    (wlr-log :debug "#### parent at (%p, %p)" (xw-parent :x) (xw-parent :y))
+    (-= local-x (xw-parent :x))
+    (-= local-y (xw-parent :y))
+    (set xw-parent (xw-parent :parent)))
+  (wlr-log :debug "#### local-x = %p" local-x)
+  (wlr-log :debug "#### local-y = %p" local-y)
+  [local-x local-y])
+
+
 (defn scene-xwayland-surface-create [parent xw-surface]
   (def tree (wlr-scene-tree-create parent))
   (def surface-tree (wlr-scene-subsurface-tree-create tree (xw-surface :surface)))
@@ -69,7 +83,8 @@
                       (wlr-scene-node-set-enabled ((scene-xw-surface :tree) :node) false))))
 
   (wlr-scene-node-set-enabled (tree :node) (xw-surface :mapped))
-  (wlr-scene-node-set-position (surface-tree :node) (xw-surface :x) (xw-surface :y))
+  (def [local-x local-y] (xw-local-coords xw-surface))
+  (wlr-scene-node-set-position (tree :node) local-x local-y)
 
   [tree surface-tree])
 
@@ -922,10 +937,11 @@
   (when (and (= (view :x) (xw-surface :x)) (= (view :y) (xw-surface :y)))
     (break))
 
-  (put view :x (xw-surface :x))
-  (put view :y (xw-surface :y))
+  (def [local-x local-y] (xw-local-coords xw-surface))
+  (put view :x local-x)
+  (put view :y local-y)
   (when (and (xw-surface :mapped) (not (nil? (view :scene-tree))))
-    (wlr-scene-node-set-position ((view :scene-tree) :node) (xw-surface :x) (xw-surface :y))))
+    (wlr-scene-node-set-position ((view :scene-tree) :node) local-x local-y)))
 
 
 (defn handle-xwayland-new-surface [server listener data]
