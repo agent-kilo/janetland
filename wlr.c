@@ -4653,10 +4653,6 @@ static JanetReg cfuns[] = {
 
 JANET_MODULE_ENTRY(JanetTable *env)
 {
-    /* Import wl module first, so that we can find the wl_* abstract types */
-    /* XXX: this will pollute the environment with wl/ stuff, even :export is set to nil */
-    jl_import(WL_MOD_FULL_NAME);
-
     janet_register_abstract_type(&jwlr_at_box);
     janet_register_abstract_type(&jwlr_at_wlr_backend);
     janet_register_abstract_type(&jwlr_at_wlr_renderer);
