@@ -1,3 +1,8 @@
+#
+# To run this example, you need spork (https://github.com/janet-lang/spork.git)
+# `jpm -l install spork` and then `jpm -l janet path/to/repl-client.janet`
+#
+
 (import spork/netrepl)
 
 (defn main [& args]
