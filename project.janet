@@ -3,11 +3,6 @@
  :dependencies [])
 
 
-(def proto-files
-  ["stable/xdg-shell/xdg-shell.xml"
-   "staging/ext-session-lock/ext-session-lock-v1.xml"])
-
-
 (defn spawn-and-wait [& args]
   (def os-env (os/environ))
   (put os-env :out :pipe)
@@ -38,9 +33,15 @@
     (when (not (os/mkdir name))
       (error (string/format "failed to create directory %s" name)))))
 
+(defn add-deps-for-obj [src deps]
+  (each d deps
+    (each s src
+      (def op (out-path s ".c" ".o"))
+      (add-dep op d))))
 
-(def generated-headers-dir "generated_headers")
-(def generated-tables-dir "generated_tables")
+
+(def generated-headers-dir (string (find-build-dir) "generated_headers"))
+(def generated-tables-dir (string (find-build-dir) "generated_tables"))
 
 (def wlr-cflags
   (let [arr @[]]
@@ -79,63 +80,30 @@
      :ml-comment-end (sequence (any :s) "*/")}))
 
 
-(declare-native :name (project-module "wlr")
-                :source ["wlr.c"]
-                :header ["jl.h"
-                         "types.h"
-                         "wlr_abs_types.h"
-                         (string generated-headers-dir "/xdg-shell-protocol.h")]
-                :cflags [;common-cflags ;wlr-cflags])
-
-(declare-native :name (project-module "wl")
-                :source ["wl.c"]
-                :header ["jl.h" "types.h" "wl_abs_types.h"]
-                :cflags [;common-cflags ;wlr-cflags])
-
-(declare-native :name (project-module "xkb")
-                :source ["xkb.c"]
-                :header ["jl.h" "types.h"]
-                :cflags [;common-cflags ;wlr-cflags])
-
-(declare-native :name (project-module "xcb")
-                :source ["xcb.c"]
-                :header ["jl.h" "types.h"]
-                :cflags [;common-cflags ;wlr-cflags])
-
-(declare-native :name (project-module "util")
-                :source ["util.c"]
-                :header ["jl.h"]
-                :cflags [;common-cflags ;wlr-cflags])
-
-(declare-source :source [(string generated-tables-dir "/keysyms.janet")]
-                :prefix ((dyn :project) :name))
-
-
-(task "proto-headers" []
+(defn add-proto-header-rules [proto-files]
   (def wl-proto-dir (pkg-config "--variable=pkgdatadir" "wayland-protocols"))
   (def wl-scanner (pkg-config "--variable=wayland_scanner" "wayland-scanner"))
-  (ensure-dir generated-headers-dir)
-  (map (fn [pfile-path]
-         (def matched (peg/match protocol-file-peg pfile-path))
-         (when (nil? matched)
-           (printf "failed to match file, skipping: %s" pfile-path)
-           (break))
-         (def pfile (in matched 0))
-         (def out-file (string generated-headers-dir "/" pfile "-protocol.h"))
-         (when (file-exists? out-file)
-           (printf "%s exists, skipping" out-file)
-           (break))
-         (def scanner-out
-           (spawn-and-wait wl-scanner
-                           "server-header"
-                           (string wl-proto-dir "/" pfile-path)
-                           out-file))
-         (print scanner-out)
-         (printf "generated %s" out-file))
-       proto-files))
+  (each pf proto-files
+    (def matched (peg/match protocol-file-peg pf))
+    (if (nil? matched)
+      (error (string/format "failed to match file: %s" pf))
+      (do
+        (def pf-name (in matched 0))
+        (def out-file (string generated-headers-dir "/" pf-name "-protocol.h"))
+        (rule out-file []
+          (ensure-dir (find-build-dir))
+          (ensure-dir generated-headers-dir)
+          (spawn-and-wait wl-scanner "server-header" (string wl-proto-dir "/" pf) out-file)
+          (printf "generated %s" out-file))))))
+
+(add-proto-header-rules ["stable/xdg-shell/xdg-shell.xml"
+                         "staging/ext-session-lock/ext-session-lock-v1.xml"])
 
 
-(task "keysym-table" []
+(def keysym-table-file-path (string generated-tables-dir "/keysyms.janet"))
+(add-dep "build" keysym-table-file-path)
+
+(rule keysym-table-file-path []
   (def xkbcommon-cflags (pkg-config "--cflags" "xkbcommon"))
   (def matched-arr (peg/match include-path-peg xkbcommon-cflags))
   (when (or (nil? matched-arr) (empty? matched-arr))
@@ -145,7 +113,6 @@
   (def keysym-file-path (string include-path "/xkbcommon/xkbcommon-keysyms.h"))
   (def keysym-file (file/open keysym-file-path :rn))
   (ensure-dir generated-tables-dir)
-  (def keysym-table-file-path (string generated-tables-dir "/keysyms.janet"))
   (def keysym-table-file (file/open keysym-table-file-path :wn))
 
   (file/write keysym-table-file
@@ -168,3 +135,52 @@
 
   (file/close keysym-table-file)
   (printf "generated %s" keysym-table-file-path))
+
+
+(def wlr-sources ["wlr.c"])
+(declare-native :name (project-module "wlr")
+                :source wlr-sources
+                :cflags [;common-cflags ;wlr-cflags])
+(add-deps-for-obj wlr-sources
+                  ["jl.h"
+                   "types.h"
+                   "wlr_abs_types.h"
+                   (string generated-headers-dir "/xdg-shell-protocol.h")])
+
+(def wl-sources ["wl.c"])
+(declare-native :name (project-module "wl")
+                :source wl-sources
+                :header 
+                :cflags [;common-cflags ;wlr-cflags])
+(add-deps-for-obj wl-sources
+                  ["jl.h"
+                   "types.h"
+                   "wl_abs_types.h"])
+
+(def xkb-sources ["xkb.c"])
+(declare-native :name (project-module "xkb")
+                :source xkb-sources
+                :cflags [;common-cflags ;wlr-cflags])
+(add-deps-for-obj xkb-sources
+                  ["jl.h"
+                   "types.h"])
+
+(def xcb-sources ["xcb.c"])
+(declare-native :name (project-module "xcb")
+                :source xcb-sources
+                :header ["jl.h" "types.h"]
+                :cflags [;common-cflags ;wlr-cflags])
+(add-deps-for-obj xcb-sources
+                  ["jl.h"
+                   "types.h"])
+
+(def util-sources ["util.c"])
+(declare-native :name (project-module "util")
+                :source util-sources
+                :cflags [;common-cflags ;wlr-cflags])
+(add-deps-for-obj util-sources
+                  ["jl.h"
+                   (string generated-headers-dir "/xdg-shell-protocol.h")])
+
+(declare-source :source [(string generated-tables-dir "/keysyms.janet")]
+                :prefix ((dyn :project) :name))
