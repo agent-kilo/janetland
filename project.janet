@@ -167,3 +167,12 @@
 
 (declare-source :source [(string generated-tables-dir "/keysyms.janet")]
                 :prefix ((dyn :project) :name))
+
+
+(task "pack" ["clean"]
+  #(spawn-and-wait "rm" "-rf" "jpm_tree")
+  (def pwd (string/trim (spawn-and-wait "pwd")))
+  (def name (string/trim (spawn-and-wait "basename" pwd)))
+  (def out-name (string "../" name ".tar.gz"))
+  (spawn-and-wait "tar" "czf" out-name (string "../" name))
+  (printf "packed to %s" out-name))
