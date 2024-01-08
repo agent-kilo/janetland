@@ -161,6 +161,7 @@
 (declare-native :name (project-module "util")
                 :source ["util.c"]
                 :headers ["jl.h"
+                          "types.h"
                           (string generated-headers-dir "/xdg-shell-protocol.h")]
                 :cflags [;common-cflags ;wlr-cflags])
 
