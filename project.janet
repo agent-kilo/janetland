@@ -33,12 +33,6 @@
     (when (not (os/mkdir name))
       (error (string/format "failed to create directory %s" name)))))
 
-(defn add-deps-for-obj [src deps]
-  (each d deps
-    (each s src
-      (def op (out-path s ".c" ".o"))
-      (add-dep op d))))
-
 
 (def generated-headers-dir (string (find-build-dir) "generated_headers"))
 (def generated-tables-dir (string (find-build-dir) "generated_tables"))
@@ -137,48 +131,38 @@
   (printf "generated %s" keysym-table-file-path))
 
 
-(def wlr-sources ["wlr.c"])
 (declare-native :name (project-module "wlr")
-                :source wlr-sources
+                :source ["wlr.c"]
+                :headers ["jl.h"
+                          "types.h"
+                          "wlr_abs_types.h"
+                          (string generated-headers-dir "/xdg-shell-protocol.h")] 
                 :cflags [;common-cflags ;wlr-cflags])
-(add-deps-for-obj wlr-sources
-                  ["jl.h"
-                   "types.h"
-                   "wlr_abs_types.h"
-                   (string generated-headers-dir "/xdg-shell-protocol.h")])
 
-(def wl-sources ["wl.c"])
 (declare-native :name (project-module "wl")
-                :source wl-sources
+                :source ["wl.c"]
+                :headers ["jl.h"
+                          "types.h"
+                          "wl_abs_types.h"]
                 :cflags [;common-cflags ;wlr-cflags])
-(add-deps-for-obj wl-sources
-                  ["jl.h"
-                   "types.h"
-                   "wl_abs_types.h"])
 
-(def xkb-sources ["xkb.c"])
 (declare-native :name (project-module "xkb")
-                :source xkb-sources
+                :source ["xkb.c"]
+                :headers ["jl.h"
+                          "types.h"]
                 :cflags [;common-cflags ;wlr-cflags])
-(add-deps-for-obj xkb-sources
-                  ["jl.h"
-                   "types.h"])
 
-(def xcb-sources ["xcb.c"])
 (declare-native :name (project-module "xcb")
-                :source xcb-sources
+                :source ["xcb.c"]
+                :headers ["jl.h"
+                          "types.h"]
                 :cflags [;common-cflags ;wlr-cflags])
-(add-deps-for-obj xcb-sources
-                  ["jl.h"
-                   "types.h"])
 
-(def util-sources ["util.c"])
 (declare-native :name (project-module "util")
-                :source util-sources
+                :source ["util.c"]
+                :headers ["jl.h"
+                          (string generated-headers-dir "/xdg-shell-protocol.h")]
                 :cflags [;common-cflags ;wlr-cflags])
-(add-deps-for-obj util-sources
-                  ["jl.h"
-                   (string generated-headers-dir "/xdg-shell-protocol.h")])
 
 (declare-source :source [(string generated-tables-dir "/keysyms.janet")]
                 :prefix ((dyn :project) :name))
