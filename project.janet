@@ -150,7 +150,6 @@
 (def wl-sources ["wl.c"])
 (declare-native :name (project-module "wl")
                 :source wl-sources
-                :header 
                 :cflags [;common-cflags ;wlr-cflags])
 (add-deps-for-obj wl-sources
                   ["jl.h"
@@ -168,7 +167,6 @@
 (def xcb-sources ["xcb.c"])
 (declare-native :name (project-module "xcb")
                 :source xcb-sources
-                :header ["jl.h" "types.h"]
                 :cflags [;common-cflags ;wlr-cflags])
 (add-deps-for-obj xcb-sources
                   ["jl.h"
