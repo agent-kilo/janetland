@@ -191,10 +191,6 @@ static JanetReg cfuns[] = {
 
 JANET_MODULE_ENTRY(JanetTable *env)
 {
-    /* Import these module first, so that we can find the abstract types */
-    jl_import(WL_MOD_FULL_NAME);
-    jl_import(WLR_MOD_FULL_NAME);
-
     janet_register_abstract_type(&jutil_at_timespec);
 
     janet_cfuns(env, MOD_NAME, cfuns);
