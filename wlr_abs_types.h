@@ -543,7 +543,10 @@ static const JanetAbstractType jwlr_at_wlr_scene_node = {
     .gcmark = NULL,
     .get = method_wlr_scene_node_get,
     .put = method_wlr_scene_node_put,
-    JANET_ATEND_PUT
+    .marshal = NULL,
+    .unmarshal = NULL,
+    .tostring = method_wlr_abs_obj_tostring,
+    JANET_ATEND_TOSTRING
 };
 
 
