@@ -2049,6 +2049,34 @@ static int method_wlr_output_get(void *p, Janet key, Janet *out) {
         return 1;
     }
     return 0;
+
+    if (!janet_cstrcmp(kw, "data")) {
+        if (!(output->data)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
+        *out = janet_wrap_pointer(output->data);
+        return 1;
+    }
+}
+
+
+static void method_wlr_output_put(void *p, Janet key, Janet value) {
+    struct wlr_output **output_p = (struct wlr_output **)p;
+    struct wlr_output *output = *output_p;
+
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    if (!janet_cstrcmp(kw, "data")) {
+        output->data = jl_value_to_data_pointer(value);
+        return;
+    }
+
+    janet_panicf("unknown key: %v", key);
 }
 
 

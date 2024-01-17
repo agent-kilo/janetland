@@ -470,12 +470,14 @@ static const jl_offset_def_t wlr_output_list_offsets[] = {
 };
 
 static int method_wlr_output_get(void *p, Janet key, Janet *out);
+static void method_wlr_output_put(void *p, Janet key, Janet value);
 static const JanetAbstractType jwlr_at_wlr_output = {
     .name = MOD_NAME "/wlr-output",
     .gc = NULL,
     .gcmark = NULL,
     .get = method_wlr_output_get,
-    JANET_ATEND_GET
+    .put = method_wlr_output_put,
+    JANET_ATEND_PUT
 };
 
 
