@@ -2048,7 +2048,6 @@ static int method_wlr_output_get(void *p, Janet key, Janet *out) {
         *out = janet_wrap_abstract(list_p);
         return 1;
     }
-    return 0;
 
     if (!janet_cstrcmp(kw, "data")) {
         if (!(output->data)) {
@@ -2058,6 +2057,8 @@ static int method_wlr_output_get(void *p, Janet key, Janet *out) {
         *out = janet_wrap_pointer(output->data);
         return 1;
     }
+
+    return 0;
 }
 
 
