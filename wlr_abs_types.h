@@ -592,7 +592,12 @@ static const JanetAbstractType jwlr_at_wlr_input_device = {
     .gc = NULL,
     .gcmark = NULL,
     .get = method_wlr_input_device_get,
-    JANET_ATEND_GET
+    .put = NULL,
+    .marshal = NULL,
+    .unmarshal = NULL,
+    .tostring = method_wlr_abs_obj_tostring,
+    .compare = method_wlr_abs_obj_compare,
+    JANET_ATEND_COMPARE
 };
 
 
