@@ -74,8 +74,7 @@
      :ml-comment-end (sequence (any :s) "*/")}))
 
 
-(defn add-proto-header-rules [proto-files]
-  (def wl-proto-dir (pkg-config "--variable=pkgdatadir" "wayland-protocols"))
+(defn add-proto-header-rules [proto-dir proto-files]
   (def wl-scanner (pkg-config "--variable=wayland_scanner" "wayland-scanner"))
   (each pf proto-files
     (def matched (peg/match protocol-file-peg pf))
@@ -87,11 +86,15 @@
         (rule out-file []
           (ensure-dir (find-build-dir))
           (ensure-dir generated-headers-dir)
-          (spawn-and-wait wl-scanner "server-header" (string wl-proto-dir "/" pf) out-file)
+          (spawn-and-wait wl-scanner "server-header" (string proto-dir "/" pf) out-file)
           (printf "generated %s" out-file))))))
 
-(add-proto-header-rules ["stable/xdg-shell/xdg-shell.xml"
+(add-proto-header-rules (pkg-config "--variable=pkgdatadir" "wayland-protocols")
+                        ["stable/xdg-shell/xdg-shell.xml"
                          "staging/ext-session-lock/ext-session-lock-v1.xml"])
+
+(add-proto-header-rules "protocol"
+                        ["wlr-layer-shell-unstable-v1.xml"])
 
 
 (def keysym-table-file-path (string generated-tables-dir "/keysyms.janet"))
@@ -136,7 +139,8 @@
                 :headers ["jl.h"
                           "types.h"
                           "wlr_abs_types.h"
-                          (string generated-headers-dir "/xdg-shell-protocol.h")] 
+                          (string generated-headers-dir "/xdg-shell-protocol.h")
+                          (string generated-headers-dir "/wlr-layer-shell-unstable-v1-protocol.h")] 
                 :cflags [;common-cflags ;wlr-cflags])
 
 (declare-native :name (project-module "wl")
