@@ -1463,6 +1463,18 @@ static Janet cfun_wlr_cursor_set_surface(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_cursor_destroy(int32_t argc, Janet *argv)
+{
+    struct wlr_cursor *cursor;
+
+    janet_fixarity(argc, 1);
+
+    cursor = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_cursor);
+    wlr_cursor_destroy(cursor);
+    return janet_wrap_nil();
+}
+
+
 static Janet cfun_wlr_xcursor_manager_create(int32_t argc, Janet *argv)
 {
     const char *name;
@@ -4285,8 +4297,13 @@ static JanetReg cfuns[] = {
     },
     {
         "wlr-cursor-set-surface", cfun_wlr_cursor_set_surface,
-        "(" MOD_NAME "/wlr-cursor-set-surface)\n\n"
+        "(" MOD_NAME "/wlr-cursor-set-surface wlr-cursor wlr-surface hotspot-x hotspot-y)\n\n"
         "Sets a surface as the cursor image."
+    },
+    {
+        "wlr-cursor-destroy", cfun_wlr_cursor_destroy,
+        "(" MOD_NAME "/wlr-cursor-destroy wlr-cursor)\n\n"
+        "Destroys a wlroots cursor object."
     },
     {
         "wlr-xcursor-manager-create", cfun_wlr_xcursor_manager_create,
