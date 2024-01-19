@@ -2027,6 +2027,18 @@ static Janet cfun_wlr_seat_get_keyboard(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_seat_destroy(int32_t argc, Janet *argv)
+{
+    struct wlr_seat *seat;
+
+    janet_fixarity(argc, 1);
+
+    seat = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_seat);
+    wlr_seat_destroy(seat);
+    return janet_wrap_nil();
+}
+
+
 static int method_wlr_output_get(void *p, Janet key, Janet *out) {
     struct wlr_output **output_p = (struct wlr_output **)p;
     struct wlr_output *output = *output_p;
@@ -4395,6 +4407,11 @@ static JanetReg cfuns[] = {
         "wlr-seat-get-keyboard", cfun_wlr_seat_get_keyboard,
         "(" MOD_NAME "/wlr-seat-get-keyboard wlr-seat)\n\n"
         "Gets the current active keyboard for the seat."
+    },
+    {
+        "wlr-seat-destroy", cfun_wlr_seat_destroy,
+        "(" MOD_NAME "/wlr-seat-destroy wlr-seat)\n\n"
+        "Destroys the wlroots seat object."
     },
     {
         "wlr-output-init-render", cfun_wlr_output_init_render,
