@@ -2218,6 +2218,18 @@ static Janet cfun_wlr_output_commit(int32_t argc, Janet *argv)
 }
 
 
+static Janet cfun_wlr_output_destroy(int32_t argc, Janet *argv)
+{
+    struct wlr_output *output;
+
+    janet_fixarity(argc, 1);
+
+    output = jl_get_abs_obj_pointer(argv, 0, &jwlr_at_wlr_output);
+    wlr_output_destroy(output);
+    return janet_wrap_nil();
+}
+
+
 static Janet cfun_wlr_surface_get_root_surface(int32_t argc, Janet *argv)
 {
     struct wlr_surface *surface;
@@ -4454,6 +4466,11 @@ static JanetReg cfuns[] = {
         "wlr-output-commit", cfun_wlr_output_commit,
         "(" MOD_NAME "/wlr-output-commit wlr-output)\n\n"
         "Commits an output object."
+    },
+    {
+        "wlr-output-destroy", cfun_wlr_output_destroy,
+        "(" MOD_NAME "/wlr-output-destroy wlr-output)\n\n"
+        "Destroys an output object."
     },
     {
         "wlr-output-layout-create", cfun_wlr_output_layout_create,
