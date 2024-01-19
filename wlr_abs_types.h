@@ -900,4 +900,20 @@ static const JanetAbstractType jwlr_at_wlr_xwayland_surface_configure_event = {
 };
 
 
+static const jl_offset_def_t wlr_layer_shell_v1_signal_offsets[] = {
+    JWLR_OFFSET_DEF(struct wlr_layer_shell_v1, events.new_surface),
+    JWLR_OFFSET_DEF(struct wlr_layer_shell_v1, events.destroy),
+    {NULL, 0},
+};
+
+static int method_wlr_layer_shell_v1_get(void *p, Janet key, Janet *out);
+static const JanetAbstractType jwlr_at_wlr_layer_shell_v1 = {
+    .name = MOD_NAME "/wlr-layer-shell-v1",
+    .gc = NULL,
+    .gcmark = NULL,
+    .get = method_wlr_layer_shell_v1_get,
+    JANET_ATEND_GET
+};
+
+
 #endif

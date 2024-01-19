@@ -20,6 +20,7 @@
 #include <wlr/types/wlr_xcursor_manager.h>
 #include <wlr/types/wlr_seat.h>
 #include <wlr/types/wlr_output.h>
+#include <wlr/types/wlr_layer_shell_v1.h>
 
 #include <xkbcommon/xkbcommon.h>
 
@@ -4131,6 +4132,53 @@ static int method_wlr_xwayland_minimize_event_get(void *p, Janet key, Janet *out
 }
 
 
+static int method_wlr_layer_shell_v1_get(void *p, Janet key, Janet *out)
+{
+    struct wlr_layer_shell_v1 **layer_shell_p = (struct wlr_layer_shell_v1 **)p;
+    struct wlr_layer_shell_v1 *layer_shell = *layer_shell_p;
+    
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        janet_panicf("expected keyword, got %v", key);
+    }
+
+    const uint8_t *kw = janet_unwrap_keyword(key);
+
+    struct wl_signal **signal_p = get_abstract_struct_signal_member(layer_shell, kw, wlr_layer_shell_v1_signal_offsets);
+    if (signal_p) {
+        *out = janet_wrap_abstract(signal_p);
+        return 1;
+    }
+
+    if (!janet_cstrcmp(kw, "data")) {
+        if (!(layer_shell->data)) {
+            *out = janet_wrap_nil();
+            return 1;
+        }
+        *out = janet_wrap_pointer(layer_shell->data);
+        return 1;
+    }
+
+    return 0;
+}
+
+
+static Janet cfun_wlr_layer_shell_v1_create(int32_t argc, Janet *argv)
+{
+    struct wl_display *display;
+
+    struct wlr_layer_shell_v1 *layer_shell;
+
+    janet_fixarity(argc, 1);
+
+    display = jl_get_abs_obj_pointer_by_name(argv, 0, WL_MOD_NAME "/wl-display");
+    layer_shell = wlr_layer_shell_v1_create(display);
+    if (!layer_shell) {
+        janet_panic("failed to create wlroots layer shell object");
+    }
+    return janet_wrap_abstract(jl_pointer_to_abs_obj(layer_shell, &jwlr_at_wlr_layer_shell_v1));
+}
+
+
 static JanetReg cfuns[] = {
     {
         "wlr-log-init", cfun_wlr_log_init,
@@ -4726,6 +4774,11 @@ static JanetReg cfuns[] = {
         "wlr-xwayland-surface-from-wlr-surface", cfun_wlr_xwayland_surface_from_wlr_surface,
         "(" MOD_NAME "/wlr-xwayland-surface-from-wlr-surface wlr-surface)\n\n"
         "Retrieves the associated XWayland surface from a wlroots surface."
+    },
+    {
+        "wlr-layer-shell-v1-create", cfun_wlr_layer_shell_v1_create,
+        "(" MOD_NAME "/wlr-layer-shell-v1-create wlr-display)\n\n"
+        "Creates a layer shell."
     },
     {NULL, NULL, NULL},
 };
